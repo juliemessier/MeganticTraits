@@ -10,14 +10,14 @@
 # B- Setup abundance data
 
 #<<WORKSPACES>>
-wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Mégantic Traits/Workspaces/") # Workspaces
-data.dir<-(("C:/Users/Julie/Desktop/Postdoc/Mégantic Traits/Data/")) # data
-res.dir<-("C:/Users/Julie/Desktop/Postdoc/Mégantic Traits//Results/")  # Results
-grp.dir<-("C:/Users/Julie/Desktop/Postdoc/Mégantic Traits//Graphs/")   # Graphs
-fct.dir<-("C:/Users/Julie/Desktop/Postdoc/Mégantic Traits//Functions/") # Functions
+wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
+data.dir<-(("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Data/")) # data
+res.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits//Results/")  # Results
+grp.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits//Graphs/")   # Graphs
+fct.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits//Functions/") # Functions
 
 #<<LIBRARIES>>
-library(car) # for 
+library(car) # for powerTransform
 library(vegan) # for decostand (standardizing data)
 
 # ==================================================================================
@@ -30,6 +30,8 @@ library(vegan) # for decostand (standardizing data)
     Megtraits<-read.csv(paste0(data.dir,'MegTraits_20170406.csv'))
     dim(Megtraits) #640 46
     str(Megtraits)
+    Megtraits$Min.Root.Loca<-as.factor(Megtraits$Min.Root.Loca)
+    Megtraits$Max.Root.Loca<-as.factor(Megtraits$Max.Root.Loca)
     
       # Simplify names
       names(Megtraits)[names(Megtraits)=="Lamina.thck.æm."] <- "Lamina.thck"
@@ -38,7 +40,7 @@ library(vegan) # for decostand (standardizing data)
       names(Megtraits)[names(Megtraits)=='LDMC.g.g.']<-'LDMC'
       names(Megtraits)[names(Megtraits)=='Leaf.Area.cm2.']<-'Leaf.Area'
       
-      # create dataframes with traits I will work with
+      # create trait dataframe with traits I will work with
       
       H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca","Max.Root.Loca",
                            "Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac",        
@@ -46,16 +48,11 @@ library(vegan) # for decostand (standardizing data)
       dim(H.traits)
       # 459 15
       
-      C.traits<-Megtraits[Megtraits$Layer=='C',c("Plant.ID","Species","Layer","Date.recolte",
-                          "Lamina.thck","LMA","LDMC","Leaf.Area")]
-      dim(C.traits)
-      # 181   8
-      
       # Following Kerkhoff & Enquist (2009), all size- and growth-related traits are natural-log transformed, because 
-      # they follow multiplicative processes:
-      #  Ht.veg, Lamina.thck, LMA, LDMC, Leaf Area).
+      # they follow multiplicative processes: Ht.veg, Lamina.thck, LMA, LDMC, Leaf Area).
     
       # Test best transform for each trait ####
+      
       # 1- Ht.veg
       plot(density(na.omit(H.traits$Ht.veg)))
       qqnorm(na.omit(H.traits$Ht.veg)) # super banana
@@ -110,15 +107,6 @@ library(vegan) # for decostand (standardizing data)
       # Best Transform - log bc size-related & no large difference with PowerTransform exponent
       H.traits$Lamina.thck<-log(H.traits$Lamina.thck)
       
-      plot(density(na.omit(C.traits$Lamina.thck))) # Bimodal
-      shapiro.test(C.traits$Lamina.thck) # 9.971e-16
-      shapiro.test(log(na.omit(C.traits$Lamina.thck)))       # 6.935e-09
-      powerTransform(na.omit(C.traits$Lamina.thck))# -0.3236387
-      shapiro.test(C.traits$Lamina.thck^-0.3236387)   
-      
-      # Best Transform - log bc size-related & no large difference with PowerTransform exponent
-      C.traits$Lamina.thck<-log(C.traits$Lamina.thck)
-      
       # 5 - LMA
       plot(density(na.omit(H.traits$LMA)))
       qqnorm(na.omit(H.traits$LMA))
@@ -135,22 +123,9 @@ library(vegan) # for decostand (standardizing data)
           md<-tapply(t2$LMA,t2$Species,FUN= median) # calculate means of species
           boxplot(t2$LMA~factor(t2$Species,levels=levels(t2$Species)[order(md)]),
                   las=2, main="LMA")
-          
+      
       # Best Transform - PowerTransform is WAY better, but log transform because it is a multiplicative trait. 
-      H.traits$LMA<-log(H.traits$LMA)
-      
-      plot(density(na.omit(C.traits$LMA))) #bimodal
-      qqnorm(na.omit(C.traits$LMA))
-      shapiro.test(C.traits$LMA)         # 8.594e-11
-      shapiro.test(log(na.omit(C.traits$LMA)))            # 0.00413
-      powerTransform(na.omit(C.traits$LMA))# 0.08602909 
-      shapiro.test(C.traits$LMA^0.08602909)               # 0.004137
-      
-      plot(density(na.omit(log(C.traits$LMA))))
-      plot(density(na.omit(C.traits$LMA^0.08602909)))
-      
-      # Best Transform - log transform because it is a multiplicative trait, and just as good as power Transform
-      C.traits$LMA<-log(C.traits$LMA)
+      H.traits$LMA<-log(H.traits$LMA)    
       
       # 6 - LDMC
       plot(density(na.omit(H.traits$LDMC))) # right skewed
@@ -171,14 +146,6 @@ library(vegan) # for decostand (standardizing data)
           boxplot(t3$LDMC~factor(t3$Species,levels=levels(t3$Species)[order(md)]),
                   las=2, main='LDMC')
           
-      plot(density(na.omit(C.traits$LDMC))) # weirdly shaped
-      shapiro.test(C.traits$LDMC) #   9.555e-05
-      shapiro.test(log(na.omit(C.traits$LDMC)))          #2.94e-09
-      powerTransform(C.traits$LDMC)#1.276166 
-      shapiro.test(C.traits$LDMC^1.276166)             # 0.000209
-      plot(density(na.omit(C.traits$LDMC^1.276166)))
-      plot(density(na.omit(log(C.traits$LDMC))))
-      
       # Best Transform - PowerTransform is way better, but it iss a ratio of weights therefore use log transform
         H.traits$LDMC<-log(H.traits$LDMC)
         
@@ -200,19 +167,8 @@ library(vegan) # for decostand (standardizing data)
           boxplot(t4$Leaf.Area~factor(t4$Species,levels=levels(t4$Species)[order(md)]),
                   las=2,main="Leaf.Area")
     
-      # Best Transform - size trait therefore log
-        H.traits$Leaf.Area<-log(H.traits$Leaf.Area)
-        
-        plot(density(na.omit(C.traits$Leaf.Area)))
-        shapiro.test(C.traits$Leaf.Area) # 5.992e-16
-        shapiro.test(log(na.omit(C.traits$Leaf.Area)))         #0.002092
-        powerTransform(C.traits$Leaf.Area)#  -0.2679859
-        shapiro.test(C.traits$Leaf.Area^ -0.2679859 )            #0.2017
-        plot(density(na.omit(C.traits$Leaf.Area^-0.2679859 )))
-        plot(density(na.omit(log(C.traits$Leaf.Area))))
-         
         # Best Transform - size trait therefore log
-        C.traits$Leaf.Area<-log(C.traits$Leaf.Area)
+        H.traits$Leaf.Area<-log(H.traits$Leaf.Area)
         
       # 8-Leaf.Mass.Frac
         plot(density(na.omit(H.traits$Leaf.Mass.Frac)))
@@ -307,12 +263,9 @@ library(vegan) # for decostand (standardizing data)
         # Min.Root.Loca - no transforms
         # Max.Root.Loca - no transforms
         H.traits$Lamina.thck<-log(H.traits$Lamina.thck)
-        C.traits$Lamina.thck<-log(C.traits$Lamina.thck)
         H.traits$LMA<-log(H.traits$LMA)
-        C.traits$LMA<-log(C.traits$LMA)
         H.traits$LDMC<-log(H.traits$LDMC)
         H.traits$Leaf.Area<-log(H.traits$Leaf.Area)
-        C.traits$Leaf.Area<-log(C.traits$Leaf.Area)
         #Leaf.Mass.Frac - no transforms
         H.traits$Supp.Mass.Frac<-H.traits$Supp.Mass.Frac^0.6124825
         H.traits$Rep.Mass.Frac<-(H.traits$Rep.Mass.Frac+0.001)^-0.564259
@@ -330,13 +283,9 @@ library(vegan) # for decostand (standardizing data)
                        "Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac")
         length(H.trait.names) #11
         
-        C.trait.names<-c("Lamina.thck","LMA","LDMC","Leaf.Area")
-        length(C.trait.names) #4
-        
         # Change caledar dates into julian dates
         H.traits$Date.recolte<- as.numeric(format(as.Date(H.traits$Date.recolte, format = "%m/%d/%Y"),"%j"))
-        C.traits$Date.recolte<- as.numeric(format(as.Date(C.traits$Date.recolte, format = "%m/%d/%Y"),"%j"))
-    
+        
         # loop testing for date effects and replacing with regression residuals
         for (t in H.trait.names){ 
           x<-lm(H.traits[[t]]~H.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
@@ -362,25 +311,6 @@ library(vegan) # for decostand (standardizing data)
         # [1] "Supp.Mass.Frac"         "R2=  0.0916507749900383" "Sign=  1" 
         # [1] "Stor.Mass.Frac"         "R2=  0.178232187256645" "Sign=  1"
         
-        for (t in C.trait.names){ 
-          x<-lm(C.traits[[t]]~C.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
-          
-          if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
-            print(c(names(C.traits[t]),
-                    paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
-                    paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
-          
-          for (i in 1:nrow(C.traits[t])){                                                   # if each row is numeric (not an NA)
-            if (is.numeric(C.traits[t][i,]))
-            {C.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
-          }                                                                           # else, do nothing to the cells with value of NA
-        }
-        
-        # [1] "Lamina.thck" "R2=  0.159"  "Sign=  -1"  
-        # [1] "LMA"        "R2=  0.072" "Sign=  -1" 
-        # [1] "LDMC"       "R2=  0.043" "Sign=  -1" 
-        # [1] "Leaf.Area"  "R2=  0.052" "Sign=  -1"
-        
         str(H.traits)
           # 'data.frame':	459 obs. of  15 variables:
           # $ Plant.ID      : Factor w/ 640 levels "ABBA1","ABBA10",..: 226 135 141 230 231 139 229 140 228 138 ...
@@ -398,15 +328,12 @@ library(vegan) # for decostand (standardizing data)
           # $ Supp.Mass.Frac: num  -0.85 -1.6 -1.85 -1.18 -1.43 ...
           # $ Rep.Mass.Frac : num  -0.446 0.682 0.118 -0.446 1.105 ...
           # $ Stor.Mass.Frac: num  0.6656 2.3183 2.6643 0.0506 0.9346 ...
-        H.traits$Min.Root.Loca<-as.factor(H.traits$Min.Root.Loca)
-        H.traits$Max.Root.Loca<-as.factor(H.traits$Max.Root.Loca)
      
     # A1.3 - Turn individual-level table into species-level table.  ####
         #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
         
         #first standardize all variables
         H.traits[8:15]<-decostand(H.traits[8:15],method='standardize', margin=2)
-        C.traits[5:8]<-decostand(C.traits[5:8],method='standardize',margin=2)
         
         sp.H.traits<-as.data.frame(aggregate(H.traits[,5:11],by=list(H.traits$Species),mean,na.rm=T))
         sp.H.traits[,2:8]<-round(sp.H.traits[2:8],digits=3)
@@ -415,14 +342,6 @@ library(vegan) # for decostand (standardizing data)
         sp.H.traits<-sp.H.traits[,-1]
         sp.H.traits<-sp.H.traits[order(rownames(sp.H.traits)),]
         dim(sp.H.traits) # 54  8
-        
-        sp.C.traits<-as.data.frame(aggregate(C.traits[,5:8],by=list(C.traits$Species),mean,na.rm=T))
-        sp.C.traits[,2:5]<-round(sp.C.traits[2:5],digits=3)
-        sp.C.traits[is.na(sp.C.traits)] <-NA
-        rownames(sp.C.traits)<-sp.C.traits$Group.1
-        sp.C.traits<-sp.C.traits[,-1]
-        sp.C.traits<-sp.C.traits[order(rownames(sp.C.traits)),]
-        dim(sp.C.traits) # 24  4
         
     # A1.4 - Add species mean traits (Seed size and mychorizae) ####
         # Deleted "FRAM" row by hand - We did not collect roots on trees... what is this row?
@@ -440,8 +359,122 @@ library(vegan) # for decostand (standardizing data)
         sp.H.traits$Row.names<-NULL
         dim(sp.H.traits) # 53 8
         
+  # A2 - Canopy layer ####
         
-    
+    # A2.1- Transform trait data for normality ####
+        
+        # create trait dataframe with traits I will work with
+        
+      C.traits<-Megtraits[Megtraits$Layer=='C',c("Plant.ID","Species","Layer","Date.recolte",
+      "Lamina.thck","LMA","LDMC","Leaf.Area")]
+      
+      dim(C.traits)
+      # 181   8       
+      
+      # Following Kerkhoff & Enquist (2009), all size- and growth-related traits are natural-log transformed,  
+      # because they follow multiplicative processes: Ht.veg, Lamina.thck, LMA, LDMC, Leaf Area.
+      
+      # Test best transform for each trait ####
+      
+      # 4 - Lamina thickness
+        plot(density(na.omit(C.traits$Lamina.thck))) # Bimodal
+        shapiro.test(C.traits$Lamina.thck) # 9.971e-16
+        shapiro.test(log(na.omit(C.traits$Lamina.thck)))       # 6.935e-09
+        powerTransform(na.omit(C.traits$Lamina.thck))# -0.3236387
+        shapiro.test(C.traits$Lamina.thck^-0.3236387)   
+        
+        # Best Transform - log bc size-related & no large difference with PowerTransform exponent
+        C.traits$Lamina.thck<-log(C.traits$Lamina.thck)
+      
+      # 5 - LMA
+        plot(density(na.omit(C.traits$LMA))) #bimodal
+        qqnorm(na.omit(C.traits$LMA))
+        shapiro.test(C.traits$LMA)         # 8.594e-11
+        shapiro.test(log(na.omit(C.traits$LMA)))            # 0.00413
+        powerTransform(na.omit(C.traits$LMA))# 0.08602909 
+        shapiro.test(C.traits$LMA^0.08602909)               # 0.004137
+        
+        plot(density(na.omit(log(C.traits$LMA))))
+        plot(density(na.omit(C.traits$LMA^0.08602909)))
+        
+        # Best Transform - log transform because it is a multiplicative trait, and just as good as power Transform
+        C.traits$LMA<-log(C.traits$LMA)
+      
+      # 6 - LDMC
+        plot(density(na.omit(C.traits$LDMC))) # weirdly shaped
+        shapiro.test(C.traits$LDMC) #   9.555e-05
+        shapiro.test(log(na.omit(C.traits$LDMC)))          #2.94e-09
+        powerTransform(C.traits$LDMC)#1.276166 
+        shapiro.test(C.traits$LDMC^1.276166)             # 0.000209
+        plot(density(na.omit(C.traits$LDMC^1.276166)))
+        plot(density(na.omit(log(C.traits$LDMC))))
+        
+        # Best Transform - log transform bc it is a multiplicative trait, but powerTransform is way better
+        C.traits$LDMC<-log(C.traits$LDMC)
+        
+      # 7 - Leaf Area
+        plot(density(na.omit(C.traits$Leaf.Area)))
+        shapiro.test(C.traits$Leaf.Area) # 5.992e-16
+        shapiro.test(log(na.omit(C.traits$Leaf.Area)))         #0.002092
+        powerTransform(C.traits$Leaf.Area)#  -0.2679859
+        shapiro.test(C.traits$Leaf.Area^ -0.2679859 )            #0.2017
+        plot(density(na.omit(C.traits$Leaf.Area^-0.2679859 )))
+        plot(density(na.omit(log(C.traits$Leaf.Area))))
+        
+        # Best Transform - size trait therefore log
+        C.traits$Leaf.Area<-log(C.traits$Leaf.Area)
+        
+      # Summary of trait transforms ####
+        C.traits$Lamina.thck<-log(C.traits$Lamina.thck)
+        C.traits$LMA<-log(C.traits$LMA)
+        C.traits$LDMC<-log(C.traits$LDMC)
+        C.traits$Leaf.Area<-log(C.traits$Leaf.Area)
+        
+    # A2.2- Remove date effect on traits  ####
+        
+      names(C.traits)
+      C.trait.names<-c("Lamina.thck","LMA","LDMC","Leaf.Area")
+      length(C.trait.names) #4
+      
+      # Change caledar dates into julian dates
+      C.traits$Date.recolte<- as.numeric(format(as.Date(C.traits$Date.recolte, format = "%m/%d/%Y"),"%j"))
+      
+      # loop testing for date effects and replacing with regression residuals
+      for (t in C.trait.names){ 
+        x<-lm(C.traits[[t]]~C.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
+        
+        if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
+          print(c(names(C.traits[t]),
+                  paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
+                  paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
+        
+        for (i in 1:nrow(C.traits[t])){                                                   # if each row is numeric (not an NA)
+          if (is.numeric(C.traits[t][i,]))
+          {C.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
+        }                                                                           # else, do nothing to the cells with value of NA
+      }
+      
+      # [1] "Lamina.thck" "R2=  0.159"  "Sign=  -1"  
+      # [1] "LMA"        "R2=  0.072" "Sign=  -1" 
+      # [1] "LDMC"       "R2=  0.043" "Sign=  -1" 
+      # [1] "Leaf.Area"  "R2=  0.052" "Sign=  -1"    
+      
+    # A2.3 - Turn individual-level table into species-level table.  ####
+      
+      #first standardize all variables
+      C.traits[5:8]<-decostand(C.traits[5:8],method='standardize',margin=2)
+      
+      sp.C.traits<-as.data.frame(aggregate(C.traits[,5:8],by=list(C.traits$Species),mean,na.rm=T))
+      sp.C.traits[,2:5]<-round(sp.C.traits[2:5],digits=3)
+      sp.C.traits[is.na(sp.C.traits)] <-NA
+      rownames(sp.C.traits)<-sp.C.traits$Group.1
+      sp.C.traits<-sp.C.traits[,-1]
+      sp.C.traits<-sp.C.traits[order(rownames(sp.C.traits)),]
+      dim(sp.C.traits) # 24  4
+      
+    # A2.4 - Add species mean traits (Seed size) ####
+      
+        
 # B- Setup abundance data ####
 
 abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
