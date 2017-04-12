@@ -583,15 +583,18 @@ library(vegan) # for decostand (standardizing data)
   rownames((abund)[abund$ratio.log.abund<=-10,]) # IMCA, POTR
   rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
   
-  # 3 - powerTransform response variable ####
-  #===========================================================
+  # powerTransform Abundance/Presence ####
   
-  powerTransform(H.abund$abund.ratio+0.01) # 0.1519625
-  plot(density((H.abund$abund.ratio+0.01)^0.1519625))
-  H.abund$pt.abund.ratio<-(H.abund$abund.ratio+0.01)^0.1519625
+  a<-abund$abund.ratio
+  a[which(a=='Inf')]<-NA
+  powerTransform(a+0.01) # 0.181293
+  abund[,'PT.abund.ratio']<-(a+0.01)^0.181293
+  b<-abund$presence.ratio
+  b[which(b==Inf)]<-NA
+  powerTransform(b+0.01)# -.3390714
+  abund[,'PT.presence.ratio']<-(b+0.01)^0.3390714
   
   str(abund)
-    # 'data.frame':	125 obs. of  11 variables:
     # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
     # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
     # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
@@ -603,6 +606,8 @@ library(vegan) # for decostand (standardizing data)
     # $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
     # $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
     # $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
+    # $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
+    # $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
   
   save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
 
@@ -639,7 +644,7 @@ library(vegan) # for decostand (standardizing data)
                                    "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
                                    "RARE","TAOF"),]
   
-  dim(abund.c) # 107 11
+  dim(abund.c) # 107 13
   
   save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
   
