@@ -16,6 +16,7 @@ library(car) # for powerTransform
 library(vegan) # for decostand (standardizing data)
 library(tree) # for tree()
 library(MASS) # for glm.nb()  
+library(mgcv) # for gam()
 
 #<<LOAD FILES>>
 
@@ -29,17 +30,20 @@ load(file=paste0(wrk.dir,'species-level.traits.Canopy.layer.Rdata'))
 
 # load(file=paste0(wrk.dir,'Species.abundances.full.data.Rdata')) # object = abund
 load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abund.c
-
 #============================================================================================
+
+# A - HERBIVORY LAYER, ABUNDANCE
 
 # 0-  Make trait and abundance dataframes correspond based on shared species ####
 #================================================================================
 
   # 0A - Herbivory layer
-    H.abund<-abund.c[which(rownames(abund.c)%in%rownames(sp.H.traits)),c('abund.ratio','log.abund.ratio','ratio.log.abund')]
+    names(H.abund)
+    H.abund<-abund.c[which(rownames(abund.c)%in%rownames(sp.H.traits)),c('abund.ratio','log.abund.ratio',
+                                                                         'ratio.log.abund',"PT.abund.ratio" )]
     H.abund<-H.abund[order(rownames(H.abund)),]
     View(H.abund)
-    dim(H.abund) #45 3
+    dim(H.abund) #45 4
     
     dim(sp.H.traits)
     # 53 8
@@ -48,23 +52,6 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
     #45 8
     all(rownames(H.abund)==rownames(sp.H.traits)) # TRUE
 
-  # 0B - Canopy layer
-    C.abund<-abund[which(rownames(abund)%in%rownames(sp.C.traits)),c('presence.change','abund.ratio')]
-    C.abund<-C.abund[order(rownames(C.abund)),]
-    View(C.abund)
-    dim(C.abund) 
-    #21 2
-
-    dim(sp.C.traits)
-    #22 4
-    dim (C.abund)
-    #21 2
-    sp.C.traits<-sp.C.traits[which(rownames(sp.C.traits)%in%rownames(C.abund)),]
-    all(rownames(sp.C.traits)==rownames(C.abund)) 
-    # TRUE
-
-# A - HERBIVORY LAYER, ABUNDANCE
-    
 # 1 - Data Exploration - Scatterplots, Tree models and GAMs #### 
 #===========================================================
 
@@ -74,10 +61,13 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
     pairs(cbind(sp.H.traits,H.abund[,'abund.ratio']),panel=panel.smooth)
     #yes, LMA-LDMC ; Root.Loca-myc.frac ; min.root.Loca - max.root.loca
     # variance appears homoscedastic
+    
     pairs(cbind(sp.H.traits,H.abund[,'log.abund.ratio']),panel=panel.smooth)
     # variance appears homoscedastic except for one outlier
+    
     pairs(cbind(sp.H.traits,H.abund[,'ratio.log.abund']),panel=panel.smooth)
     # can't tell variance homogeneity - one outlier too large
+    
     pairs(cbind(sp.H.traits,H.abund[,'pt.abund.ratio']),panel=panel.smooth)
     # variance appears homoscedastic
     
@@ -89,33 +79,49 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
     title('herbaceous layer, abund.ratio vs traits')
     # Myc.frac is most important variable, 
     # for those with high myc.frac, LDMC matters
+    tree.model #  null deviance = 167.00
+    1-(deviance(tree.model)/167) # 0.29 
     
     tree.model.l<-tree(H.abund$log.abund.ratio~.,data=sp.H.traits)
     plot(tree.model.l)
     text(tree.model.l)
     title('herbaceous layer, log.abund.ratio vs traits')
     # complicated - LDMc, myc.frac, leaf.area, LMA...
+    tree.model.l # null deviance = 45.4800
+    1-(deviance(tree.model.l)/45.48) # 0.43
     
     tree.model.rl<-tree(H.abund$ratio.log.abund~.,data=sp.H.traits)
     plot(tree.model.rl)
     text(tree.model.rl)
     title('herbaceous layer, ratio.log.abund vs traits')
+    # only LDMc retained
+    tree.model.rl # null deviance = 592.50
+    1-(deviance(tree.model.rl)/592.50) # 0.20
+    
+    tree.model.pt<-tree(H.abund$PT.abund.ratio~.,data=sp.H.traits)
+    plot(tree.model.pt)
+    text(tree.model.pt)
+    title('herbaceous layer, PT.ratio.abund vs traits')
+    # LDMC & myc.fraction retained
+    tree.model.pt # null deviance = 1.281
+    1-(deviance(tree.model.pt)/1.281) # 0.45
     
     # GAM - non-linearities?  
     
-    library(mgcv)
     par(mfrow=c(2,2))
-    m<-gam(H.abund.c$pt.abund.ratio~s(sp.H.traits.c$myc.frac)+s(sp.H.traits.c$Min.Root.Loca)+
-             s(sp.H.traits.c$LDMC),data=sp.H.traits.c)
-    plot(m)
+    plot(gam(H.abund$abund.ratio~s(myc.frac)+s(Min.Root.Loca)+
+             s(LDMC)+s(LDMC),data=sp.H.traits))
+    
     #myc.frac appears non-linear
     #Min.Root.Loca appears non-linear
-    m<-gam(H.abund.c$pt.abund.ratio~s(sp.H.traits.c$Ht.veg)+s(sp.H.traits.c$Lamina.thck)+
+    m<-gam(H.abund.c$abund.ratio~s(sp.H.traits.c$Ht.veg)+s(sp.H.traits.c$Lamina.thck)+
              s(sp.H.traits.c$LMA),data=sp.H.traits.c)
     plot(m)
     #LMA appears correlated
-    m<-gam(H.abund.c$pt.abund.ratio~s(sp.H.traits.c$Leaf.Area),data=sp.H.traits.c)
+    m<-gam(H.abund.c$abund.ratio~s(sp.H.traits.c$Leaf.Area),data=sp.H.traits.c)
     plot(m)
+    
+    par(mfrow=c(1,1))
     
     #------------------------------------#
     # myc.frac. and LDMC appear non-linear
