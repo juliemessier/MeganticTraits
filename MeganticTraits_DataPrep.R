@@ -548,6 +548,8 @@ library(vegan) # for decostand (standardizing data)
   rownames(abund)<-abund$Species
   abund$Species<-NULL
   
+  # Abundance/Presence Ratios
+  
   abund[,'presence.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
   abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
   abund$abund.ratio
@@ -556,7 +558,9 @@ library(vegan) # for decostand (standardizing data)
   # [17] "RARE" "TAOF
   # loosing 18 data points to "Inf"
   plot(density(abund$abund.ratio))
-  plot(density(log(abund$abund.ratio)))
+  plot(density(log(abund$abund.ratio+0.01)))
+  
+  # Log of Abundance/Presence Ratios
   
   abund[,'log.presence.ratio']<-log(abund$presence.ratio+0.01)
   abund[,'log.abund.ratio']<-log(abund$abund.ratio+0.01)
@@ -570,8 +574,24 @@ library(vegan) # for decostand (standardizing data)
   # [1] "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "OXMO"  "TSCA" 
   # sencond density peak has 10 species. 
   
+  # Ratios of log Abundance/Presence
+  
+  abund[,'ratio.log.presence']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
+  abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
+  abund$ratio.log.abund
+  plot(density(abund$ratio.log.abund))
+  rownames((abund)[abund$ratio.log.abund<=-10,]) # IMCA, POTR
+  rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
+  
+  # 3 - powerTransform response variable ####
+  #===========================================================
+  
+  powerTransform(H.abund$abund.ratio+0.01) # 0.1519625
+  plot(density((H.abund$abund.ratio+0.01)^0.1519625))
+  H.abund$pt.abund.ratio<-(H.abund$abund.ratio+0.01)^0.1519625
+  
   str(abund)
-    # 'data.frame':	125 obs. of  9 variables:
+    # 'data.frame':	125 obs. of  11 variables:
     # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
     # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
     # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
@@ -581,6 +601,8 @@ library(vegan) # for decostand (standardizing data)
     # $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
     # $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
     # $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
+    # $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
+    # $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
   
   save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
 
@@ -617,6 +639,7 @@ library(vegan) # for decostand (standardizing data)
                                    "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
                                    "RARE","TAOF"),]
   
-  dim(abund.c) # 107 9
+  dim(abund.c) # 107 11
   
   save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
+  
