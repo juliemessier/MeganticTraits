@@ -514,18 +514,18 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   # Does not select anything !! 
   
 
-  # 2.5 glm, lognormal link fct - doesn't meet assumption ####
+  # 2.5 glm, gamma link fct - Meets assumption, but model not significant wihtout outliers ####
   #=========================================#
   # glm.nb - doesn't work bc non-integer values
   # glm gamma doesn't work bc NaNs produced
-  # can`t figure out how to do gamlss for lognormal link ...
+  #
    
   # A) Check Trait-trait interactions #####
   ----
   
   summary(glm(H.abund.c$abund.ratio+0.01~(Min.Root.Loca+Ht.veg+Min.Root.Loca+Lamina.thck+LMA+
                                           LDMC+Leaf.Area+myc.frac)^2,
-                 data=sp.H.traits.c,family=Gamma),dispersion=1)
+                 data=sp.H.traits.c,family=Gamma(link='log')),dispersion=1)
   
   # No significant terms
   
@@ -534,74 +534,88 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   
   summary(glm(H.abund.c$abund.ratio~I(Ht.veg^2)+I(Min.Root.Loca^2)+I(Lamina.thck^2)+
                I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2)+I(myc.frac^2),
-             data=sp.H.traits.c),family=Gamma)
+             data=sp.H.traits.c),family=Gamma(link='log'))
   
   # I(myc.frac^2) significant
       
     
   # C) Fit best model ####
   ----
-    # doesn't accept trait interactions in H1 model specification
-  H1<-gamlss(H.abund.c$abund.ratio~.+I(myc.frac^2),data=sp.H.traits.c,family=LOGNO())
-  # Error in gamlss(H.abund.c$abund.ratio ~ ., data = sp.H.traits.c, family = LOGNO()) : 
-  #   response variable out of range
+
+  H1<-glm(H.abund.c$abund.ratio+0.01~.+I(myc.frac^2),data=sp.H.traits.c,family= Gamma(link='log'))
+  # Error: no valid set of coefficients has been found: please supply starting values
+  # In addition: Warning message:
+  #   In log(ifelse(y == 0, 1, y/mu)) : NaNs produced
+  H0<-glm(H.abund.c$abund.ratio+0.01~1,data=sp.H.traits.c,family=Gamma(link='log'))
   
-  H0<-gamlss(H.abund.c$abund.ratio~1,data=sp.H.traits.c,family=LOGNO())
+  summary(best.glm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F),
+          dispersion=1)
   
-  step.glm.H<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F)
-  summary(step.glm.H)
-  
-  # glm.nb(formula = H.abund.c$abund.ratio ~ I(myc.frac^2), data = sp.H.traits.c,
-  # init.theta = 5.892508028, link = log)
+  # lm(formula = H.abund.c$abund.ratio + 0.01 ~ I(myc.frac^2), family = Gamma(link = "log"), 
+  # data = sp.H.traits.c)
   
   # Coefficients:
-  # Estimate Std. Error z value Pr(>|z|)    
-  # (Intercept)   -0.05089    0.20302  -0.251    0.802    
-  # I(myc.frac^2)  0.32586    0.07283   4.474 7.67e-06 ***
+  # Estimate Std. Error z value Pr(>|z|)   
+  # (Intercept)   -0.02954    0.20700  -0.143   0.8865   
+  # I(myc.frac^2)  0.31347    0.11562   2.711   0.0067 **
+  #   ---
+  #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # 
+  # (Dispersion parameter for Gamma family taken to be 1)
+  # 
+  # Null deviance: 37.981  on 34  degrees of freedom
+  # Residual deviance: 26.255  on 33  degrees of freedom
+  # AIC: 93.921
   
-  # Null deviance: 50.976  on 34  degrees of freedom
-  # Residual deviance: 32.344  on 33  degrees of freedom
-  # AIC: 108.7
+  # fitting Gamma with dispersion=1 is supposed to be equivalent to fitting lognormal. 
+  # see: http://stats.stackexchange.com/questions/21447/how-to-specify-a-lognormal-distribution-in-the-glm-family-argument-in-r
+  # see: https://stats.stackexchange.com/questions/67547/when-to-use-gamma-glms
+  # see: http://seananderson.ca/2014/04/08/gamma-glms.html
+  
+  # the Gamma family the links inverse, identity and log
+  gamma.dispersion(H1) # 0.5984368
+  gamma.shape(H1)
+  # Alpha: 1.671020
+  # SE:    0.366515
   
   # Null deviance = total variance & model deviance = variance explained by model. hence, 
   # D2 = (model$null.deviance - model$deviance) / model$null.deviance
-  (step.glm.H$null.deviance-step.glm.H$deviance)/step.glm.H$deviance
-  # 0.57
+  (best.glm$null.deviance-best.glm$deviance)/best.glm$deviance
+  # 0.44
   
   # D) Diagnostic plot ####
   ----
   
-  plot(step.glm.H)
-  # Variance in residuals is homoscedastic
-  # QQ-plot - distribution still is still banana-shaped :-(
+  plot(best.glm)
+  # Variance in residuals is homoscedastic !
+  # QQ-plot - distribution is pretty linear !!
   # Leverage - CASC & LYAN have a lot of influence on model - try model without that datapoint.
   
   # E) fit model without outliers
   ----
-    
-  summary(glm.nb(
-    H.abund.c.no.outliers$abund.ratio~I(myc.frac^2),data=sp.H.traits.c.no.outliers
-    ))
   
-  #Coefficients:
-  #Estimate Std. Error z value Pr(>|z|)
-  #(Intercept)    0.12861    0.22803   0.564    0.573
-  #I(myc.frac^2) -0.02696    0.21878  -0.123    0.902
+  best.glm$call  
+  # glm(formula = H.abund.c$abund.ratio + 0.01 ~ I(myc.frac^2), family = Gamma(link = "log"), 
+  # data = sp.H.traits.c)
   
-  #    Null deviance: 27.319  on 32  degrees of freedom
-  #Residual deviance: 27.304  on 31  degrees of freedom
-  #AIC: 88.115
+  dim(H.abund.c) #35 4
+  H.abund.c.no.outliers<-H.abund.c[!rownames(H.abund.c)%in%c('CASC','LYAN'),]
+  dim(H.abund.c.no.outliers) #33 4
+  
+  dim(sp.H.traits.c) #35 7
+  sp.H.traits.c.no.outliers<-sp.H.traits.c[!rownames(sp.H.traits.c)%in%c('CASC','LYAN'),]
+  dim(sp.H.traits.c.no.outliers) #33 7
+  
+  glm.no.out<-glm(
+    H.abund.c.no.outliers$abund.ratio + 0.01 ~ I(myc.frac^2),
+    data = sp.H.traits.c.no.outliers,
+    family = Gamma(link = "log")
+    )
+  
+  (glm.no.out$null.deviance-glm.no.out$deviance)/glm.no.out$deviance
+  # 0.0006
+  
   
   # model isn't significant without high-leverage datapoints
-  
-          # Testing whether we do need an overdispersion parameter (need for negative binomial distribution)
-          # by comparing the negative binomial model with with a poisson regression, which does not assume overdispersion
-          
-          m3 <- glm(H.abund.c$abund.ratio ~ I(myc.frac^2), family = "poisson", data = sp.H.traits.c)
-          pchisq(2 * (logLik(step.glm.H) - logLik(m3)), df = 1, lower.tail = FALSE)
-          # Doesn't work bc poisson distribution doesn't work with my data
-  
-  # 2.6 - glm - lognormal link function? #####
-  
 
   
