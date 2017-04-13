@@ -20,11 +20,13 @@ fct.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Functions/") # Functio
 library(car) # for powerTransform
 library(vegan) # for decostand (standardizing data)
 
-# ==================================================================================
+# ==================================================================================#
 
 # A - Setup trait data ####
+# ========================#
 
-  # A1 - HERBIVORY LAYER
+  # A1 - HERBIVORY LAYER ####
+  #=======================#
 
     # A1.1- Transform trait data for normality ####
 
@@ -297,6 +299,7 @@ library(vegan) # for decostand (standardizing data)
         H.traits$Stor.Mass.Frac<-(H.traits$Stor.Mass.Frac+0.001)^-0.07569593
         
     # A1.2- Remove date effect on traits  ####
+    # =======================================#
     
         names(H.traits)
         #  [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"        
@@ -359,7 +362,8 @@ library(vegan) # for decostand (standardizing data)
         H.traits[8:15]<-decostand(H.traits[8:15],method='standardize', margin=2)
         save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
      
-    # A1.3 - Turn individual-level table into species-level table.  ####
+    # A1.3 - Turn individual-level table into species-level table  ####
+    #=================================================================#    
         #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
 
         H.traits$Min.Root.Loca<-as.numeric(H.traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
@@ -374,6 +378,8 @@ library(vegan) # for decostand (standardizing data)
         dim(sp.H.traits) # 51  7
         
     # A1.4 - Add species mean traits (Seed size and mychorizae) ####
+    #=================================================================#
+        
         # Deleted "FRAM" row by hand - We did not collect roots on trees... what is this row?
         myc<-read.csv(paste0(data.dir,'myc.csv'))
         head(myc)
@@ -393,8 +399,10 @@ library(vegan) # for decostand (standardizing data)
         save(sp.H.traits,file=paste0(wrk.dir,'species-level.traits.Herbaceous.layer.Rdata'))
         
   # A2 - Canopy layer ####
+  #=======================#
         
     # A2.1- Transform trait data for normality ####
+    #=============================================#
         
         # create trait dataframe with traits I will work with
         
@@ -463,7 +471,8 @@ library(vegan) # for decostand (standardizing data)
         C.traits$LDMC<-log(C.traits$LDMC)
         C.traits$Leaf.Area<-log(C.traits$Leaf.Area)
         
-    # A2.2- Remove date effect on traits  ####
+    # A2.2- Remove date effect on traits ####
+    #=======================================#
         
       names(C.traits)
       C.trait.names<-c("Lamina.thck","LMA","LDMC","Leaf.Area")
@@ -498,7 +507,8 @@ library(vegan) # for decostand (standardizing data)
       
       save(C.traits,file=paste0(wrk.dir,"Canopy.Layer.Traits.Standardized.RData"))
       
-    # A2.3 - Turn individual-level table into species-level table.  ####
+    # A2.3 - Turn individual-level table into species-level table ####
+    # ===============================================================#  
       
       sp.C.traits<-as.data.frame(aggregate(C.traits[,5:8],by=list(C.traits$Species),mean,na.rm=T))
       sp.C.traits[,2:5]<-round(sp.C.traits[2:5],digits=3)
@@ -514,8 +524,11 @@ library(vegan) # for decostand (standardizing data)
       
         
 # B- Setup abundance data ####
-      
+# ===========================#
+
       # B1 - Look at temporal patterns ####
+      # ====================================#
+      
       plot(abund[abund$Layer=='H','avg.abundance.2012']~abund[abund$Layer=='H','avg.abundance.1970'],type='n',
            xlab='av abundance 1970', ylab='avg abundance 2012',main='herbaceous')
       text(abund[abund$Layer=='H','avg.abundance.1970'],abund[abund$Layer=='H','avg.abundance.2012'],
@@ -541,110 +554,111 @@ library(vegan) # for decostand (standardizing data)
       text(log(abund[abund$Layer=='C','avg.abundance.1970']),log(abund[abund$Layer=='C','avg.abundance.2012']),
            labels=rownames(abund)[which(abund$Layer=='C')])
       abline(0,1)
+        
+    # B2- Create abundance dataframe & new variables ####
+    #=====================================================#
+        
+    abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
+    rownames(abund)<-abund$Species
+    abund$Species<-NULL
+    
+      # Abundance/Presence Ratios
       
-  # B2- Create abundance dataframe & new variables ####
+      abund[,'presence.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
+      abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
+      abund$abund.ratio
+      rownames(abund[abund$abund.ratio=='Inf',]) 
+      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
+      # [17] "RARE" "TAOF
+      # loosing 18 data points to "Inf"
+      plot(density(abund$abund.ratio))
+      plot(density(log(abund$abund.ratio+0.01)))
       
-  abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
-  rownames(abund)<-abund$Species
-  abund$Species<-NULL
+      # Log of Abundance/Presence Ratios
+      
+      abund[,'log.presence.ratio']<-log(abund$presence.ratio+0.01)
+      abund[,'log.abund.ratio']<-log(abund$abund.ratio+0.01)
+      abund$log.abund.ratio
+      rownames(abund[abund$log.abund.ratio=='Inf',])
+      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
+      # [17] "RARE" "TAOF"
+      #loosing 18 data points to Inf
+      plot(density(abund$log.abund.ratio))
+      rownames(abund[abund$log.abund.ratio<=-3,])
+      # [1] "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "OXMO"  "TSCA" 
+      # sencond density peak has 10 species. 
+      
+      # Ratios of log Abundance/Presence
+      
+      abund[,'ratio.log.presence']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
+      abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
+      abund$ratio.log.abund
+      plot(density(abund$ratio.log.abund))
+      rownames((abund)[abund$ratio.log.abund<=-10,]) # IMCA, POTR
+      rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
+      
+      # powerTransform Abundance/Presence ####
+      
+      a<-abund$abund.ratio
+      a[which(a=='Inf')]<-NA
+      powerTransform(a+0.01) # 0.181293
+      abund[,'PT.abund.ratio']<-(a+0.01)^0.181293
+      b<-abund$presence.ratio
+      b[which(b==Inf)]<-NA
+      powerTransform(b+0.01)# -.3390714
+      abund[,'PT.presence.ratio']<-(b+0.01)^0.3390714
+    
+    str(abund)
+      # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
+      # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
+      # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
+      # $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
+      # $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
+      # $ presence.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
+      # $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
+      # $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
+      # $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
+      # $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
+      # $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
+      # $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
+      # $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
+    
+    save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
   
-  # Abundance/Presence Ratios
-  
-  abund[,'presence.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
-  abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
-  abund$abund.ratio
-  rownames(abund[abund$abund.ratio=='Inf',]) 
-  # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
-  # [17] "RARE" "TAOF
-  # loosing 18 data points to "Inf"
-  plot(density(abund$abund.ratio))
-  plot(density(log(abund$abund.ratio+0.01)))
-  
-  # Log of Abundance/Presence Ratios
-  
-  abund[,'log.presence.ratio']<-log(abund$presence.ratio+0.01)
-  abund[,'log.abund.ratio']<-log(abund$abund.ratio+0.01)
-  abund$log.abund.ratio
-  rownames(abund[abund$log.abund.ratio=='Inf',])
-  # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
-  # [17] "RARE" "TAOF"
-  #loosing 18 data points to Inf
-  plot(density(abund$log.abund.ratio))
-  rownames(abund[abund$log.abund.ratio<=-3,])
-  # [1] "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "OXMO"  "TSCA" 
-  # sencond density peak has 10 species. 
-  
-  # Ratios of log Abundance/Presence
-  
-  abund[,'ratio.log.presence']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
-  abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
-  abund$ratio.log.abund
-  plot(density(abund$ratio.log.abund))
-  rownames((abund)[abund$ratio.log.abund<=-10,]) # IMCA, POTR
-  rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
-  
-  # powerTransform Abundance/Presence ####
-  
-  a<-abund$abund.ratio
-  a[which(a=='Inf')]<-NA
-  powerTransform(a+0.01) # 0.181293
-  abund[,'PT.abund.ratio']<-(a+0.01)^0.181293
-  b<-abund$presence.ratio
-  b[which(b==Inf)]<-NA
-  powerTransform(b+0.01)# -.3390714
-  abund[,'PT.presence.ratio']<-(b+0.01)^0.3390714
-  
-  str(abund)
-    # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
-    # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
-    # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
-    # $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
-    # $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
-    # $ presence.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
-    # $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
-    # $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
-    # $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
-    # $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
-    # $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
-    # $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
-    # $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
-  
-  save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
+    # link function of glms (negative binomial) made to deal with lack of normality of response variable. 
 
-  # link function of glms (negative binomial) made to deal with lack of normality of response variable. 
+    # B3 - Problem with infinity values ####
+    #========================================#
+    
+      # ABUNDANCE
+    
+      # Which species were absent in 1970?
+      rownames(abund)[which(abund$avg.abundance.1970==0)]  
+      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN"  "MOUN" "PAQU" "POGR" 
+      # [17]"RARE" "TAOF"
+      
+      # What is the minimum value in dataset?
+      abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
+      #0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+      
+      # replace 0s with minimum value
+      abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
+      abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
+              "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01 
+      
+      #Re-calculate abundance
+      non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
+      plot(density(non0.abund.change)) 
+      # now ranges from 0-200, with a single value at 200. Bad idea to replace 1970's 0s.
+      
+      abund$non0.avg.abundance.1970<-NULL
+      
+      #save new abundance dataset without INF values
+      abund.c<-abund[!rownames(abund)%in% c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
+                                     "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
+                                     "RARE","TAOF"),]
+    
+    dim(abund.c) # 107 13
+    
+    save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
 
-  # B3 - Problem with infinity values ####
-  #=================================#
-  
-    # ABUNDANCE
-  
-    # Which species were absent in 1970?
-    rownames(abund)[which(abund$avg.abundance.1970==0)]  
-    # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN"  "MOUN" "PAQU" "POGR" 
-    # [17]"RARE" "TAOF"
-    
-    # What is the minimum value in dataset?
-    abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
-    #0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
-    
-    # replace 0s with minimum value
-    abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
-    abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-            "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01 
-    
-    #Re-calculate abundance
-    non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
-    plot(density(non0.abund.change)) 
-    # now ranges from 0-200, with a single value at 200. Bad idea to replace 1970's 0s.
-    
-    abund$non0.avg.abundance.1970<-NULL
-    
-    #save new abundance dataset without INF values
-    abund.c<-abund[!rownames(abund)%in% c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-                                   "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
-                                   "RARE","TAOF"),]
-  
-  dim(abund.c) # 107 13
-  
-  save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
-  
