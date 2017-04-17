@@ -7,7 +7,7 @@
 #   A4.1 - lm - elev ~ traits. Traits do not predict herbaceous species elevation
 #   A4.2 - glm - elev ~ traits. Traits do not predict herbaceous species elevation
 # B - CANOPY LAYER
-# 
+# B3 - Data Exploration - Scatterplots, Tree models and GAMs
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
@@ -285,3 +285,42 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
                dispersion=1)
         
         # nothing significant
+        
+      # CANOPY LAYER
+        
+        # 4.1 Scatterplots - pairwise interactions? ####
+        #----
+        
+        names(C.dat) 
+        # [1] "Lamina.thck" "LMA"         "LDMC"        "Leaf.Area"   "elev"   
+        
+        pairs(C.dat,panel=panel.smooth)
+        # Variance seems homoscedastic
+        # yes, Lamina.thck-LMA; LDMc-LMA
+        
+        # 4.2 - Tree models - non-linearities ####
+        #----
+        
+        C.elev.tree.model<-tree(C.dat$elev~.,data=C.dat)
+        plot(C.elev.tree.model)
+        text(C.elev.tree.model)
+        title('canopy layer, elev vs traits')
+        # LDMC is most important variable, 
+        # for those with high LDMC, high LDMC matters
+        C.elev.tree.model #  null deviance = 38840
+        1-(deviance(C.elev.tree.model)/38840) # 0.55
+        
+        # 4.3 GAM - non-linearities?  ####
+        #----
+        
+        plot(gam(C.dat$elev~s(Lamina.thck),data=C.dat))
+        # curvy 
+        
+        plot(gam(H.dat$elev~s(LDMC),data=H.dat))
+        # no relationship     
+        
+        plot(gam(H.dat$elev~s(LMA),data=H.dat))
+        # negative ?
+        
+        plot(gam(H.dat$elev~s(Leaf.Area),data=H.dat))
+        # positive?
