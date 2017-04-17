@@ -158,7 +158,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
   # A3 - Data Exploration ####
   #==========================#
 
-        # 3.1 Scatterplots - pairwise interactions? ####
+        # A3.1 Scatterplots - pairwise interactions? ####
         #----
 
         names(H.dat) 
@@ -169,7 +169,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         # Variance seems homoscedastic
         # yes, Leaf.Area-Ht.veg; Lamina.thck-LMA; LDMc-LMA
 
-        # 3.2 - Tree models - non-linearities ####
+        # A3.2 - Tree models - non-linearities ####
         #----
         
         elev.tree.model<-tree(H.dat$elev~.,data=H.dat)
@@ -182,7 +182,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         elev.tree.model #  null deviance = 33790.0
         1-(deviance(elev.tree.model)/33790.0) # 0.43
         
-        # 3.3 GAM - non-linearities?  ####
+        # A3.3 GAM - non-linearities?  ####
         #----
         
         plot(gam(H.dat$elev~s(Ht.veg)+s(Min.Root.Loca)
@@ -213,7 +213,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
     # 4) Residuals vs Leverage - shows whether individual datapoints have a lot of 'weight' on 
     # the regression
     
-    # 4 - Model selection ####
+    # A4 - Model selection ####
     #===========================================================
         
         #  A4.1 lm - elev ~ traits - nothing significant ! ####
@@ -288,7 +288,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         
       # CANOPY LAYER
         
-        # 4.1 Scatterplots - pairwise interactions? ####
+        # B3.1 Scatterplots - pairwise interactions? ####
         #----
         
         names(C.dat) 
@@ -298,7 +298,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         # Variance seems homoscedastic
         # yes, Lamina.thck-LMA; LDMc-LMA
         
-        # 4.2 - Tree models - non-linearities ####
+        # B3.2 - Tree models - non-linearities ####
         #----
         
         C.elev.tree.model<-tree(C.dat$elev~.,data=C.dat)
@@ -310,7 +310,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         C.elev.tree.model #  null deviance = 38840
         1-(deviance(C.elev.tree.model)/38840) # 0.55
         
-        # 4.3 GAM - non-linearities?  ####
+        # B3.3 GAM - non-linearities?  ####
         #----
         
         plot(gam(C.dat$elev~s(Lamina.thck),data=C.dat))
@@ -324,3 +324,78 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         
         plot(gam(H.dat$elev~s(Leaf.Area),data=H.dat))
         # positive?
+        
+        # B4 - Model selection ####
+        #===========================================================
+        
+        #  B4.1 lm - elev ~ traits - nothing significant ! ####
+        
+        # A) Check trait-trait interactions ####
+        #----
+        
+        # short on degrees of freedom. Do it in two models.
+        summary(lm(C.dat$elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+                   data=C.dat))
+        
+        # LMA, LDMC & all interactions significant!!!
+         
+        
+        # B) Check non-linear relationships ####
+        #----
+        
+        summary(lm(C.dat$elev~.+I(Lamina.thck^2)+I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2),
+                   data=C.dat))
+        
+        # nothing significant
+        
+        # C) Fit best minimal model ####
+        #----
+        
+        H1<-lm(C.dat$elev~.^2,data=C.dat)
+        H0<-lm(C.dat$elev~1,data=C.dat)
+        
+        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
+        summary(C.elev.best.lm)
+        
+        #             Estimate Std. Error t value Pr(>|t|)    
+        # (Intercept)   566.71      11.68  48.529   <2e-16 ***
+        # LDMC          -26.05      15.22  -1.712    0.108    
+        # ---
+
+        # Residual standard error: 46.54 on 15 degrees of freedom
+        # Multiple R-squared:  0.1634,	Adjusted R-squared:  0.1076 
+        # F-statistic:  2.93 on 1 and 15 DF,  p-value: 0.1075
+        
+        # starting with empty model, nothing is significant!
+        # Null model is retained
+        AIC(H0) 
+        # 185
+        
+        
+        C.elev.best.lm<-step(H0,scope=list(upper=H1,lower=H0),direction="both")
+        summary(C.elev.best.lm)
+        
+        # Coefficients:
+        #                       Estimate Std. Error t value Pr(>|t|)    
+        # (Intercept)             549.80      11.32  48.551 5.12e-09 ***
+        # Lamina.thck              24.69      27.49   0.898  0.40379    
+        # LMA                    -268.09      70.39  -3.809  0.00888 ** 
+        # LDMC                    393.06      93.44   4.207  0.00564 ** 
+        # Leaf.Area                30.66      16.50   1.858  0.11248    
+        # Lamina.thck:LMA        -139.57      53.46  -2.611  0.04008 *  
+        # Lamina.thck:LDMC        516.52     102.64   5.032  0.00237 ** 
+        # Lamina.thck:Leaf.Area   135.53      34.15   3.969  0.00738 ** 
+        # LMA:LDMC                -44.63      17.86  -2.499  0.04659 *  
+        # LMA:Leaf.Area          -159.35      46.54  -3.424  0.01407 *  
+        # LDMC:Leaf.Area          104.86      27.45   3.820  0.00876 ** 
+        # 
+        # Residual standard error: 26.07 on 6 degrees of freedom
+        # Multiple R-squared:  0.895,	Adjusted R-squared:   0.72 
+        # F-statistic: 5.115 on 10 and 6 DF,  p-value: 0.02926
+        
+        # Starting with full model, everything is retained BUT model has non-significant terms...
+        AIC(H1) # 165
+      
+        
+        # B4.2 glm, gamma link fct - 
+        
