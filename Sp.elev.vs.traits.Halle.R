@@ -1,6 +1,6 @@
 #<<TABLE OF CONTENTS>>
 # 1 - Calculate mean elevation of each species
-# 2- Create dataframes
+# 2 - Create dataframes
 # A - HERBIVORY LAYER
 # A3- Data Exploration - Scatterplots, Tree models and GAMs
 # A4 - Model Selection
@@ -8,6 +8,9 @@
 #   A4.2 - glm - elev ~ traits. Traits do not predict herbaceous species elevation
 # B - CANOPY LAYER
 # B3 - Data Exploration - Scatterplots, Tree models and GAMs
+# B4 - Model selection ####
+#   B4.1 lm - elev ~ traits - nothing significant ! ####
+#   B4.2 glm, gamma link fct - elev ~ traits - nothing significant... ?!
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
@@ -338,23 +341,27 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
                    data=C.dat))
         
         # LMA, LDMC & all interactions significant!!!
-         
+        
+        vif(lm(C.dat$elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+               data=C.dat)) 
+        
+        # LMA, LDMC and Lamina.thck:LDMC are redundant
         
         # B) Check non-linear relationships ####
         #----
         
-        summary(lm(C.dat$elev~.+I(Lamina.thck^2)+I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2),
+        summary(lm(C.dat$elev~Lamina.thck+I(Lamina.thck^2)+LMA+I(LMA^2)+LDMC+I(LDMC^2)+Leaf.Area+I(Leaf.Area^2),
                    data=C.dat))
         
         # nothing significant
         
-        # C) Fit best minimal model ####
+        # C) Fit  minimal model ####
         #----
         
         H1<-lm(C.dat$elev~.^2,data=C.dat)
         H0<-lm(C.dat$elev~1,data=C.dat)
         
-        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
+        C.elev.best.lm<-step(H0,scope=list(upper=H1,lower=H0),direction="both")
         summary(C.elev.best.lm)
         
         #             Estimate Std. Error t value Pr(>|t|)    
@@ -371,8 +378,7 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         AIC(H0) 
         # 185
         
-        
-        C.elev.best.lm<-step(H0,scope=list(upper=H1,lower=H0),direction="both")
+        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
         summary(C.elev.best.lm)
         
         # Coefficients:
@@ -395,7 +401,105 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         
         # Starting with full model, everything is retained BUT model has non-significant terms...
         AIC(H1) # 165
-      
         
-        # B4.2 glm, gamma link fct - 
+        plot(C.elev.best.lm)
+        # variance homoscedastic
+        # normal residuals
+        # PRPE & FRAM Cook's = 0.5
+        
+        a<-update(C.elev.best.lm,~.-Lamina.thck)
+        a<-update(a,~.-LMA:Lamina.thck)
+        a<-update(a,~.-Leaf.Area:Lamina.thck)
+        a<-update(a,~.-LDMC:Lamina.thck )
+        
+        # D) Redo test without outliers
+        dim(C.dat) #17 5
+        C.dat.no.outliers<-C.dat[!rownames(C.dat)%in%c('PRPE','FRAM'),]
+        dim(C.dat) #33 4
+        
+        H0<-lm(C.dat.no.outliers$elev~1,data=C.dat.no.outliers)
+        H1<-lm(C.dat.no.outliers$elev~.^2,data=C.dat.no.outliers)
+        
+        C.elev.best.lm.no.outliers<-step(H1,scope=list(upper=H1,lower=H0),direction="both" )
+        summary(C.elev.best.lm.no.outliers)
+        AIC(C.elev.best.lm.no.outliers) # 148.7      
+        
+        C.elev.best.lm.no.outliers<-update(C.elev.best.lm,
+                                           subset=(C.dat[!rownames(C.dat)%in%c('PRPE','FRAM'),]))
+        
+        # Redo test without LMA
+        H1<-lm(C.dat$elev~(LDMC*Lamina.thck*Leaf.Area),data=C.dat)
+        H0<-lm(C.dat$elev~1,data=C.dat)
+        
+        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
+        summary(C.elev.best.lm)
+        C.elev.best.lm<-update(C.elev.best.lm,~.-Lamina.thck:Leaf.Area)
+        summary(C.elev.best.lm)
+        C.elev.best.lm<-update(C.elev.best.lm,~.-Leaf.Area)
+        summary(C.elev.best.lm)
+        
+        # Coefficients:
+        #   Estimate Std. Error t value Pr(>|t|)    
+        # (Intercept)        549.53      15.38  35.724  2.3e-14 ***
+        # LDMC                59.87      41.47   1.444    0.172    
+        # Lamina.thck        -28.82      23.76  -1.213    0.247    
+        # LDMC:Lamina.thck   114.30      52.10   2.194    0.047 *  
+        #   ---
+        #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+        # 
+        # Residual standard error: 42.68 on 13 degrees of freedom
+        # Multiple R-squared:  0.3905,	Adjusted R-squared:  0.2498 
+        # F-statistic: 2.776 on 3 and 13 DF,  p-value: 0.08334
+        
+        # B4.2 glm, gamma link fct - elev ~ traits - nothing significant ####
+        
+        # A) Check trait-trait interactions ####
+        # ----
+        
+        summary(glm(C.dat$elev~.+(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+                    data=C.dat,family=Gamma(link='log')),dispersion=1)
+        
+        # nothing significant
+        
+        # B) Check higher-order effects ####
+        #----
+        
+        summary(glm(C.dat$elev~.+I(Lamina.thck^2)+I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2),
+                    data=C.dat),family=Gamma(link='log'))  
+        
+        # nothing significant
+        
+        # C) Fit best model ####
+        #----
+        
+        H1<-glm(C.dat$elev~.^2,data=C.dat,family= Gamma(link='log'))
+        H0<-glm(C.dat$elev~1,data=C.dat,family=Gamma(link='log'))
+        
+        summary(C.elev.best.glm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F),
+                dispersion=1)
+        
+        # nothing significant
+        
+        summary(C.elev.best.glm<-step(H1,scope=list(lower=H0,upper=H1),direction='both',trace=F),
+                dispersion=1)
+        
+        # nothing significant
+        
+        
+        
+# summary(lm) - reports t-values
+# The t tests are the marginal impact of the variables in question, 
+# given the presence of all the other variables. i.e. the beta coefficients are partial regression coefficients, 
+# and we are testing their significance
+
+# anova(lm) - reports F-values
+# the reductions in the residual sum of squares as each term of the formula is added in turn
+# anova(lm(formula)) = aov(formula). Order greatly affects results
+
+  # The F tests are sequential - so they test for the importance of var1 in the presence of nothing 
+  # but the intercept, of var2 in the presence of nothing but the intercept and V1, and of the interaction 
+  # in the presence of all the above
+
+# The t-test statistic (and its p-value) is a test of whether coefficient=0. The F-test on the anova() printout
+# is whether the added variable significantly reduces the residual sum of squares.
         
