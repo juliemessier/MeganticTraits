@@ -9,8 +9,8 @@
 # B - CANOPY LAYER
 # B3 - Data Exploration - Scatterplots, Tree models and GAMs
 # B4 - Model selection ####
-#   B4.1 lm - elev ~ traits - nothing significant ! ####
-#   B4.2 glm, gamma link fct - elev ~ traits - nothing significant... ?!
+#   B4.1 lm - elev ~ traits - nothing significant !
+#   B4.2 glm, gamma link fct - elev ~ traits - nothing significant!
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
@@ -427,7 +427,8 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         C.elev.best.lm.no.outliers<-update(C.elev.best.lm,
                                            subset=(C.dat[!rownames(C.dat)%in%c('PRPE','FRAM'),]))
         
-        # Redo test without LMA
+        # Redo model without LMA bc it is highly correlated wtih both Lamina.thck & LDMC
+        
         H1<-lm(C.dat$elev~(LDMC*Lamina.thck*Leaf.Area),data=C.dat)
         H0<-lm(C.dat$elev~1,data=C.dat)
         
@@ -450,6 +451,9 @@ shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
         # Residual standard error: 42.68 on 13 degrees of freedom
         # Multiple R-squared:  0.3905,	Adjusted R-squared:  0.2498 
         # F-statistic: 2.776 on 3 and 13 DF,  p-value: 0.08334
+        
+        #$$$$
+        #Non-significant model
         
         # B4.2 glm, gamma link fct - elev ~ traits - nothing significant ####
         
