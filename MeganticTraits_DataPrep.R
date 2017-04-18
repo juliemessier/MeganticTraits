@@ -661,4 +661,4 @@ library(vegan) # for decostand (standardizing data)
     dim(abund.c) # 107 13
     
     save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
-
+    
