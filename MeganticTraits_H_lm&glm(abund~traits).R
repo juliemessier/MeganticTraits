@@ -167,6 +167,9 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
     dim(H.abund.c)
     #35 4
     
+    save(sp.H.traits.c,file = paste0(wrk.dir,'Herbaceous.layer.species-level.traits.no.NAs.Rdata'))
+    save(H.abund.c,file=paste0(wrk.dir,'Herbaceous.layer.species.abundance.change.for.sp.with.no.NAs.in.traits..Rdata'))
+    
   # 2.1 lm - abundance Ratio - doesn't meet assumptions & only significant bc of outliers ####
   #========================================================================#
 
@@ -267,16 +270,16 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   H1<-lm(H.abund.c$log.abund.ratio~.+I(myc.frac^2),data=sp.H.traits.c)
   H0<-lm(H.abund.c$log.abund.ratio~1,data=sp.H.traits.c)
   
-  best.log.lm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F)
+  H.best.log.lm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F)
   
-  summary(best.log.lm)
-  AIC(best.log.lm) #103.4
-  best.log.lm<-update(best.log.lm,~.-Ht.veg)
-  summary(best.log.lm)
-  AIC(best.log.lm) #104.21
-  best.log.lm<-update(best.log.lm,~.-LDMC)
-  summary(best.log.lm)
-  AIC(best.log.lm) #105.4
+  summary(H.best.log.lm)
+  AIC(H.best.log.lm) #103.4
+  H.best.log.lm<-update(H.best.log.lm,~.-Ht.veg)
+  summary(H.best.log.lm)
+  AIC(H.best.log.lm) #104.21
+  H.best.log.lm<-update(H.best.log.lm,~.-LDMC)
+  summary(H.best.log.lm)
+  AIC(H.best.log.lm) #105.4
   
   # Coefficients:
   #               Estimate Std. Error t value Pr(>|t|)   
@@ -291,7 +294,7 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   # D) diagnostic plots ####
   ----
   
-  plot(best.log.lm)
+  plot(H.best.log.lm)
   # Variance homoscedastic
   # Residuals - normal (except OXMO) !
   # Leverage - CASC, LYAN & OXMO pulling regression
@@ -314,6 +317,8 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   
   # $$$$
   # LDMC was only significant because of outliers 
+  
+  save(H.best.log.lm,file=paste0(wrk.dir,'Herbaceous.layer.best.model.predicting.log.transformed.abund.ratio.with.traits.RData'))
   
   
   # 2.3 lm - PowerTransform response variable - MEETS ASSUMPTIONS, but only significant bc of outliers ####
