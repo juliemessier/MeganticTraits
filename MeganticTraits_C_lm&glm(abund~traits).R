@@ -39,11 +39,6 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
 
 # B - CANOPY LAYER, ABUNDANCE
 
-C.abund<-abund.c[abund.c$Layer=='C',c('abund.ratio','log.abund.ratio','ratio.log.abund',"PT.abund.ratio" )]
-dim(C.abund)
-
-# 21 4
-
 # 0-  Make trait and abundance dataframes correspond based on shared species ####
 #================================================================================
 
@@ -62,6 +57,8 @@ dim(C.abund)
     dim(sp.C.traits) 
     # 21 4
     all(rownames(C.abund)==rownames(sp.C.traits)) # TRUE
+    
+    save(C.abund,file=paste0(wrk.dir,'Canopy.layer.species.abundance.change.for.sp.with.traits.RData'))
 
 # 1 - Data Exploration - Scatterplots, Tree models and GAMs #### 
 #===========================================================
@@ -172,6 +169,9 @@ dim(C.abund)
     C.abund.c<-C.abund[which(rownames(C.abund)%in%rownames(sp.C.traits.c)),]
     dim(C.abund.c)
     # 17 4
+    
+    save(sp.C.traits.c,file = paste0(wrk.dir,'Canopy.layer.species-level.traits.no.NAs.Rdata'))
+    save(C.abund.c,file=paste0(wrk.dir,'Canopy.layer.species.abundance.change.for.sp.with.no.NAs.in.traits..Rdata'))
     
   # 2.1 lm - abundance Ratio - model ns.  Does not meet assumptions ####
   #========================================================================#
@@ -299,10 +299,10 @@ dim(C.abund)
     C.abund.c.no.outliers$log.abund.ratio~Lamina.thck,data=sp.C.traits.c.no.outliers
   ))  # 0.35
   # $$$$
-  # model still significant despitethat datapoint
+  # model still significant despite that datapoint
   
       
-  # 0.35
+  save(C.best.log.lm,file=paste0(wrk.dir,'Canopy.layer.best.model.predicting.log.abund.ratio.with.traits.RData'))
   
   # F) plot regression ####
   ----
@@ -385,6 +385,8 @@ dim(C.abund)
   # 0.31
   
   # model robust to outlier !
+  
+  save(C.best.pt.lm,file=paste0(wrk.dir,'Canopy.layer.best.model.predicting.power.transformed.abund.ratio.with.traits.RData'))
   
   # F) plot regression ####
   ----
@@ -546,7 +548,7 @@ dim(C.abund)
   
   plot(C.best.glm)
   # Variance in residuals is homoscedastic !
-  # QQ-plot - residual distribution not linear on LEFT hand-side !! (osvi, frni, potr)
+  # QQ-plot - residual distribution not linear on LEFT hand-side !! (for osvi, frni, potr species)
   # Leverage - PRPE & OSVI have a lot of influence on model - try model without that datapoint.
   
   # E) fit model without outliers ####

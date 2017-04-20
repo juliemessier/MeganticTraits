@@ -1,10 +1,10 @@
 #<<TABLE OF CONTENTS>>
 # 0 - Load & Prep Data
 # 1 - Calculate CWM of each plot in 1970 and 2010 
-# 2 - Create dataframes
-# A - HERBIVORY LAYER
+# 2 - Traits vs elevation
+#   2A - HERBIVORY LAYER - LMA & Leaf thickness weakly correlated with elevation
 
-# B - CANOPY LAYER  
+#   2B - CANOPY LAYER  
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
@@ -95,15 +95,15 @@ plot70.dat[plot70.dat$sp.code%in%c('CADI', 'EUMA', 'OSCL', 'TACA'),1:5]
 # 111        Taraxacum_campylodes Taraxacum officinale  Taraxacum  campylodes    TACA
 # 112            Taxus_canadensis     Taxus canadensis      Taxus  canadensis    TACA
 
-# don't keep either CADI
+# don't keep either CADI - not in traits measured
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Carex_disperma','sp.code']<-'CADIS'
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Cardamine_diphylla','sp.code']<-'CADIP'
-# don't keep either EUMA
+# don't keep either EUMA - - not in traits measured
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Eupatorium_maculatum','sp.code']<-'EUPMA'
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Eurybia_macrophyll','sp.code']<-'EURMA'
 # Keep Osmorhiza claytonii
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Osmunda_claytoniana','sp.code']<-'OSCLAY'
-# don't Keep either TACA
+# don't Keep either TACA -- not in traits measured
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Taraxacum_campylodes','sp.code']<-'TARCA'
 plot70.dat[plot70.dat$Accepted_name_Novembre_2016=='Taxus_canadensis','sp.code']<-'TAXCA'
 
@@ -182,7 +182,8 @@ save(H.cwm.70,file=paste0(wrk.dir,'1970.plot.cwm.herbaceous.layer.Rdata'))
 save(H.plot.by.sp.70,file=paste0(wrk.dir,'plot.by.species.1970.herbaceous.layer.Rdata'))
 save(H.sp.by.tr.70,file=paste0(wrk.dir,'sp.by.traits.1970.herbaceous.layer.Rdata'))
 
-# 2 - Trait vs Elevation
+# 2 - Trait vs Elevation ####
+#===========================#
 
 pairs(dat[,3:10])
 # LMA, Lamina.thck, myc.frac seem to be correlated with elevation. 
