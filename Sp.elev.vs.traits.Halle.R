@@ -9,8 +9,8 @@
 # B - CANOPY LAYER
 # B3 - Data Exploration - Scatterplots, Tree models and GAMs
 # B4 - Model selection ####
-#   B4.1 lm - elev ~ traits - nothing significant !
-#   B4.2 glm, gamma link fct - elev ~ traits - nothing significant!
+#   B4.1 lm - elev ~ traits - Traits do not predict canopy species elevation !
+#   B4.2 glm, gamma link fct - elev ~ traits - Traits do not predict canopy species elevation!
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
@@ -77,6 +77,8 @@ str(mean.elev)
   # $ sp.code: chr  "ABBA" "ACPE" "ACRU" "ACSA" ...
   # $ elev   : num  625 582 523 572 622 ...
 
+save(mean.elev,file=paste0(wrk.dir,'species.mean.elevation.based.on.Hall.plot.surveys.RData'))
+
 # 2- Create dataframes
 
 # Herbaceous dataframe - merge trait data and elevation based on species code
@@ -119,8 +121,9 @@ H.dat$Row.names<-NULL
 plot(density(H.dat$elev)) # looks quite normal except for bums in tails and a little right-skewed
 shapiro.test((H.dat$elev)) # p-val = 0.053 ! Woo-hoo!
 shapiro.test(log(H.dat$elev)) #p-val=0.11 
-plot(density(log(H.dat$elev))) # not any different. don't transform.
+plot(density(log(H.dat$elev))) # not any different. don't 
 
+save(H.dat,file=paste0(wrk.dir,'Herbaceous.layer.dataframe.with.species.mean.elevation.and.traits.RData'))
 
 # Canopy dataframe - merge trait data and elevation based on species code
 C.dat<-merge(sp.C.traits.c,mean.elev,by.y='sp.code',by.x=0) # '0' indicates rownames
@@ -153,6 +156,8 @@ C.dat$Row.names<-NULL
 
 plot(density(C.dat$elev)) # looks quite normal except for a little right-skewed
 shapiro.test((C.dat$elev)) # p-val = 0.21 ! Woo-hoo! Don't transform.
+
+save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevation.and.traits.RData'))
 
 
 # A - HERBIVORY LAYER ####
