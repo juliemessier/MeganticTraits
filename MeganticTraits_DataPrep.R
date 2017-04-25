@@ -6,8 +6,15 @@
     # A1.3 - Turn individual-level table into species-level table.
     # A1.4 - Add species mean traits (Seed size and mychorizae)
   # A2 - Canopy layer
-
+    # A2.1 - Transform trait data for normality
+    # A2.2 - Remove date effect on traits
+    # A2.3 - Turn individual-level table into species-level table.
+    # A2.4 - Add species mean traits (Seed size and mychorizae)
 # B- Setup abundance data
+# B2- Create abundance dataframe & new variables
+# B3 - Problem with infinity values ####
+
+
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
