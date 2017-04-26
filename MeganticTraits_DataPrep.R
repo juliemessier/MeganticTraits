@@ -14,8 +14,6 @@
 # B2- Create abundance dataframe & new variables
 # B3 - Problem with infinity values ####
 
-
-
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
 data.dir<-(("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Data/")) # data
@@ -32,7 +30,7 @@ library(vegan) # for decostand (standardizing data)
 # A - Setup trait data ####
 # ========================#
 
-  # A1 - HERBIVORY LAYER ####
+  # A1 - HERBACEOUS LAYER ####
   #=======================#
 
     # A1.1- Transform trait data for normality ####
