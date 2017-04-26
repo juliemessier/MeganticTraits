@@ -47,13 +47,14 @@ Hall<-read.csv(paste0(data.dir,'G.Hall_sp_by_site_corrected.csv'),header=T)
 # Calculate mean elevation for each species 
 sp.names<-names(Hall[,12:length(names(Hall))])
 
-mean.elev<-data.frame(matrix(ncol=2,nrow=459))
-names(mean.elev)<-c('Species','elev')
+mean.elev<-data.frame(matrix(ncol=3,nrow=459))
+names(mean.elev)<-c('Species','elev','mid.elev')
 
 # Calculate mean species elevation
 for(x in sp.names) {
   mean.elev[which(sp.names==x),'Species']<-x
   mean.elev[which(mean.elev$Species==x),'elev']<-round(sum(Hall$Elev_m * Hall[,x]) / sum(Hall[,x]),digits=0) 
+  mean.elev[which(mean.elev$Species==x),'mid.elev']<-(max(Hall[Hall[,x]==1,'Elev_m'])-min(Hall[Hall[,x]==1,'Elev_m']))/2
     }
 
 # Split name to create species code
@@ -68,7 +69,7 @@ mean.elev[x,'sp.code']<-paste0(toupper(strtrim(mean.elev$Genus[x],2)),toupper(st
 
 str(mean.elev)
 # re-order columns
-mean.elev<-mean.elev[c('Species','Genus','epi','sp.code','elev')]
+mean.elev<-mean.elev[c('Species','Genus','epi','sp.code','elev','mid.elev')]
 str(mean.elev)
   # data.frame':	459 obs. of  5 variables:
   # $ Species: chr  "Abies_balsamea" "Acer_pensylvanicum" "Acer_rubrum" "Acer_saccharum" ...
