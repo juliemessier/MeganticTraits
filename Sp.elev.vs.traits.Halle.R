@@ -40,6 +40,47 @@ load(file=paste0(wrk.dir,'species-level.traits.Canopy.layer.Rdata')) # sp.C.trai
 load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abund.c
 #=====================================================================================
 
+# 0 - Re-bin elevations
+
+# Create vector of intervals
+intervals<-seq(from=400,to=1100,by=50)
+length(intervals)
+
+# Create vector of lower and upper intervals
+lower.int<-intervals[1:14]+1
+upper.int<-intervals[2:15]
+
+# Create empty matrix to fill
+
+Hall.by.intervals<-as.data.frame(matrix(NA,nrow=14,ncol=ncol(Hall)-11))
+colnames(Hall.by.intervals)<-colnames(Hall)[12:ncol(Hall)]
+elev.range<-paste0(lower.int,'-',upper.int)
+no.plots<-rep(NA,times=14)
+Hall.by.intervals<-cbind(elev.range,lower.int,upper.int,no.plots,Hall.by.intervals)
+
+
+
+for (i in 1:nrow(Hall.by.intervals)) { # loop through each elevation intervals (14)
+  l<-Hall.by.intervals[i,'lower.int']
+  u<-Hall.by.intervals[i,'upper.int']
+  subset.Hall<-Hall[which(Hall$Elev_m >= l & Hall$Elev_m <= u),]
+  
+  for(s in colnames(Hall.by.intervals)[5:ncol(Hall.by.intervals)]){ # loop through each species in the colnames (459)
+    
+    ifelse(
+      test= any(subset.Hall[,s]==1)==TRUE,               # if this test is true
+      yes = Hall.by.intervals[Hall.by.intervals$elev.range==elev.range[i],s]<-1,   # make the value for that elevation range for that species to 1
+      no= Hall.by.intervals[Hall.by.intervals$elev.range==elev.range[i],s]<-0      # else, make it 0
+    )
+    
+    Hall.by.intervals[elev.range==elev.range[i],'no.plots']<-nrow(subset.Hall)
+    
+  }
+}
+
+head(Hall.by.intervals)[1:7]
+
+
 # 1 - Calculate mean elevation of each species
 # Hall = presence/absence of species along small plots spread along elevational gradient
 Hall<-read.csv(paste0(data.dir,'G.Hall_sp_by_site_corrected.csv'),header=T)
