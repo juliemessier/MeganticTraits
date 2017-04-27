@@ -174,25 +174,89 @@ H.cwm.70<-functcomp(H.sp.by.tr.70,
                    H.plot.by.sp.70,
                    CWM.type='all')
 
-dat<-merge(plot.elev,H.cwm.70,by.y=0,by.x=0)
-dim(dat)
-
+cwm70.dat<-merge(plot.elev,H.cwm.70,by.y=0,by.x=0)
+cwm70.dat$Row.names<-NULL # remove useless column entitled 'Row.names'
+dim(cwm70.dat) # 48 9
 
 save(H.cwm.70,file=paste0(wrk.dir,'1970.plot.cwm.herbaceous.layer.Rdata'))
 save(H.plot.by.sp.70,file=paste0(wrk.dir,'plot.by.species.1970.herbaceous.layer.Rdata'))
 save(H.sp.by.tr.70,file=paste0(wrk.dir,'sp.by.traits.1970.herbaceous.layer.Rdata'))
+save(cwm70.dat,file=paste0(wrk.dir,'1970.plot.cwm.and.elevation.herbaceous.layer.Rdata'))
 
 # 2 - Trait vs Elevation ####
 #===========================#
 
-pairs(dat[,3:10])
-# LMA, Lamina.thck, myc.frac seem to be correlated with elevation. 
+  # 2.1 - Scatterplots - pairwise interactions? #### 
+  
+  pairs(cwm70.dat[,2:9])
+  # LMA, Lamina.thck, myc.frac seem to be correlated with elevation. 
+  
+  plot(density(cwm70.dat$MeanElev)) #bimodal with peaks at 600m and 1000m
+  
+  # 2.2 - GAM - non-linearities?  ####
+  
+  par(mfrow=c(2,2))
+  plot(gam(cwm70.dat$MeanElev~s(Ht.veg)+s(myc.frac)+
+             s(Min.Root.Loca),data=cwm70.dat))
+  
+  #myc.frac appears and Min.Root.Loca appear correlated
+  
+  plot(gam(cwm70.dat$MeanElev~s(Ht.veg)+s(Lamina.thck)+
+             s(LMA),data=cwm70.dat))
+  # Lamina thickness appears non-linear
+  
+  plot(gam(cwm70.dat$MeanElev~s(Leaf.Area),data=cwm70.dat))
+  # No relationships
+  
+  par(mfrow=c(1,1))
+  
+#=====================================================
+  
+  # Diagnostic plots
+  
+  # 1) Residuals vs Fitted - detects residual non-linear relationships between x & y variables 
+  #    and heteroscedasticity (wedge)
+  # 2) QQ plot - shows whether residuals are normally distributed (will follow straight line)
+  # 3) Scale-Location - shows whether variance (residuals) increase with incrasing mean (also tests
+  # for homoscedasticity). Another version of plot 1
+  # 4) Residuals vs Leverage - shows whether individual datapoints have a lot of 'weight' on 
+  # the regression
+  
+  # 2.3 - Regressions ####
+  #===========================================================
 
-plot(density(dat$MeanElev)) #bimodal with peaks at 600m and 1000m
-
-m1<-lm(dat$Lamina.thck~MeanElev, data=dat)
-# Significant, AdjR2 = 0.15
-
+  # Ht.veg
+  
+  summary(m1<-lm(cwm70.dat$Ht.veg~MeanElev+I(MeanElev^2),data=cwm70.dat)) # N.S.
+  
+  # Min.Root.Loca
+  
+  summary(m2<-lm(cwm70.dat$Min.Root.Loca~MeanElev+I(MeanElev^2),data=cwm70.dat))# Significant
+  
+  # Coefficients:
+  #                 Estimate Std. Error t value Pr(>|t|)   
+  # (Intercept)   -6.440e-01  1.492e+00  -0.432  0.66814   
+  # MeanElev       1.076e-02  4.091e-03   2.629  0.01168 * 
+  # I(MeanElev^2) -7.602e-06  2.683e-06  -2.833  0.00687 **
+  #   ---
+  #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # 
+  # Residual standard error: 0.5368 on 45 degrees of freedom
+  # Multiple R-squared:  0.1936,	Adjusted R-squared:  0.1578 
+  # F-statistic: 5.402 on 2 and 45 DF,  p-value: 0.007893
+  
+  plot(cwm70.dat$Min.Root.Loca~MeanElev,data=cwm70.dat,
+       xlab='Plot elevation (m)', ylab='Rooting Depth CWM',family='serif',pch=20)
+  points(x=cwm70.dat$MeanElev, 
+         y=fitted(m2),
+         col='red', pch=20)
+  text(900,4.0,labels= 'y= 0.01x -7e-06 x^2 \n AdjR2=0.16, p=0.008',family='serif',cex=0.8)
+  
+  # Lamina.thck
+  
+  summary(m3<-lm(cwm70.dat$Lamina.thck~MeanElev, data=cwm70.dat)) # Significant
+  # Significant, AdjR2 = 0.15
+  
   # Coefficients:
   #               Estimate Std. Error t value Pr(>|t|)   
   # (Intercept) -0.9309745  0.3343314  -2.785  0.00775 **
@@ -203,10 +267,19 @@ m1<-lm(dat$Lamina.thck~MeanElev, data=dat)
   # Residual standard error: 0.542 on 46 degrees of freedom
   # Multiple R-squared:  0.1685,	Adjusted R-squared:  0.1504 
   # F-statistic: 9.323 on 1 and 46 DF,  p-value: 0.003755
-
-m2<-lm(dat$LMA~MeanElev,data=dat)
-# significant, AdjR2=0.08
-
+  
+  plot(cwm70.dat$Lamina.thck~MeanElev,data=cwm70.dat,
+       xlab='Plot elevation (m)', ylab='Leaf thickness',family='serif',pch=20)
+  points(x=cwm70.dat$MeanElev, 
+         y=fitted(m3),
+         col='red', pch=20)
+  text(650,1.3,labels= 'y= -0.93 + 0.001x \n AdjR2=0.15, p=0.003',family='serif',cex=0.9)
+  
+  # LMA
+  
+  summary(m4<-lm(cwm70.dat$LMA~MeanElev,data=cwm70.dat))
+  # significant, AdjR2=0.08
+  
   # Coefficients:
   #              Estimate Std. Error t value Pr(>|t|)  
   # (Intercept) -0.3332923  0.1617211  -2.061   0.0450 *
@@ -215,22 +288,49 @@ m2<-lm(dat$LMA~MeanElev,data=dat)
   # Residual standard error: 0.2622 on 46 degrees of freedom
   # Multiple R-squared:  0.1015,	Adjusted R-squared:  0.08201 
   # F-statistic: 5.199 on 1 and 46 DF,  p-value: 0.02728
-
-m3<-lm(dat$myc.frac~MeanElev+I(MeanElev^2),data=dat)
-summary(m3)
-
+  
+  plot(cwm70.dat$LMA~MeanElev,data=cwm70.dat,
+       xlab='Plot elevation (m)', ylab='LMA',family='serif',pch=20)
+  points(x=cwm70.dat$MeanElev, 
+         y=fitted(m4),
+         col='red', pch=20)
+  text(650,1.3,labels= 'y= -0.93 + 0.001x \n AdjR2=0.15, p=0.003',family='serif',cex=0.9)
+  
+  # find outlier point
+  text(x=cwm70.dat$MeanElev, y=cwm70.dat$LMA, labels = cwm70.dat$plot) # plot 02 has a very low CWM-LMA
+  
+  # run model without that outlier
+  summary(lm(cwm70.dat[cwm70.dat$plot!='62',]$LMA~MeanElev,data=cwm70.dat[cwm70.dat$plot!='62',]))
+  # model not significnat without outlier
+  
+  # LDMC
+  
+  summary(m5<-lm(cwm70.dat$LDMC~MeanElev,data=cwm70.dat)) # N.S.
+  
+  # Leaf.Area
+  
+  summary(m6<-lm(cwm70.dat$Leaf.Area~MeanElev,data=cwm70.dat)) # p=val=0.008
+  
   # Coefficients:
-  #                 Estimate Std. Error t value Pr(>|t|)
-  # (Intercept)   -9.865e-01  1.153e+00  -0.855    0.397
-  # MeanElev       4.077e-03  3.162e-03   1.289    0.204
-  # I(MeanElev^2) -2.500e-06  2.073e-06  -1.206    0.234
+  # Estimate Std. Error t value Pr(>|t|)   
+  # (Intercept) -0.7371092  0.2327403  -3.167  0.00273 **
+  # MeanElev     0.0008945  0.0003218   2.780  0.00786 **
+  # ---
+  # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
   # 
-  # Residual standard error: 0.4148 on 45 degrees of freedom
-  # Multiple R-squared:  0.04501,	Adjusted R-squared:  0.002568 
-  # F-statistic: 1.061 on 2 and 45 DF,  p-value: 0.3548
-
-#plot myc.frac vs elevation
-points(x=dat$MeanElev, 
-       y=fitted(m3),
-       col='red', pch=20)
-#Weird that it is not significant. Looks like it shoulds
+  # Residual standard error: 0.3773 on 46 degrees of freedom
+  # Multiple R-squared:  0.1438,	Adjusted R-squared:  0.1252 
+  # F-statistic: 7.726 on 1 and 46 DF,  p-value: 0.007859
+  
+  plot(cwm70.dat$Leaf.Area~MeanElev,data=cwm70.dat,
+       xlab='Plot elevation (m)', ylab='Leaf Area',family='serif',pch=20)
+  points(x=cwm70.dat$MeanElev, 
+         y=fitted(m6),
+         col='red', pch=20)
+  text(700,0.6,labels= 'y= -0.73 + 0.001x  \n AdjR2=0.13, p=0.008',family='serif',cex=0.9)
+    
+  # myc.frac
+  
+  summary(m7<-lm(cwm70.dat$myc.frac~MeanElev+I(MeanElev^2),data=cwm70.dat)) # NS
+  plot(cwm70.dat$myc.frac~,data=cwm70.dat)
+  text(cwm70.dat$MeanElev,cwm70.dat$myc.frac,labels=cwm70.dat$plot)
