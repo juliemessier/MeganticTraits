@@ -435,7 +435,6 @@ save(cwm12.dat,file=paste0(wrk.dir,'2012.plot.cwm.and.elevation.herbaceous.layer
       
       summary(m11<-lm(cwm12.dat$LMA~MeanElev,data=cwm12.dat)) # NS 
       
-      
       # LDMC
       
       summary(m12<-lm(cwm12.dat$LDMC~MeanElev,data=cwm12.dat)) # N.S.

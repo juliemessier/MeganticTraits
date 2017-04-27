@@ -1,12 +1,13 @@
 #<<TABLE OF CONTENTS>>
-# 0-  Make trait and abundance dataframes correspond based on shared species
+# CANOPY LAYER, ABUNDANCE
+# 0- Make trait and abundance dataframes correspond based on shared species
 # 1- Data Exploration, scatterplot, tree models & GAM
 # 2- Abund~Traits models
 #   2.1 lm - abundance Ratio - model ns.  Does not meet assumptions
 #   2.2 lm - log abundance ratio - Model significant and MEETS ASSUMPTIONS
 #   2.3 lm - PowerTransform response variable - Model significiant & MEETS ASSUMPTIONS 
 #   2.4 lm - Ratio of log abundance - Model marginally significant & does not meets assumptions 
-#   2.5g lm (gamma) - abunance ratio - meets assumption when 3 outliers are removed
+#   2.5g lm (gamma) - abundance ratio - meets assumption when 3 outliers are removed
 
 
 #<<WORKSPACES>>
