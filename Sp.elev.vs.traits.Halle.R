@@ -100,7 +100,8 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   colnames(intervals.by.sp)<-sp.names
   elev.range<-paste0(lower.int,'-',upper.int)
   no.plots<-rep(NA,times=14)
-  Hall.by.intervals.weighted<-cbind(elev.range,lower.int,upper.int,mid.int,no.plots,intervals.by.sp)
+  rel.sampling.effort<-rep(NA,times=14)
+  Hall.by.intervals.weighted<-cbind(elev.range,lower.int,upper.int,mid.int,no.plots,rel.sampling.effort,intervals.by.sp)
   
   # fill empty dataframe
   
@@ -118,13 +119,14 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
       # assign proportion of species occurence for each elevation bin 
       
       Hall.by.intervals.weighted[elev.range==elev.range[i],'no.plots']<-nrow(subset.Hall) 
+      Hall.by.intervals.weighted[elev.range==elev.range[i],'rel.sampling.effort']<-nrow(subset.Hall)/nrow(Hall)
       # count total no. of plots into each elevation bin
       
     }
   }
   
   head(Hall.by.intervals.weighted)[1:10]
-  apply(Hall.by.intervals.weighted[6:ncol(Hall.by.intervals)],2,sum) # Check all columns add to 1. 
+  apply(Hall.by.intervals.weighted[5:ncol(Hall.by.intervals)],2,sum) # Check all columns add to 1. 
   
 # 1 - Calculate mean elevation of each species ####
 #=================================================#
@@ -223,7 +225,7 @@ H.dat$Row.names<-NULL
 
 plot(density(H.dat$avg.elev.pa)) # left-skewed
 shapiro.test((H.dat$avg.elev.pa)) # p-val = 0.01 ! Not bad!
-plot(density(H.dat$mid.elev))
+plot(density(H.dat$wghtd.elev))
 plot(H.dat$mid.elev,H.dat$avg.elev.pa,
      xlim=c(500,800),ylim=c(500,800))
 points(x=H.dat$mid.elev,
