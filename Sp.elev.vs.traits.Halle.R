@@ -115,8 +115,8 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
       
       elev.presence<-sum(subset.Hall[,s])   # Number of plots where species s occurs within elevation bin
       p<-elev.presence/Hall.bins.prop.presence$no.plots[i] # proportion of plots with sp. s present of a given elevation bin
-      Hall.bins.prop.presence[Hall.bins.prop.presence$elev.range==elev.range[i],s]<-p 
-      # assign proportion of species occurence for each elevation bin 
+      
+      Hall.bins.prop.presence[Hall.bins.prop.presence$elev.range==elev.range[i],s]<-p # assign proportion of species occurence for each elevation bin 
       
     }
   }
@@ -132,15 +132,15 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
 
 # Calculate mean elevation for each species 
 
-mean.elev<-data.frame(matrix(ncol=5,nrow=459))
-names(mean.elev)<-c('Species','avg.elev.pa','mid.elev','wghtd.elev')
+mean.elev<-data.frame(matrix(ncol=4,nrow=459))
+names(mean.elev)<-c('Species','wghtd.elev','mid.elev','wghtd.elev')
 
 # Calculate mean species elevation
 for(s in sp.names) {
   mean.elev[which(sp.names==s),'Species']<-s                  # Assign species name
   
   # Mean elevation based on presence/absence data
-  mean.elev[which(mean.elev$Species==s),'avg.elev.pa']<-
+  mean.elev[which(mean.elev$Species==s),'wghtd.elev']<-
     round(sum(Hall.bins.pa$mid.int * Hall.bins.pa[,s]) / 
             sum(Hall.bins.pa[,s]),digits=0)           
   
@@ -154,12 +154,14 @@ for(s in sp.names) {
     Hall.bins.prop.presence$mid.int *
       Hall.bins.prop.presence[,s]
     ) / sum(Hall.bins.prop.presence[,s])
+}
 
 # Split name to create species code
 for(x in 1:length(sp.names)){
   mean.elev[x,'Genus']<-c(strsplit(sp.names[x],"_")[1][[1]][1])
   mean.elev[x,'epi']<-c(strsplit(sp.names[x],"_")[1][[1]][2])
 }
+
 # Create species code to match trait data
 for(x in 1:length(sp.names)){
 mean.elev[x,'sp.code']<-paste0(toupper(strtrim(mean.elev$Genus[x],2)),toupper(strtrim(mean.elev$epi[x],2)))
@@ -167,7 +169,7 @@ mean.elev[x,'sp.code']<-paste0(toupper(strtrim(mean.elev$Genus[x],2)),toupper(st
 
 str(mean.elev)
 # re-order columns
-mean.elev<-mean.elev[c('Species','Genus','epi','sp.code','avg.elev.pa','mid.elev','wghtd.elev','wghtd.elev2')]
+mean.elev<-mean.elev[c('Species','Genus','epi','sp.code','avg.elev.pa','mid.elev','wghtd.elev')]
 str(mean.elev)
   # data.frame':	459 obs. of  5 variables:
   # $ Species: chr  "Abies_balsamea" "Acer_pensylvanicum" "Acer_rubrum" "Acer_saccharum" ...
@@ -176,7 +178,6 @@ str(mean.elev)
   # $ sp.code: chr  "ABBA" "ACPE" "ACRU" "ACSA" ...
   # $ avg.elev.pa   : num  625 582 523 572 622 ...
   # $ mid.elev: num  744 676 660 680 742 ...
-  # $ wghtd.elev2: num  17792 9783 7295 9216 16081 ...
 
 save(mean.elev,file=paste0(wrk.dir,'species.mean.elevation.based.on.Hall.plot.surveys.RData'))
 
@@ -193,7 +194,8 @@ row.names(H.dat)<-H.dat$Row.names
 # Error - non-unique values of ‘CASC’, ‘COCA’, ‘COTR’, ‘POPU’ 
 
 # clean Duplicates
-mean.elev[mean.elev$sp.code%in%c('CASC', 'COCA', 'COTR', 'POPU'),]
+mean.elev[mean.elev$sp.code%in%c('CASC', 'COCA', 'COTR', 'POPU'),] # what are the duplicate rows?
+
   #                   Species        Genus        epi sp.code avg.elev.pa
   # 84         Carex_scabrata        Carex   scabrata    CASC  599
   # 85         Carex_scoparia        Carex   scoparia    CASC  550
@@ -204,14 +206,14 @@ mean.elev[mean.elev$sp.code%in%c('CASC', 'COCA', 'COTR', 'POPU'),]
   # 317 Polygonatum_pubescens  Polygonatum  pubescens    POPU  583
   # 330  Potamogeton_pusillus  Potamogeton   pusillus    POPU  490
 
-# Keep Carex scabrata
-mean.elev[mean.elev$Species=='Carex_scoparia','sp.code']<-'CASCO'
-# Keep Cornus canadensis
-mean.elev[mean.elev$Species=='Conyza_canadensis','sp.code']<-'COCAN'
-# Keep Polygonatum pubescens
-mean.elev[mean.elev$Species=='Potamogeton_pusillus','sp.code']<-'POPUS'
-# Keep Coptis trifolia
-mean.elev[mean.elev$Species=='Corallorhiza_trifida','sp.code']<-'COTRI'
+# Keep Carex scabrata original sp.code
+mean.elev[mean.elev$Species=='Carex_scoparia','sp.code']<-'CASCO' # rename Carex scoparia
+# Keep Cornus canadensis original sp.code
+mean.elev[mean.elev$Species=='Conyza_canadensis','sp.code']<-'COCAN' # rename Conyza canadensis
+# Keep Polygonatum pubescens original sp.code
+mean.elev[mean.elev$Species=='Potamogeton_pusillus','sp.code']<-'POPUS' # rename Potamogeton pusillus
+# Keep Coptis trifolia original sp.code
+mean.elev[mean.elev$Species=='Corallorhiza_trifida','sp.code']<-'COTRI'# rename Corallorhiza trifida
 
 # Overwrite object with new changes
 save(mean.elev,file=paste0(wrk.dir,'species.mean.elevation.based.on.Hall.plot.surveys.RData'))
@@ -225,17 +227,10 @@ row.names(H.dat)<-H.dat$Row.names
 H.dat$Row.names<-NULL
 
 plot(density(H.dat$avg.elev.pa)) # left-skewed
-shapiro.test((H.dat$avg.elev.pa)) # p-val = 0.01 ! Not bad!
-plot(density(H.dat$wghtd.elev2)) # This carries same problem of unevely sampled no. of plots along elevation 
-plot(H.dat$avg.elev.pa,H.dat$wghtd.elev2)
-     #xlim=c(500,800),ylim=c(500,800))
-# points(x=H.dat$mid.elev,
-#        y=predict(lm(H.dat$avg.elev.pa~H.dat$mid.elev)),
-#        col='red', pch=20) 
-# abline(a=0,b=1)
+shapiro.test((H.dat$avg.elev.pa)) # p-val = 0.005 ! Not bad!
 
-summary(lm(H.dat$avg.elev.pa~H.dat$wghtd.elev2)) #AdjR2 = 0.30
-# These two elevations are almost the same!
+summary(lm(H.dat$avg.elev.pa~H.dat$wghtd.elev)) #AdjR2 = 0.75
+# These two elevations are 3/4 similar
 
 
 save(H.dat,file=paste0(wrk.dir,'Herbaceous.layer.dataframe.with.species.mean.elevation.and.traits.RData'))
@@ -258,10 +253,10 @@ mean.elev[mean.elev$sp.code%in%c('ACSP', 'POTR'),]
   # 316       Poa_trivialis     Poa   trivialis    POTR  549
   # 328 Populus_tremuloides Populus tremuloides    POTR  528
 
-# Keep Acer spicatum
-mean.elev[mean.elev$Species=='Actaea_sp','sp.code']<-'ACTSP'
-# Keep Populus tremuloides
-mean.elev[mean.elev$Species=='Poa_trivialis','sp.code']<-'POTRI'
+# Keep Acer spicatum original sp.code
+mean.elev[mean.elev$Species=='Actaea_sp','sp.code']<-'ACTSP' # rename Actaea_sp
+# Keep Populus tremuloides original sp.code
+mean.elev[mean.elev$Species=='Poa_trivialis','sp.code']<-'POTRI' # rename Poa trivialis
 
 # Overwrite object with new changes
 save(mean.elev,file=paste0(wrk.dir,'species.mean.elevation.based.on.Hall.plot.surveys.RData'))
@@ -274,15 +269,15 @@ C.dat[,c('Species','Genus','epi')]<-NULL
 row.names(C.dat)<-C.dat$Row.names
 C.dat$Row.names<-NULL
 
-plot(density(C.dat$avg.elev.pa)) # looks quite normal 
-shapiro.test((C.dat$avg.elev.pa)) # p-val = 0.10 ! Woo-hoo! Don't transform.
-plot(density(C.dat$mid.elev)) # looks quite normal except for a little right-skewed
-shapiro.test((C.dat$avg.elev.pa)) # p-val = 0.20 ! Woo-hoo! Don't transform.
+plot(density(C.dat$avg.elev.pa)) # bimodal - no suprise: conifers vs deciduous 
+shapiro.test((C.dat$avg.elev.pa)) # p-val = 0.03 ! normal enough! Don't transform.
+plot(density(C.dat$mid.elev)) # bimodal
+shapiro.test((C.dat$mid.elev)) # p-val = 0.009 - Close enough
 
 save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevation.and.traits.RData'))
 
 
-# A - HERBIVORY LAYER ####
+# A - HERBACEOUS LAYER ####
 #==========================#
 
   # A3 - Data Exploration ####
@@ -293,31 +288,32 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
 
         names(H.dat) 
         # [1] "Ht.veg"        "Min.Root.Loca" "Lamina.thck"   "LMA"           "LDMC"          "Leaf.Area"     "myc.frac"     
-        # [8] "avg.elev.pa"   "mid.elev"      "wghtd.elev"    "wghtd.elev2"
+        # [8] "avg.elev.pa"   "mid.elev"      "wghtd.elev"
 
-        pairs(H.dat[,c(1:7,11)],panel=panel.smooth)
+        pairs(H.dat,panel=panel.smooth)
         # Variance seems homoscedastic
         # correlations among Leaf.Area-Ht.veg; Lamina.thck-LMA; LDMc-LMA
+        # myc.frac and min.root.loca seem related to weighted elevation
 
         # A3.2 - Tree models - non-linearities ####
         #----
         
-        elev.tree.model<-tree(H.dat$avg.elev.pa~Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area+myc.frac,
+        elev.tree.model<-tree(H.dat$wghtd.elev~Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area+myc.frac,
                               data=H.dat)
         plot(elev.tree.model); text(elev.tree.model) ; title('herbaceous layer, avg.elev.pa vs traits')
-        # LDMC is most important variable, 
-        # for those with high LDMC, LDMC matters
-        # For those with low LDMC min.root.loca matters
-        elev.tree.model #  null deviance = 60840
-        1-(deviance(elev.tree.model)/60840) # 0.54
+        # Min.Root.Loca is most important variable, 
+        # for those with high Min.Root.Loca, LDMC matters
+        # For those with low min.root.loca, myc.frac matters
+        elev.tree.model #  null deviance = 133000
+        1-(deviance(elev.tree.model)/133000) # 0.53
         
         # A3.3 GAM - non-linearities?  ####
         #----
         
         par(mfrow=c(2,2))
-        plot(gam(H.dat$avg.elev.pa~s(Ht.veg)+s(Min.Root.Loca)
+        plot(gam(H.dat$wghtd.elev~s(Ht.veg)+s(Min.Root.Loca)
                  ,data=H.dat))
-        # no curvature
+        # relationship w Min.Root.Loca, but no curvature
         
         plot(gam(H.dat$avg.elev.pa~s(Lamina.thck)+s(LMA)
                  ,data=H.dat))
@@ -352,11 +348,11 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         #----
         
         # short on degrees of freedom. Do it in two models.
-        summary(lm(H.dat$avg.elev.pa~(Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+        summary(lm(H.dat$wghtd.elev~(Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area)^2,
                    data=H.dat))
         #LMA:Leaf.Area  marginally significant
         
-        summary(lm(H.dat$avg.elev.pa~(myc.frac+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+        summary(lm(H.dat$wghtd.elev~(myc.frac+Min.Root.Loca+Lamina.thck+LMA+LDMC+Leaf.Area)^2,
                    data=H.dat))
         
         # nothing significant
@@ -364,53 +360,75 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # B) Check non-linear relationships ####
         #----
         
-        summary(lm(H.dat$avg.elev.pa~.+I(Ht.veg^2)+I(Min.Root.Loca^2)+I(Lamina.thck^2)+
+        summary(lm(H.dat$wghtd.elev~I(Ht.veg^2)+I(Min.Root.Loca^2)+I(Lamina.thck^2)+
                      I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2)+I(myc.frac^2),
                 data=H.dat))
         # 
-        # I(LMA^2)  significant
+        # nothing significant
         
         # C) Fit best minimal model - not significant####
         #----
         
-        H1<-lm(H.dat$avg.elev.pa~Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+I(LMA^2),data=H.dat)
-        H0<-lm(H.dat$avg.elev.pa~1,data=H.dat)
+        H1<-lm(H.dat$wghtd.elev~Ht.veg+Min.Root.Loca+Lamina.thck+LMA+LDMC+LMA:Leaf.Area,data=H.dat)
+        H0<-lm(H.dat$wghtd.elev~1,data=H.dat)
         
         elev.best.lm.forw<-step(H0,scope=list(lower=H0,upper=H1),trace=T,direction='both')
-        summary(elev.best.lm.forw) # Min.Root.Loca retained, but not significant
-        AIC(elev.best.lm.forw) #307.97
+        summary(elev.best.lm.forw) # Min.Root.Loca retained, but marginally significant
+        # AdjR2=0.08
+        AIC(elev.best.lm.forw) #329.17
         
         # Null model just as good
 
         elev.best.lm.back<-step(H1,scope=list(lower=H0,upper=H1),trace=T,direction='both')
-        summary(elev.best.lm.back) # Min.Root.Loca
+        summary(elev.best.lm.back) 
 
         # Coefficients:
         #               Estimate Std. Error t value Pr(>|t|)    
-        # (Intercept)    710.341     21.896  32.441   <2e-16 ***
-        # Min.Root.Loca  -11.319      7.869  -1.438    0.162 
-        # model not significant
+        # (Intercept)     728.87      30.51  23.887   <2e-16 ***
+        # Min.Root.Loca   -21.55      11.01  -1.957   0.0620 .  
+        # Lamina.thck      53.06      30.03   1.767   0.0899 .  
+        # LMA             -89.57      46.49  -1.927   0.0659 .  
+        # LDMC             76.73      34.78   2.206   0.0372 * 
+        
+        # Residual standard error: 63.68 on 24 degrees of freedom
+        # Multiple R-squared:  0.2685,	Adjusted R-squared:  0.1466 
+        # F-statistic: 2.202 on 4 and 24 DF,  p-value: 0.09914
+        
+        AIC(elev.best.lm.back) # 329.73
+        
+        # Continue model simplification
+        
+        m4<-update(elev.best.lm.back,~.-Lamina.thck); AIC(m4) #33128
+        summary(m4)
+        m5<-update(m4,~.-LMA); AIC(m4) #331
+        summary(m5)
+        m6<-update(m5,~.-LDMC); AIC(m6) # 329.17
+        summary(m6)
+        
+        #----
+        # back to minimal model from forward selection. 
+        # Two models with similar AIC: one parameter explains 8% of variance, or 4 parameters explain 15%. 
         
         # Plot results 
         par(mfrow=c(1,1))
         
-        plot(H.dat$avg.elev.pa,H.dat$Ht.veg,
+        plot(H.dat$wghtd.elev,H.dat$Ht.veg,
              pch=19, mgp=c(2,1,0),
              xlab='',ylab= 'Plant Height (cm)',family='serif')
          
-        plot(H.dat$avg.elev.pa,H.dat$LMA,
+        plot(H.dat$wghtd.elev,H.dat$LMA,
              pch=19, mgp=c(2,1,0),
              xlab='',ylab= 'LMA (mg/cm2)',family='serif')
         
-        plot(H.dat$avg.elev.pa,H.dat$Leaf.Area,
+        plot(H.dat$wghtd.elev,H.dat$Leaf.Area,
              pch=19, mgp=c(2,1,0),
              xlab='',ylab= 'Leaf Area (cm2)',family='serif')
         
-        plot(H.dat$avg.elev.pa,H.dat$Min.Root.Loca,
+        plot(H.dat$wghtd.elev,H.dat$Min.Root.Loca,
              pch=19, mgp=c(2,1,0),
              xlab='Species mean elevation (m)',ylab= 'Rooting depth',family='serif')
         
-        plot(H.dat$avg.elev.pa,H.dat$myc.frac,
+        plot(H.dat$wghtd.elev,H.dat$myc.frac,
              pch=19, mgp=c(2,1,0),
              xlab= 'Species mean elevation (m)', ylab= 'fraction of roots with \n mycorhizal associations',family='serif')
         
@@ -419,7 +437,7 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # A) Check trait-trait interactions ####
         # ----
         
-        summary(glm(H.dat$avg.elev.pa~.+(Min.Root.Loca+Ht.veg+Min.Root.Loca+Lamina.thck+LMA+
+        summary(glm(H.dat$wghtd.elev~(Min.Root.Loca+Ht.veg+Min.Root.Loca+Lamina.thck+LMA+
                                                   LDMC+Leaf.Area+myc.frac)^2,
                     data=H.dat,family=Gamma(link='log')),dispersion=1)
         
@@ -428,7 +446,7 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # B) Check higher-order effects ####
         #----
           
-        summary(glm(H.dat$avg.elev.pa~I(Ht.veg^2)+I(Min.Root.Loca^2)+I(Lamina.thck^2)+
+        summary(glm(H.dat$wghtd.elev~I(Ht.veg^2)+I(Min.Root.Loca^2)+I(Lamina.thck^2)+
                       I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2)+I(myc.frac^2),
                     data=H.dat),family=Gamma(link='log'))  
         
@@ -437,52 +455,71 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # C) Fit best model ####
         #----
         
-        H1<-glm(H.dat$avg.elev.pa~.,data=H.dat,family= Gamma(link='log'))
-        H0<-glm(H.dat$avg.elev.pa~1,data=H.dat,family=Gamma(link='log'))
+        H1<-glm(H.dat$wghtd.elev~.,data=H.dat,family= Gamma(link='log'))
+        H0<-glm(H.dat$wghtd.elev~1,data=H.dat,family=Gamma(link='log'))
         
-        summary(elev.best.glm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F),
+        summary(elev.best.glm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=T),
                dispersion=1)
         
-        # nothing significant
+        # Best model has non-significant terms
         
-      # CANOPY LAYER
+        # Coefficients:
+        #              Estimate Std. Error z value Pr(>|z|)  
+        # (Intercept)  5.199121   2.813546   1.848   0.0646 .
+        # avg.elev.pa  0.001920   0.004117   0.466   0.6409  
+        # myc.frac    -0.019395   0.172150  -0.113   0.9103  
+        # Ht.veg      -0.025589   0.317374  -0.081   0.9357 
+        
+        AIC(elev.best.glm) # 280
+        AIC(H0) # 330
+        
+        elev.best.glm #  null deviance = 0.29
+        1-(deviance(elev.best.glm)/0.29) # 0.85
+        
+        #---
+        # A model where none of the terms are significant explains 85% of the variance ?
+        
+      # B - CANOPY LAYER ####
+      #=====================#
         
         # B3.1 Scatterplots - pairwise interactions? ####
         #----
         
         names(C.dat) 
-        # [1] "Lamina.thck" "LMA"         "LDMC"        "Leaf.Area"   "elev"   
+        # [1] "Lamina.thck" "LMA"         "LDMC"        "Leaf.Area"   "avg.elev.pa"   "mid.elev"    "wghtd.elev"   
         
         pairs(C.dat,panel=panel.smooth)
         # Variance seems homoscedastic
         # yes, Lamina.thck-LMA; LDMc-LMA
+        # maybe weighted elevation and Leaf Area?
         
         # B3.2 - Tree models - non-linearities ####
         #----
         
-        C.elev.tree.model<-tree(C.dat$avg.elev.pa~.,data=C.dat)
-        plot(C.elev.tree.model)
-        text(C.elev.tree.model)
-        title('canopy layer, elev vs traits')
-        # LDMC is most important variable, 
+        C.elev.tree.model<-tree(C.dat$wghtd.elev~Lamina.thck+LMA+LDMC+Leaf.Area,data=C.dat)
+        plot(C.elev.tree.model) ; text(C.elev.tree.model) ; title('canopy layer, elev vs traits')
+        # LDMC is most important variable - non-linear relationships appear 
         # for those with high LDMC, high LDMC matters
-        C.elev.tree.model #  null deviance = 38840
-        1-(deviance(C.elev.tree.model)/38840) # 0.55
+        
+        C.dat[C.dat$LDMC<=-2.0,] # Acer Spicatum. weird. 
+        
+        C.elev.tree.model #  null deviance = 143400
+        1-(deviance(C.elev.tree.model)/143400) # 0.53
         
         # B3.3 GAM - non-linearities?  ####
         #----
         
-        plot(gam(C.dat$avg.elev.pa~s(Lamina.thck),data=C.dat))
+        plot(gam(C.dat$wghtd.elev~s(Lamina.thck),data=C.dat))
         # curvy 
         
-        plot(gam(H.dat$avg.elev.pa~s(LDMC),data=H.dat))
+        plot(gam(H.dat$wghtd.elev~s(LDMC),data=H.dat))
         # no relationship     
         
-        plot(gam(H.dat$avg.elev.pa~s(LMA),data=H.dat))
-        # negative ?
+        plot(gam(H.dat$wghtd.elev~s(LMA),data=H.dat))
+        # no relationships
         
-        plot(gam(H.dat$avg.elev.pa~s(Leaf.Area),data=H.dat))
-        # positive?
+        plot(gam(H.dat$wghtd.elev~s(Leaf.Area),data=H.dat))
+        # no relationship
         
         # B4 - Model selection ####
         #===========================================================
@@ -493,130 +530,66 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         #----
         
         # short on degrees of freedom. Do it in two models.
-        summary(lm(C.dat$avg.elev.pa~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+        summary(lm(C.dat$wghtd.elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
                    data=C.dat))
         
-        # LMA, LDMC & all interactions significant!!!
+        # LMA, LDMC & almost all interactions significant!!!
         
-        vif(lm(C.dat$avg.elev.pa~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+        vif(lm(C.dat$wghtd.elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
                data=C.dat)) 
         
-        # LMA, LDMC and Lamina.thck:LDMC are redundant
+        # LMA, LDMC and Lamina.thck:LDMC are redundant, so remove LDMC from analyses
         
         # B) Check non-linear relationships ####
         #----
         
-        summary(lm(C.dat$avg.elev.pa~Lamina.thck+I(Lamina.thck^2)+LMA+I(LMA^2)+LDMC+I(LDMC^2)+Leaf.Area+I(Leaf.Area^2),
+        summary(lm(C.dat$wghtd.elev~Lamina.thck+I(Lamina.thck^2)+LMA+I(LMA^2)+LDMC+I(LDMC^2)+Leaf.Area+I(Leaf.Area^2),
                    data=C.dat))
         
-        # nothing significant
+        # LDMC^2 and Lamina.thck^2 marginal
         
         # C) Fit  minimal model ####
         #----
         
-        H1<-lm(C.dat$avg.elev.pa~.^2,data=C.dat)
-        H0<-lm(C.dat$avg.elev.pa~1,data=C.dat)
+        H1<-lm(C.dat$wghtd.elev~Lamina.thck+LMA+Leaf.Area+
+                 I(Lamina.thck^2)+
+                 +LMA:Leaf.Area+Lamina.thck:Leaf.Area+Lamina.thck:LMA,
+               data=C.dat)
+        H0<-lm(C.dat$wghtd.elev~1,data=C.dat)
         
-        C.elev.best.lm<-step(H0,scope=list(upper=H1,lower=H0),direction="both")
-        summary(C.elev.best.lm)
+        C.elev.best.lm.back<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
+        summary(C.elev.best.lm.back)
         
-        #             Estimate Std. Error t value Pr(>|t|)    
-        # (Intercept)   566.71      11.68  48.529   <2e-16 ***
-        # LDMC          -26.05      15.22  -1.712    0.108    
+        #Coefficients:
+        # Estimate Std. Error t value Pr(>|t|)    
+        # (Intercept)       562.04      37.82  14.860 1.26e-08 ***
+        #   Lamina.thck        16.29      68.95   0.236    0.818    
+        # LMA               -10.23      72.49  -0.141    0.890    
+        # Leaf.Area         -63.81      38.82  -1.644    0.128    
+        # LMA:Leaf.Area    -130.40      88.11  -1.480    0.167    
+        # Lamina.thck:LMA    87.67      73.88   1.187    0.260    
         # ---
-
-        # Residual standard error: 46.54 on 15 degrees of freedom
-        # Multiple R-squared:  0.1634,	Adjusted R-squared:  0.1076 
-        # F-statistic:  2.93 on 1 and 15 DF,  p-value: 0.1075
-        
-        # starting with empty model, nothing is significant!
-        # Null model is retained
-        AIC(H0) 
-        # 185
-        
-        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
-        summary(C.elev.best.lm)
-        
-        # Coefficients:
-        #                       Estimate Std. Error t value Pr(>|t|)    
-        # (Intercept)             549.80      11.32  48.551 5.12e-09 ***
-        # Lamina.thck              24.69      27.49   0.898  0.40379    
-        # LMA                    -268.09      70.39  -3.809  0.00888 ** 
-        # LDMC                    393.06      93.44   4.207  0.00564 ** 
-        # Leaf.Area                30.66      16.50   1.858  0.11248    
-        # Lamina.thck:LMA        -139.57      53.46  -2.611  0.04008 *  
-        # Lamina.thck:LDMC        516.52     102.64   5.032  0.00237 ** 
-        # Lamina.thck:Leaf.Area   135.53      34.15   3.969  0.00738 ** 
-        # LMA:LDMC                -44.63      17.86  -2.499  0.04659 *  
-        # LMA:Leaf.Area          -159.35      46.54  -3.424  0.01407 *  
-        # LDMC:Leaf.Area          104.86      27.45   3.820  0.00876 ** 
-        # 
-        # Residual standard error: 26.07 on 6 degrees of freedom
-        # Multiple R-squared:  0.895,	Adjusted R-squared:   0.72 
-        # F-statistic: 5.115 on 10 and 6 DF,  p-value: 0.02926
-        
-        # Starting with full model, everything is retained BUT model has non-significant terms...
-        AIC(H1) # 165
-        
-        plot(C.elev.best.lm)
-        # variance homoscedastic
-        # normal residuals
-        # PRPE & FRAM Cook's = 0.5
-        
-        a<-update(C.elev.best.lm,~.-Lamina.thck)
-        a<-update(a,~.-LMA:Lamina.thck)
-        a<-update(a,~.-Leaf.Area:Lamina.thck)
-        a<-update(a,~.-LDMC:Lamina.thck )
-        
-        # D) Redo test without outliers
-        dim(C.dat) #17 5
-        C.dat.no.outliers<-C.dat[!rownames(C.dat)%in%c('PRPE','FRAM'),]
-        dim(C.dat) #33 4
-        
-        H0<-lm(C.dat.no.outliers$avg.elev.pa~1,data=C.dat.no.outliers)
-        H1<-lm(C.dat.no.outliers$avg.elev.pa~.^2,data=C.dat.no.outliers)
-        
-        C.elev.best.lm.no.outliers<-step(H1,scope=list(upper=H1,lower=H0),direction="both" )
-        summary(C.elev.best.lm.no.outliers)
-        AIC(C.elev.best.lm.no.outliers) # 148.7      
-        
-        C.elev.best.lm.no.outliers<-update(C.elev.best.lm,
-                                           subset=(C.dat[!rownames(C.dat)%in%c('PRPE','FRAM'),]))
-        
-        # Redo model without LMA bc it is highly correlated wtih both Lamina.thck & LDMC
-        
-        H1<-lm(C.dat$avg.elev.pa~(LDMC*Lamina.thck*Leaf.Area),data=C.dat)
-        H0<-lm(C.dat$avg.elev.pa~1,data=C.dat)
-        
-        C.elev.best.lm<-step(H1,scope=list(upper=H1,lower=H0),direction="both")
-        summary(C.elev.best.lm)
-        C.elev.best.lm<-update(C.elev.best.lm,~.-Lamina.thck:Leaf.Area)
-        summary(C.elev.best.lm)
-        C.elev.best.lm<-update(C.elev.best.lm,~.-Leaf.Area)
-        summary(C.elev.best.lm)
-        
-        # Coefficients:
-        #   Estimate Std. Error t value Pr(>|t|)    
-        # (Intercept)        549.53      15.38  35.724  2.3e-14 ***
-        # LDMC                59.87      41.47   1.444    0.172    
-        # Lamina.thck        -28.82      23.76  -1.213    0.247    
-        # LDMC:Lamina.thck   114.30      52.10   2.194    0.047 *  
-        #   ---
         #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
         # 
-        # Residual standard error: 42.68 on 13 degrees of freedom
-        # Multiple R-squared:  0.3905,	Adjusted R-squared:  0.2498 
-        # F-statistic: 2.776 on 3 and 13 DF,  p-value: 0.08334
+        # Residual standard error: 92.8 on 11 degrees of freedom
+        # Multiple R-squared:  0.3393,	Adjusted R-squared:  0.03901 
+        # F-statistic:  1.13 on 5 and 11 DF,  p-value: 0.4002
+        AIC(C.elev.best.lm.back) # 208
+        AIC(H0) # 205 
+        # Why didn't it keep the null model?
         
-        #$$$$
-        #Non-significant model
+        C.elev.best.lm.forw<-step(H0,scope=list(upper=H1,lower=H0),direction="both")
+        summary(C.elev.best.lm.forw)
+        
+        # Null model retained
+        
         
         # B4.2 glm, gamma link fct - elev ~ traits - nothing significant ####
         
         # A) Check trait-trait interactions ####
         # ----
         
-        summary(glm(C.dat$avg.elev.pa~.+(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
+        summary(glm(C.dat$wghtd.elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,
                     data=C.dat,family=Gamma(link='log')),dispersion=1)
         
         # nothing significant
@@ -624,7 +597,7 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # B) Check higher-order effects ####
         #----
         
-        summary(glm(C.dat$avg.elev.pa~.+I(Lamina.thck^2)+I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2),
+        summary(glm(C.dat$wghtd.elev~+I(Lamina.thck^2)+I(LMA^2)+I(LDMC^2)+I(Leaf.Area^2),
                     data=C.dat),family=Gamma(link='log'))  
         
         # nothing significant
@@ -632,18 +605,19 @@ save(C.dat,file=paste0(wrk.dir,'Canopy.layer.dataframe.with.species.mean.elevati
         # C) Fit best model ####
         #----
         
-        H1<-glm(C.dat$avg.elev.pa~.^2,data=C.dat,family= Gamma(link='log'))
-        H0<-glm(C.dat$avg.elev.pa~1,data=C.dat,family=Gamma(link='log'))
+        H1<-glm(C.dat$wghtd.elev~(Lamina.thck+LMA+LDMC+Leaf.Area)^2,data=C.dat,family= Gamma(link='log'))
+        H0<-glm(C.dat$wghtd.elev~1,data=C.dat,family=Gamma(link='log'))
         
         summary(C.elev.best.glm<-step(H0,scope=list(lower=H0,upper=H1),direction='both',trace=F),
                 dispersion=1)
         
-        # nothing significant
+        # Null model retained
         
         summary(C.elev.best.glm<-step(H1,scope=list(lower=H0,upper=H1),direction='both',trace=F),
                 dispersion=1)
         
-        # nothing significant
+        # everything retained, but model not significant. 
+        # Redo of analyses AQUI
         
         
         
