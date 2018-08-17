@@ -1,6 +1,7 @@
 # <<TABLE OF CONTENTS>>
 # A - Setup trait data
   # A1 - Herbivory layer
+    # A1.0 - Data Exploration
     # A1.1 - Transform trait data for normality
     # A1.2 - Remove date effect on traits
     # A1.3 - Turn individual-level table into species-level table.
@@ -15,15 +16,17 @@
 # B3 - Problem with infinity values ####
 
 #<<WORKSPACES>>
-wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Workspaces/") # Workspaces
-data.dir<-(("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Data/")) # data
-res.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Results/")  # Results
-grp.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Graphs/")   # Graphs
-fct.dir<-("C:/Users/Julie/Desktop/Postdoc/Megantic Traits/Functions/") # Functions
+wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Workspaces/") # Workspaces
+data.dir<-(("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Data/")) # data
+res.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Results/")  # Results
+grp.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Graphs/")   # Graphs
+fct.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Functions/") # Functions
 
 #<<LIBRARIES>>
 library(car) # for powerTransform
 library(vegan) # for decostand (standardizing data)
+library(lattice) # For fancy multipanel graphs
+source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
 
 # ==================================================================================#
 
@@ -33,10 +36,8 @@ library(vegan) # for decostand (standardizing data)
   # A1 - HERBACEOUS LAYER ####
   #=======================#
 
-    # A1.1- Transform trait data for normality ####
-
-    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20170406.csv'))
-    dim(Megtraits) #640 46
+    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20171019.csv'))
+    dim(Megtraits) #640 47
     str(Megtraits)
     Megtraits$Min.Root.Loca<-as.ordered(Megtraits$Min.Root.Loca) # remains a factor, but is ordered (ordinal)
     Megtraits$Max.Root.Loca<-as.ordered(Megtraits$Max.Root.Loca) # remains a factor, but is ordered (ordinal)
@@ -47,20 +48,27 @@ library(vegan) # for decostand (standardizing data)
       names(Megtraits)[names(Megtraits)=='LMA.g.cm2.']<-'LMA'
       names(Megtraits)[names(Megtraits)=='LDMC.g.g.']<-'LDMC'
       names(Megtraits)[names(Megtraits)=='Leaf.Area.cm2.']<-'Leaf.Area'
+      names(Megtraits)[names(Megtraits)=='Fine.Root.Diam.mm.']<-'F.Root.Diam'
+      names(Megtraits)[names(Megtraits)=='SRL.g.cm.']<-'SRL'
       
       # create trait dataframe with traits I will work with
       
       H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca","Max.Root.Loca",
                            "Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac",        
-                           "Rep.Mass.Frac","Stor.Mass.Frac")]
+                           "Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam","SRL")]
       
       dim(H.traits)
-      # 459 15
+      # 459 17
       H.traits<-droplevels(H.traits)
+      names(H.traits)
+      # [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"         "Min.Root.Loca"  "Max.Root.Loca" 
+      # [8] "Lamina.thck"    "LMA"            "LDMC"           "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac" 
+      # [15] "Stor.Mass.Frac" "F.Root.Diam"    "SRL"
+      
       str(H.traits)
       
         # 'data.frame':	459 obs. of  15 variables:
-        #   $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 155 64 70 159 160 68 158 69 157 67 ...
+        # $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 155 64 70 159 160 68 158 69 157 67 ...
         # $ Species       : Factor w/ 51 levels "ARNU","ARTR",..: 19 8 8 19 19 8 19 8 19 8 ...
         # $ Layer         : Factor w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
         # $ Date.recolte  : Factor w/ 49 levels "5/11/2016","5/12/2016",..: 7 7 11 11 11 11 11 11 11 11 ...
@@ -75,7 +83,29 @@ library(vegan) # for decostand (standardizing data)
         # $ Supp.Mass.Frac: num  0.14 0.05 0.02 0.1 0.07 0.05 0.09 0.06 0.04 0.06 ...
         # $ Rep.Mass.Frac : num  0 0.08 0.04 0 0.11 0.07 0 0.09 0 0.12 ...
         # $ Stor.Mass.Frac: num  0.37 0.8 0.89 0.21 0.44 0.78 0.37 0.76 0.36 0.76 ...
+        # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
+        # $ SRL           : num  NA 0.000422 NA 0.000704 0.00042 0.00019 0.00025 0.000383 NA 0.0001 ...
       
+      
+      # A1.0 - Data Exploration #### (Following Highlands Stats course)
+      
+        #A1.0.1 - Outliers on Y and X 
+        
+        #A1.0.2 - Homogeneity of Y 
+      
+        #A1.0.3 - Normality of Y (least important - use link function instead)
+      
+        #A1.0.4 - Zeros?
+      
+        #A1.0.5 - Collinearity of Ys
+      
+        #A1.0.6 Relationship between Y and X. Linear?
+      
+        #A1.0.7 Interactions?
+      
+      
+      
+      # A1.1- Transform trait data for normality ####
       
       # Test best transform for each trait ####
       
