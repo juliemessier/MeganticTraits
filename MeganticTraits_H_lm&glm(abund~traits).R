@@ -160,12 +160,16 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
     sp.H.traits.c<-sp.H.traits[!is.na(sp.H.traits$myc.frac),]
     sp.H.traits.c<-sp.H.traits.c[!is.na(sp.H.traits.c$Leaf.Area),]
     dim(sp.H.traits.c)
-    # 35 7
+    # 40 7
     
     # Adjust species list for abundance data to have matching datasets
     H.abund.c<-H.abund[which(rownames(H.abund)%in%rownames(sp.H.traits.c)),]
     dim(H.abund.c)
     #35 4
+    
+    sp.H.traits.c<-sp.H.traits.c[which(rownames(sp.H.traits.c)%in%rownames(H.abund.c)),]
+    dim(sp.H.traits.c)
+    # 35 7
     
     save(sp.H.traits.c,file = paste0(wrk.dir,'Herbaceous.layer.species-level.traits.no.NAs.Rdata'))
     save(H.abund.c,file=paste0(wrk.dir,'Herbaceous.layer.species.abundance.change.for.sp.with.no.NAs.in.traits..Rdata'))
@@ -319,6 +323,44 @@ load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abu
   # LDMC was only significant because of outliers 
   
   save(H.best.log.lm,file=paste0(wrk.dir,'Herbaceous.layer.best.model.predicting.log.transformed.abund.ratio.with.traits.RData'))
+  
+  
+  # F) plot lack of relationship... #### 
+  
+  # Plot results 
+  par(mfrow=c(1,1))
+  
+  plot(x=sp.H.traits.c$Ht.veg,
+       y=H.abund.c$log.abund.ratio,
+       pch=19, mgp=c(1.5,0.5,0),
+       xlab='Plant Height (standardized)',ylab='log(abundance ratio)',family='serif')
+  
+  H.abund.c[H.abund.c$log.abund.ratio<=-4,] # Oxalis Montana
+  text(x=-1.0,y=-4,labels='Oxalis montana',font=3,cex=0.8)
+  
+  plot(x=sp.H.traits.c$LMA,
+       y=H.abund.c$log.abund.ratio,
+       pch=19,mgp=c(1.5,0.5,0),
+       xlab='LMA (standardized)',ylab='log(abundance ratio)',family='serif')
+  
+  plot(x=sp.H.traits.c$Leaf.Area,
+       y=H.abund.c$log.abund.ratio,
+       pch=19, mgp=c(1.5,0.5,0),
+       xlab='Leaf Area (standardized)',ylab='log(abundance ratio)',family='serif')
+  
+  sp.H.traits.c[sp.H.traits.c$Leaf.Area<=-4,] # Lycopodium obscurum and lycopodium annotinum
+  text(x=-3.8,y=-0.5,labels='Lycopodium\nobscurum',font=3,cex=0.8)
+  text(x=-3.8,y=1.8,labels='Lycopodium\nannotinum',font=3,cex=0.8)
+  
+  plot(x=sp.H.traits.c$Min.Root.Loca,
+       y=H.abund.c$log.abund.ratio,
+       pch=19, mgp=c(1.5,0.5,0),
+       xlab='Rooting depth (standardized)',ylab='log(abundance ratio)',family='serif')
+  
+  plot(x=sp.H.traits.c$myc.frac,
+       y=H.abund.c$log.abund.ratio,
+       pch=19, mgp=c(1.5,0.5,0),
+       xlab= 'fraction of roots with \n mycorhizal associations', ylab='log(abundance ratio)',family='serif')
   
   
   # 2.3 lm - PowerTransform response variable - MEETS ASSUMPTIONS, but only significant bc of outliers ####
