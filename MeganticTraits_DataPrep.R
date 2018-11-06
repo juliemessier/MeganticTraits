@@ -86,10 +86,21 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
         # $ SRL           : num  NA 0.000422 NA 0.000704 0.00042 0.00019 0.00025 0.000383 NA 0.0001 ...
       
+    # Reponse Variables
+      names(H.abund)
+      head(H.abund)
+      
       
       # A1.0 - Data Exploration #### (Following Highlands Stats course)
       
         #A1.0.1 - Outliers on Y and X 
+        par(mfrow = c(1, 3))  
+        boxplot(H.abund$abund.ratio,
+                main = "Abundance Ratio")
+        dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
+                 xlab='range of data',
+                 ylab='Order of the data'),
+        
         
         #A1.0.2 - Homogeneity of Y 
       
