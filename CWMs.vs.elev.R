@@ -279,10 +279,16 @@ save(cwm12.dat,file=paste0(wrk.dir,'2012.plot.cwm.and.elevation.herbaceous.layer
       # F-statistic: 5.402 on 2 and 45 DF,  p-value: 0.007893
       
       plot(cwm70.dat$Min.Root.Loca~MeanElev,data=cwm70.dat,
-           xlab='Plot elevation (m)', ylab='Rooting Depth CWM',family='serif',pch=20)
-      points(x=cwm70.dat$MeanElev, 
-             y=fitted(m2),
-             col='red', pch=20)
+           xlab='Plot elevation (m)', ylab='Rooting Depth CWM',family='serif',pch=20, mgp=c(1.5,0.5,0))
+      
+      # points(x=cwm70.dat$MeanElev[ordered(cwm70.dat$MeanElev)], 
+      #        y=fitted(m2)[order(cwm70.dat$MeanElev),],
+      #        col='red', pch=20)
+      ]
+      lines(x=cwm70.dat$MeanElev[order(cwm70.dat$MeanElev)], 
+             y=fitted(m2)[order(cwm70.dat$MeanElev)],
+           col='red',lwd=2)
+      
       text(900,4.0,labels= 'y= 0.01x -7e-06 x^2 \n AdjR2=0.16, p=0.008',family='serif',cex=0.8)
       
       # Lamina.thck
@@ -302,15 +308,19 @@ save(cwm12.dat,file=paste0(wrk.dir,'2012.plot.cwm.and.elevation.herbaceous.layer
       # F-statistic: 9.323 on 1 and 46 DF,  p-value: 0.003755
       
       plot(cwm70.dat$Lamina.thck~MeanElev,data=cwm70.dat,
-           xlab='Plot elevation (m)', ylab='Leaf thickness',family='serif',pch=20)
-      points(x=cwm70.dat$MeanElev, 
-             y=fitted(m3),
-             col='red', pch=20)
+           xlab='Plot elevation (m)', ylab='Leaf thickness CWM',family='serif',pch=20, mgp=c(1.5,0.5,0))
+      # points(x=cwm70.dat$MeanElev, 
+      #        y=fitted(m3),
+      #        col='red', pch=20)
+      lines(x=cwm70.dat$MeanElev[order(cwm70.dat$MeanElev)], 
+            y=fitted(m3)[order(cwm70.dat$MeanElev)],
+            col='red',lwd=2)
       text(650,1.3,labels= 'y= -0.93 + 0.001x \n AdjR2=0.15, p=0.003',family='serif',cex=0.9)
       
       # LMA
       
       summary(m4<-lm(cwm70.dat$LMA~MeanElev,data=cwm70.dat))
+      
       # significant, AdjR2=0.08
       
       # Coefficients:
@@ -323,10 +333,14 @@ save(cwm12.dat,file=paste0(wrk.dir,'2012.plot.cwm.and.elevation.herbaceous.layer
       # F-statistic: 5.199 on 1 and 46 DF,  p-value: 0.02728
       
       plot(cwm70.dat$LMA~MeanElev,data=cwm70.dat,
-           xlab='Plot elevation (m)', ylab='LMA',family='serif',pch=20)
-      points(x=cwm70.dat$MeanElev, 
-             y=fitted(m4),
-             col='red', pch=20)
+           xlab='Plot elevation (m)', ylab='LMA CWM',family='serif',pch=20, mgp=c(1.5,0.5,0))
+      # points(x=cwm70.dat$MeanElev, 
+      #        y=fitted(m4),
+      #        col='red', pch=20)
+      lines(x=cwm70.dat$MeanElev[order(cwm70.dat$MeanElev)], 
+            y=fitted(m4)[order(cwm70.dat$MeanElev)],
+            col='red',lwd=2)
+      
       text(650,1.3,labels= 'y= -0.93 + 0.001x \n AdjR2=0.15, p=0.003',family='serif',cex=0.9)
       
       # find outlier point
@@ -356,10 +370,13 @@ save(cwm12.dat,file=paste0(wrk.dir,'2012.plot.cwm.and.elevation.herbaceous.layer
       # F-statistic: 7.726 on 1 and 46 DF,  p-value: 0.007859
       
       plot(cwm70.dat$Leaf.Area~MeanElev,data=cwm70.dat,
-           xlab='Plot elevation (m)', ylab='Leaf Area',family='serif',pch=20)
-      points(x=cwm70.dat$MeanElev, 
-             y=fitted(m6),
-             col='red', pch=20)
+           xlab='Plot elevation (m)', ylab='Leaf Area CWM',family='serif',pch=20,mgp=c(1.5,0.5,0))
+      # points(x=cwm70.dat$MeanElev, 
+      #        y=fitted(m6),
+      #        col='red', pch=20)
+      lines(x=cwm70.dat$MeanElev[order(cwm70.dat$MeanElev)], 
+            y=fitted(m6)[order(cwm70.dat$MeanElev)],
+            col='red',lwd=2)
       text(700,0.6,labels= 'y= -0.73 + 0.001x  \n AdjR2=0.13, p=0.008',family='serif',cex=0.9)
         
       # myc.frac
