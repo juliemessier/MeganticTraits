@@ -36,7 +36,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
   # A1 - HERBACEOUS LAYER ####
   #=======================#
 
-    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20171019.csv'))
+    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20181106.csv'))
     dim(Megtraits) #640 47
     str(Megtraits)
     Megtraits$Min.Root.Loca<-as.ordered(Megtraits$Min.Root.Loca) # remains a factor, but is ordered (ordinal)
@@ -49,9 +49,9 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       names(Megtraits)[names(Megtraits)=='LDMC.g.g.']<-'LDMC'
       names(Megtraits)[names(Megtraits)=='Leaf.Area.cm2.']<-'Leaf.Area'
       names(Megtraits)[names(Megtraits)=='Fine.Root.Diam.mm.']<-'F.Root.Diam'
-      names(Megtraits)[names(Megtraits)=='SRL.g.cm.']<-'SRL'
+      names(Megtraits)[names(Megtraits)=='SRL.cm.mg.']<-'SRL'
       
-      # create trait dataframe with traits I will work with
+      # create herbaceous trait dataframe with traits I will work with
       
       H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca","Max.Root.Loca",
                            "Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac",        
@@ -67,41 +67,202 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       str(H.traits)
       
-        # 'data.frame':	459 obs. of  15 variables:
-        # $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 155 64 70 159 160 68 158 69 157 67 ...
-        # $ Species       : Factor w/ 51 levels "ARNU","ARTR",..: 19 8 8 19 19 8 19 8 19 8 ...
+        # 'data.frame':	459 obs. of  17 variables:
+        # $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 1 2 3 4 5 6 7 8 9 10 ...
+        # $ Species       : Factor w/ 51 levels "ARNU","ARTR",..: 1 1 1 1 1 1 1 1 1 2 ...
         # $ Layer         : Factor w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
-        # $ Date.recolte  : Factor w/ 49 levels "5/11/2016","5/12/2016",..: 7 7 11 11 11 11 11 11 11 11 ...
-        # $ Ht.veg        : num  NA 5 4.5 5.5 6 4.5 8.5 4.5 4.5 7 ...
-        # $ Min.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 6 1 2 2 5 2 5 1 2 4 ...
-        # $ Max.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 6 1 2 2 5 2 5 1 2 5 ...
-        # $ Lamina.thck   : num  315 305 325 402 432 ...
-        # $ LMA           : num  0.0029 0.0029 0.0017 0.0031 0.0042 0.0024 0.0031 0.0023 0.0035 0.0023 ...
-        # $ LDMC          : num  0.1 0.098 0.051 0.097 0.113 0.087 0.111 0.125 0.103 0.106 ...
-        # $ Leaf.Area     : num  8.67 1.34 1.36 13.07 23.2 ...
-        # $ Leaf.Mass.Frac: num  0.48 0.06 0.05 0.69 0.38 0.1 0.54 0.08 0.6 0.06 ...
-        # $ Supp.Mass.Frac: num  0.14 0.05 0.02 0.1 0.07 0.05 0.09 0.06 0.04 0.06 ...
-        # $ Rep.Mass.Frac : num  0 0.08 0.04 0 0.11 0.07 0 0.09 0 0.12 ...
-        # $ Stor.Mass.Frac: num  0.37 0.8 0.89 0.21 0.44 0.78 0.37 0.76 0.36 0.76 ...
+        # $ Date.recolte  : Factor w/ 49 levels "01-06-2016","01-08-2016",..: 47 49 49 49 1 1 1 1 24 44 ...
+        # $ Ht.veg        : num  32 24 34.5 42 28 47.5 26 14 56 15.5 ...
+        # $ Min.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 1 1 1 1 3 1 2 2 5 ...
+        # $ Max.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 2 1 1 1 3 1 2 2 5 ...
+        # $ Lamina.thck   : num  71.3 73.8 70.5 67.8 73.8 ...
+        # $ LMA           : num  0.0012 0.0013 0.0011 0.0014 0.0015 0.0017 0.0011 0.0012 0.0015 0.0014 ...
+        # $ LDMC          : num  0.16 0.182 0.153 0.175 0.193 0.203 0.181 0.18 0.194 0.102 ...
+        # $ Leaf.Area     : num  18 14 21.2 37 18.3 ...
+        # $ Leaf.Mass.Frac: num  0.21 0.3 0.09 0.3 0.5 0.41 0.59 0.22 0.29 0.42 ...
+        # $ Supp.Mass.Frac: num  0.17 0.2 0.16 0.27 0.28 0.31 0.36 0.17 0.22 0.11 ...
+        # $ Rep.Mass.Frac : num  0 0 0 0 0 0 0 0 0.11 0 ...
+        # $ Stor.Mass.Frac: num  0.62 0.49 0.75 0.43 0.22 0.28 0.04 0.61 0.38 0.47 ...
         # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
-        # $ SRL           : num  NA 0.000422 NA 0.000704 0.00042 0.00019 0.00025 0.000383 NA 0.0001 ...
-      
+        # $ SRL           : num  NA 2.37 NA 1.42 2.38 ...      
     # Reponse Variables
       names(H.abund)
       head(H.abund)
       
       
-      # A1.0 - Data Exploration #### (Following Highlands Stats course)
+      # A1.0 - Data Exploration (Following Highlands Stats course) #### 
       
         #A1.0.1 - Outliers on Y and X 
-        par(mfrow = c(1, 3))  
-        boxplot(H.abund$abund.ratio,
-                main = "Abundance Ratio")
-        dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
-                 xlab='range of data',
-                 ylab='Order of the data'),
         
-        
+            #Y1 - Abundance - 3 outliers, variance homogeneous
+            par(mfrow = c(1, 2))  
+            boxplot(H.abund$abund.ratio,
+                    main = "Abundance Ratio")
+            dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data')
+
+            #Y2 - Elevation
+            
+            #X1 - Ht.veg - 2 outlier species - COCO and VIAL are tall
+            boxplot(H.traits$Ht.veg,
+                    main = "vegetative height")
+            dotchart(H.traits$Ht.veg, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            dotchart(H.traits$Ht.veg, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            # X2 - Min.Root.Loca - no outliers - only 6 categories. 7 species with NAs
+            boxplot(H.traits$Min.Root.Loca,
+                    main = "Minimum Root Location")
+            
+            H.traits[,c('Species','Min.Root.Loca')] # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
+            
+            dotchart(as.numeric(H.traits$Min.Root.Loca), #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            dotchart(as.numeric(H.traits$Min.Root.Loca), #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            plot(as.numeric(H.traits$Max.Root.Loca)~as.numeric(H.traits$Min.Root.Loca))
+            
+            
+            # X3 - Max.Root.Loca - no outliers - only 6 categories. 7 species with NAs
+            boxplot(H.traits$Max.Root.Loca,
+                    main = "Maximum Root Location")
+            
+            H.traits[,c('Species','Max.Root.Loca')]  # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
+            
+            # X4 - Lamina.thck - CLCA, CLBO and GAPR, ERAM are 3x thicker than other species
+            boxplot(H.traits$Lamina.thck,
+                    main = "Lamina.thck") # many outliers
+            
+            dotchart(H.traits$Lamina.thck, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data')  # two species are very thick
+            
+            dotchart(H.traits$Lamina.thck, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            # X5 - LMA - LYOB and GAPR have 3x higher LMA than other species
+            boxplot(H.traits$LMA,
+                    main = "LmA") # lots of outliers
+            
+            dotchart(H.traits$LMA, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # two outlier species
+            
+            dotchart(H.traits$LMA, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data') # LYOB, GAPR have high LMA
+            
+            H.traits[(H.traits$Species=='SAPU'|H.traits$Species=='COAL'),c('Plant.ID','LMA')]
+            
+            # X6 - LDMC - okay
+            boxplot(H.traits$LDMC,
+                    main = "LDMC")
+            
+            dotchart(H.traits$LDMC, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # fine
+            
+            # X7 - Leaf.Area # SAPU has 20x larger leaf area than other sp. 
+            
+            boxplot(H.traits$Leaf.Area,
+                    main = "Leaf.Area") # outliers
+            
+            dotchart(H.traits$Leaf.Area, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # one species outlier
+            
+            dotchart(H.traits$Leaf.Area, #i.e. cleveland dot chart - conditional on species
+                    groups=H.traits$Species,
+                    xlab='range of data',
+                    ylab='Order of the data') # SAPU is outlier
+            
+            # X8 - Leaf.Mass.Frac - okay
+            boxplot(H.traits$Leaf.Mass.Frac,
+                    main = "Supp.Mass.Frac") # fine
+            
+            dotchart(H.traits$Leaf.Mass.Frac, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # fine
+            
+            # X9 - Supp.Mass.Frac - Okay
+            
+            boxplot(H.traits$Supp.Mass.Frac,
+                    main = "Supp.Mass.Frac") # fine
+            
+            dotchart(H.traits$Supp.Mass.Frac, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            # X10 - Rep.Mass.Frac # 0 inflated at individual level (not clustered by species)
+            
+            boxplot(H.traits$Rep.Mass.Frac,
+                    main = "Rep.Mass.Frac") # 0 inflated
+            
+            dotchart(H.traits$Rep.Mass.Frac, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # 0 inflated
+            
+            dotchart(H.traits$Rep.Mass.Frac, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data')
+            
+            # X11 - Stor.Mass.Frac - 0 inflated at species level (turn into presence/absence?)
+            boxplot(H.traits$Stor.Mass.Frac,
+                    main = "Rep.Mass.Frac") # 0 inflated
+            
+            dotchart(H.traits$Stor.Mass.Frac, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # 0 inflated
+            
+            dotchart(H.traits$Stor.Mass.Frac, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data') # some species at 0, others not. 
+            
+            # X12 - F.Root.Diam - CYAC & EPHE have 4x thicker fine roots
+            boxplot(H.traits$F.Root.Diam,
+                    main = "F.Root.Diam")
+            
+            dotchart(H.traits$F.Root.Diam, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # 2 sp with large diameter
+            
+            dotchart(H.traits$F.Root.Diam, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data') # CYAC & EPHE are outliers 
+            
+            # X13 - SRL - okay
+            
+            boxplot(H.traits$SRL,
+                    main = "SRL") # many outliers
+            
+            dotchart(H.traits$SRL, #i.e. cleveland dot chart
+                     xlab='range of data',
+                     ylab='Order of the data') # 3 species with outliers
+            
+            dotchart(H.traits$SRL, #i.e. cleveland dot chart - conditional on species
+                     groups=H.traits$Species,
+                     xlab='range of data',
+                     ylab='Order of the data') 
+
+           H.traits[(H.traits$Species=='STAM'|H.traits$Species=='STLA'),c('Plant.ID','SRL')]
+
         #A1.0.2 - Homogeneity of Y 
       
         #A1.0.3 - Normality of Y (least important - use link function instead)
