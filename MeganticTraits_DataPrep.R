@@ -1,11 +1,13 @@
 # <<TABLE OF CONTENTS>>
 # A - Setup trait data
   # A1 - Herbivory layer
-    # A1.0 - Data Exploration
-    # A1.1 - Transform trait data for normality
-    # A1.2 - Remove date effect on traits
-    # A1.3 - Turn individual-level table into species-level table.
-    # A1.4 - Add species mean traits (Seed size and mychorizae)
+    # A1.1 - Remove date effect on traits
+    # A1.2 - Turn individual-level table into species-level table.
+    # A1.3 - Add species mean traits (Seed size and mychorizae)
+    # A1.4 - Data Exploration
+    # A1.5 - Transform trait data as needed
+    
+
   # A2 - Canopy layer
     # A2.1 - Transform trait data for normality
     # A2.2 - Remove date effect on traits
@@ -89,8 +91,112 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       names(H.abund)
       head(H.abund)
       
+      # A1.1 - Remove date effect on traits  ####
+      # =======================================#
       
-      # A1.0 - Data Exploration (Following Highlands Stats course) #### 
+      names(H.traits)
+      # [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"        
+      # [6] "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"            "LDMC"          
+      # [11] "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac"  "Stor.Mass.Frac"
+      # [16] "F.Root.Diam"    "SRL"
+      
+      Trait.Names         # list of trait names
+      # [1] "Ht.veg"         "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"           
+      # [6] "LDMC"           "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac" 
+      # [11] "Stor.Mass.Frac" "F.Root.Diam"    "SRL"
+      length(Trait.Names) #13
+      
+      save(Trait.Names,file=paste0(wrk.dir,'list.trait.names.herbivory.layer.Rdata'))
+      
+      # Change calendar dates into julian dates
+      H.traits$Date.recolte<- as.numeric(format(as.Date(H.traits$Date.recolte, format = "%m/%d/%Y"),"%j"))
+      
+      # loop testing for date effects and replacing with regression residuals
+      for (t in Trait.Names[-c(2:3)]){  # not for min. and max. root location, because they are factors
+        x<-lm(H.traits[[t]]~H.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
+        
+        if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
+          print(c(names(H.traits[t]),
+                  paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
+                  paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
+        
+        for (i in 1:nrow(H.traits[t])){                                                   # if each row is numeric (not an NA)
+          if (is.numeric(H.traits[t][i,]))
+          {H.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
+        }                                                                           # else, do nothing to the cells with value of NA
+      }
+      
+      # [1] "Ht.veg"                 "R2=  0.203" "Sign=  1"              
+      # [1] "Lamina.thck"            "R2=  0.273" "Sign=  -1"             
+      # [1] "LDMC"                   "R2=  0.179" "Sign=  1"              
+      # [1] "Leaf.Mass.Frac"         "R2=  0.097" "Sign=  1"              
+      # [1] "Supp.Mass.Frac"         "R2=  0.092" "Sign=  1" 
+      # [1] "Stor.Mass.Frac"         "R2=  0.178" "Sign=  1"
+      
+      str(H.traits)
+      # 'data.frame':	459 obs. of  15 variables:
+      # $ Plant.ID      : Factor w/ 640 levels "ABBA1","ABBA10",..: 226 135 141 230 231 139 229 140 228 138 ...
+      # $ Species       : Factor w/ 75 levels "ABBA","ACPE",..: 27 16 16 27 27 16 27 16 27 16 ...
+      # $ Layer         : w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
+      # $ Date.recolte  : num  123 123 124 124 124 124 124 124 124 124 ...
+      # $ Ht.veg        : num  NA -0.68 -0.799 -0.598 -0.511 ...
+      # $ Min.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 4 ...
+      # $ Max.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 5 ...
+      # $ Lamina.thck   : num  0.613 0.582 0.652 0.864 0.936 ...
+      # $ LMA           : num  0.409 0.409 -0.127 0.473 0.777 ...
+      # $ LDMC          : num  -0.1908 -0.211 -0.8713 -0.2284 -0.0757 ...
+      # $ Leaf.Area     : num  0.111 -1.756 -1.747 0.516 1.09 ...
+      # $ Leaf.Mass.Frac: num  0.0392 -0.3808 -0.3933 0.2467 -0.0633 ...
+      # $ Supp.Mass.Frac: num  -0.0361 -0.1764 -0.2463 -0.0933 -0.1412 ...
+      # $ Rep.Mass.Frac : num  15.2 -29.9 -28 15.2 -30.6 ...
+      # $ Stor.Mass.Frac: num  -0.1009 -0.1619 -0.1748 -0.0586 -0.1196 ...
+      
+      save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Unstandardized.RData"))
+      
+      # Standardize all variables
+      H.traits[8:15]<-decostand(H.traits[8:15],method='standardize', margin=2)
+      save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
+      
+      # A1.2 - Turn individual-level table into species-level table  ####
+      #=================================================================#    
+      #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
+      
+      H.traits$Min.Root.Loca<-as.numeric(H.traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
+      H.traits$Max.Root.Loca<-as.numeric(H.traits$Max.Root.Loca) # can't take mean or median of ordinal var. 
+      
+      sp.H.traits<-as.data.frame(aggregate(H.traits[,5:11],by=list(H.traits$Species),mean,na.rm=T))
+      sp.H.traits[,2:8]<-round(sp.H.traits[2:8],digits=3)
+      sp.H.traits[is.na(sp.H.traits)] <-NA
+      rownames(sp.H.traits)<-sp.H.traits$Group.1
+      sp.H.traits<-sp.H.traits[,-1]
+      sp.H.traits<-sp.H.traits[order(rownames(sp.H.traits)),]
+      dim(sp.H.traits) # 51  7
+      
+      # A1.3 - Add species mean traits (Seed size and mychorizae) ####
+      #=================================================================#
+      
+      # Deleted "FRAM" row by hand - We did not collect roots on trees... what is this row?
+      myc<-read.csv(paste0(data.dir,'myc.csv'))
+      head(myc)
+      dim(myc) #43 2
+      rownames(myc)<-myc$species
+      myc<-myc[-1]
+      plot(density(myc$myc.frac)) # left skewed
+      myc<-decostand(myc,method='standardize',margin=2)
+      dim(myc) #43 1
+      
+      sp.H.traits<-merge(sp.H.traits,myc, by="row.names",all=T)
+      head(sp.H.traits)
+      rownames(sp.H.traits)<-sp.H.traits$Row.names
+      sp.H.traits$Row.names<-NULL
+      dim(sp.H.traits) # 53 8
+      
+      save(sp.H.traits,file=paste0(wrk.dir,'species-level.traits.Herbaceous.layer.Rdata'))
+      
+      
+      
+      # A1.4 - Data Exploration (Following Highlands Stats course) ####
+      #=================================================================#
       
         #A1.0.1 - Outliers on Y and X 
         
@@ -159,7 +265,8 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
             
             dotchart(H.traits$LMA, #i.e. cleveland dot chart
                      xlab='range of data',
-                     ylab='Order of the data') # two outlier species
+                     ylab='Order of the data',
+                     main='LMA') # two outlier species
             
             dotchart(H.traits$LMA, #i.e. cleveland dot chart - conditional on species
                      groups=H.traits$Species,
@@ -240,12 +347,14 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
             
             dotchart(H.traits$F.Root.Diam, #i.e. cleveland dot chart
                      xlab='range of data',
-                     ylab='Order of the data') # 2 sp with large diameter
+                     ylab='Order of the data',
+                     main="fine Root thickness") # 2 sp with large diameter
             
             dotchart(H.traits$F.Root.Diam, #i.e. cleveland dot chart - conditional on species
                      groups=H.traits$Species,
                      xlab='range of data',
-                     ylab='Order of the data') # CYAC & EPHE are outliers 
+                     ylab='Order of the data',
+                     main='SRL') # CYAC & EPHE are outliers 
             
             # X13 - SRL - okay
             
@@ -262,14 +371,40 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
                      ylab='Order of the data') 
 
            H.traits[(H.traits$Species=='STAM'|H.traits$Species=='STLA'),c('Plant.ID','SRL')]
+           
+           # TRY HighlandStats code
+           
+           Trait.Names <- c("Ht.veg","Min.Root.Loca","Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area",
+                      "Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam",
+                      "SRL")
+           # Source Highland library v.10 for Highland's own wrapper function for Cleveland dotplots
+           source("C:/Users/Julie/Desktop/Postdoc/Workshops/Highland Stats_GLM, GAMS/HighstatLibV10.R")   #<---
+           
+           Mydotplot(H.traits[ ,Trait.Names])
+           # Something weird is going on - SRL and Lamina.thck split in two, where it is not,
+           # and values of the variable are wrong. 
+           
+           # Summary
+           # log transform leaf area, vegetative height, LMA, SRL and fine root thickness 
+           # because of outliers
+           
 
-        #A1.0.2 - Homogeneity of Y 
+        #A1.0.2 - Homogeneity (homoscedasticity) of Y - residuals vs fitted for each var.
+         
+            # Test after model is built, as validation step
       
-        #A1.0.3 - Normality of Y (least important - use link function instead)
+        #A1.0.3 - Normality of Y - (least important - use link function instead). test for normality of residuals
+           
+            # Test after model is built, as validation step
       
-        #A1.0.4 - Zeros?
-      
-        #A1.0.5 - Collinearity of Ys
+        #A1.0.4 - Zero trouble (Y) ?
+           
+            sort(H.abund$abund.ratio)
+            # only one 0 value - Okay! 
+            
+        #A1.0.5 - Collinearity  (X)
+            
+            
       
         #A1.0.6 Relationship between Y and X. Linear?
       
@@ -277,7 +412,8 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       
       
-      # A1.1- Transform trait data for normality ####
+      # A1.1- Transform trait data Transform trait data as needed ####
+      #===========================================================#
       
       # Test best transform for each trait ####
       
@@ -505,105 +641,8 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         H.traits$Rep.Mass.Frac<-(H.traits$Rep.Mass.Frac+0.001)^-0.564259
         H.traits$Stor.Mass.Frac<-(H.traits$Stor.Mass.Frac+0.001)^-0.07569593
         
-    # A1.2- Remove date effect on traits  ####
-    # =======================================#
-    
-        names(H.traits)
-        #  [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"        
-        #  [6] "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"            "LDMC"          
-        # [11] "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac"  "Stor.Mass.Frac"
-    
-        # list of trait names
-        H.trait.names<-c("Ht.veg","Min.Root.Loca","Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area",
-                       "Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac")
-        length(H.trait.names) #11
-        
-        save(H.trait.names,file=paste0(wrk.dir,'list.trait.names.herbivory.layer.Rdata'))
-        
-        # Change calendar dates into julian dates
-        H.traits$Date.recolte<- as.numeric(format(as.Date(H.traits$Date.recolte, format = "%m/%d/%Y"),"%j"))
-        
-        # loop testing for date effects and replacing with regression residuals
-        for (t in H.trait.names[-c(2:3)]){  # not for min. and max. root location, because they are factors
-          x<-lm(H.traits[[t]]~H.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
-          
-          if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
-            print(c(names(H.traits[t]),
-                    paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
-                    paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
-          
-          for (i in 1:nrow(H.traits[t])){                                                   # if each row is numeric (not an NA)
-            if (is.numeric(H.traits[t][i,]))
-            {H.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
-          }                                                                           # else, do nothing to the cells with value of NA
-        }
-        
-        # [1] "Ht.veg"                 "R2=  0.203" "Sign=  1"              
-        # [1] "Lamina.thck"            "R2=  0.273" "Sign=  -1"             
-        # [1] "LDMC"                   "R2=  0.179" "Sign=  1"              
-        # [1] "Leaf.Mass.Frac"         "R2=  0.097" "Sign=  1"              
-        # [1] "Supp.Mass.Frac"         "R2=  0.092" "Sign=  1" 
-        # [1] "Stor.Mass.Frac"         "R2=  0.178" "Sign=  1"
-        
-        str(H.traits)
-          # 'data.frame':	459 obs. of  15 variables:
-          # $ Plant.ID      : Factor w/ 640 levels "ABBA1","ABBA10",..: 226 135 141 230 231 139 229 140 228 138 ...
-          # $ Species       : Factor w/ 75 levels "ABBA","ACPE",..: 27 16 16 27 27 16 27 16 27 16 ...
-          # $ Layer         : w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
-          # $ Date.recolte  : num  123 123 124 124 124 124 124 124 124 124 ...
-          # $ Ht.veg        : num  NA -0.68 -0.799 -0.598 -0.511 ...
-          # $ Min.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 4 ...
-          # $ Max.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 5 ...
-          # $ Lamina.thck   : num  0.613 0.582 0.652 0.864 0.936 ...
-          # $ LMA           : num  0.409 0.409 -0.127 0.473 0.777 ...
-          # $ LDMC          : num  -0.1908 -0.211 -0.8713 -0.2284 -0.0757 ...
-          # $ Leaf.Area     : num  0.111 -1.756 -1.747 0.516 1.09 ...
-          # $ Leaf.Mass.Frac: num  0.0392 -0.3808 -0.3933 0.2467 -0.0633 ...
-          # $ Supp.Mass.Frac: num  -0.0361 -0.1764 -0.2463 -0.0933 -0.1412 ...
-          # $ Rep.Mass.Frac : num  15.2 -29.9 -28 15.2 -30.6 ...
-          # $ Stor.Mass.Frac: num  -0.1009 -0.1619 -0.1748 -0.0586 -0.1196 ...
-        
-        save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Unstandardized.RData"))
-        
-        # Standardize all variables
-        H.traits[8:15]<-decostand(H.traits[8:15],method='standardize', margin=2)
-        save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
-     
-    # A1.3 - Turn individual-level table into species-level table  ####
-    #=================================================================#    
-        #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
+  
 
-        H.traits$Min.Root.Loca<-as.numeric(H.traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
-        H.traits$Max.Root.Loca<-as.numeric(H.traits$Max.Root.Loca) # can't take mean or median of ordinal var. 
-        
-        sp.H.traits<-as.data.frame(aggregate(H.traits[,5:11],by=list(H.traits$Species),mean,na.rm=T))
-        sp.H.traits[,2:8]<-round(sp.H.traits[2:8],digits=3)
-        sp.H.traits[is.na(sp.H.traits)] <-NA
-        rownames(sp.H.traits)<-sp.H.traits$Group.1
-        sp.H.traits<-sp.H.traits[,-1]
-        sp.H.traits<-sp.H.traits[order(rownames(sp.H.traits)),]
-        dim(sp.H.traits) # 51  7
-        
-    # A1.4 - Add species mean traits (Seed size and mychorizae) ####
-    #=================================================================#
-        
-        # Deleted "FRAM" row by hand - We did not collect roots on trees... what is this row?
-        myc<-read.csv(paste0(data.dir,'myc.csv'))
-        head(myc)
-        dim(myc) #43 2
-        rownames(myc)<-myc$species
-        myc<-myc[-1]
-        plot(density(myc$myc.frac)) # left skewed
-        myc<-decostand(myc,method='standardize',margin=2)
-        dim(myc) #43 1
-    
-        sp.H.traits<-merge(sp.H.traits,myc, by="row.names",all=T)
-        head(sp.H.traits)
-        rownames(sp.H.traits)<-sp.H.traits$Row.names
-        sp.H.traits$Row.names<-NULL
-        dim(sp.H.traits) # 53 8
-        
-        save(sp.H.traits,file=paste0(wrk.dir,'species-level.traits.Herbaceous.layer.Rdata'))
         
   # A2 - Canopy layer ####
   #=======================#
