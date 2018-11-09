@@ -55,9 +55,9 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       # create herbaceous trait dataframe with traits I will work with
       
-      H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca","Max.Root.Loca",
-                           "Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac",        
-                           "Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam","SRL")]
+      H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca",
+                                                 "Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac",
+                                                 "Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam","SRL")]
       
       dim(H.traits)
       # 459 17
@@ -87,7 +87,8 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # $ Stor.Mass.Frac: num  0.62 0.49 0.75 0.43 0.22 0.28 0.04 0.61 0.38 0.47 ...
         # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
         # $ SRL           : num  NA 2.37 NA 1.42 2.38 ...      
-    # Reponse Variables
+      
+      # Reponse Variables
       names(H.abund)
       head(H.abund)
       
@@ -143,194 +144,257 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       # [1] "Supp.Mass.Frac" "R2=  0.089"     "Sign=  1"      
       # [1] "Stor.Mass.Frac" "R2=  0.215"     "Sign=  -1" 
       
-      # Okay, but look visually to see if these relationships linear? 
+      # Okay, but look visually to see if these relationships are (a) linear and (b) due to species-date association? 
       
-      scatterplotMatrix(~Date.recolte+Ht.veg+Lamina.thck+LDMC+Leaf.Area+Leaf.Mass.Frac+
-                           Supp.Mass.Frac+Stor.Mass.Frac, data=H.traits,
-                                     main="Sampling date effect")   
-      
-      # curved for lamina thickness?
-      # curved for storage mass fraction?
-      
-      # Look at effect of date independent of effect of species. Species and date are correlated. 
-      
-      m<-lm(Date.recolte~Species, data=H.traits)
-      summary(m)
-      
-      lm(formula = Date.recolte ~ Species, data = H.traits)
-      
-        # Residuals:
-        #   Min      1Q  Median      3Q     Max 
-        # -38.077  -2.286   0.000   1.600  38.500 
-        # 
-        # Coefficients:
-        #             Estimate Std. Error t value Pr(>|t|)    
-        # (Intercept) 153.7778     3.2838  46.829  < 2e-16 ***
-        # SpeciesARTR  28.4444     4.6440   6.125 2.14e-09 ***
-        # SpeciesATFI  47.2222     4.9647   9.512  < 2e-16 ***
-        # SpeciesCAIN  16.6222     4.5264   3.672 0.000272 ***
-        # SpeciesCASC  27.2222     4.5264   6.014 4.02e-09 ***
-        # SpeciesCIAL  31.2222     4.7869   6.522 2.05e-10 ***
-        # SpeciesCLBO -10.1778     4.5264  -2.249 0.025076 *  
-        # SpeciesCLCA -27.5051     4.4279  -6.212 1.29e-09 ***
-        # SpeciesCOAL  26.3333     4.6440   5.670 2.70e-08 ***
-        # SpeciesCOCA   7.4222     4.5264   1.640 0.101827    
-        # SpeciesCOCO  75.3651     4.9647  15.180  < 2e-16 ***
-        # SpeciesCOTR -18.6778     4.5264  -4.126 4.47e-05 ***
-        # SpeciesCYAC  -5.2778     7.7012  -0.685 0.493534    
-        # SpeciesDEAC  60.9365     4.9647  12.274  < 2e-16 ***
-        # SpeciesDEDI  28.2222     4.5264   6.235 1.13e-09 ***
-        # SpeciesDEPU  36.7222     4.7869   7.671 1.26e-13 ***
-        # SpeciesDRIN  36.5556     4.6440   7.872 3.19e-14 ***
-        # SpeciesEPHE  39.8472     4.7869   8.324 1.29e-15 ***
-        # SpeciesERAM -29.3778     4.5264  -6.490 2.49e-10 ***
-        # SpeciesGAPR -27.7778     4.5264  -6.137 2.00e-09 ***
-        # SpeciesGATE  22.0000     4.6440   4.737 3.00e-06 ***
-        # SpeciesGATR  35.7222     5.1922   6.880 2.26e-11 ***
-        # SpeciesHULU  69.6508     4.9647  14.029  < 2e-16 ***
-        # SpeciesIMCA  18.4222     4.5264   4.070 5.65e-05 ***
-        # SpeciesLOCA  26.9495     4.4279   6.086 2.67e-09 ***
-        # SpeciesLYAN  67.5079     4.9647  13.598  < 2e-16 ***
-        # SpeciesLYOB  63.9222     4.5264  14.122  < 2e-16 ***
-        # SpeciesMACA -18.2778     4.5264  -4.038 6.44e-05 ***
-        # SpeciesMEVI  -7.5556     4.6440  -1.627 0.104521    
-        # SpeciesMIRE  41.7222     4.7869   8.716  < 2e-16 ***
-        # SpeciesOCAC  43.2991     4.2719  10.136  < 2e-16 ***
-        # SpeciesOSCI  68.9365     4.9647  13.885  < 2e-16 ***
-        # SpeciesOSCL  16.9495     4.4279   3.828 0.000150 ***
-        # SpeciesOXMO  -2.2778     4.5264  -0.503 0.615083    
-        # SpeciesPHCO  35.8222     4.5264   7.914 2.37e-14 ***
-        # SpeciesPOPU  -2.0778     4.5264  -0.459 0.646455    
-        # SpeciesPRAL  23.7222     4.5264   5.241 2.57e-07 ***
-        # SpeciesPYSE   6.3131     4.4279   1.426 0.154701    
-        # SpeciesRUID  66.6508     4.9647  13.425  < 2e-16 ***
-        # SpeciesRUPU  48.7937     4.9647   9.828  < 2e-16 ***
-        # SpeciesSAPU  43.6508     4.9647   8.792  < 2e-16 ***
-        # SpeciesSMRA  -1.2323     4.4279  -0.278 0.780916    
-        # SpeciesSTAM  16.1222     4.5264   3.562 0.000412 ***
-        # SpeciesSTLA  -0.9596     4.4279  -0.217 0.828538    
-        # SpeciesTHNO  35.2222     4.9647   7.095 5.77e-12 ***
-        # SpeciesTICO  21.3333     4.6440   4.594 5.81e-06 ***
-        # SpeciesTRBO  -7.0778     4.5264  -1.564 0.118674    
-        # SpeciesTRER -14.9778     4.5264  -3.309 0.001020 ** 
-        # SpeciesTRUN -15.1778     4.5264  -3.353 0.000874 ***
-        # SpeciesVEVI  21.5222     4.5264   4.755 2.76e-06 ***
-        # SpeciesVIAL  63.7937     4.9647  12.850  < 2e-16 ***
-        # ---
-        # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-        # 
-        # Residual standard error: 9.851 on 408 degrees of freedom
-        # Multiple R-squared:  0.8989,	Adjusted R-squared:  0.8865 
-        # F-statistic: 72.56 on 50 and 408 DF,  p-value: < 2.2e-16
-      
-      # Get intraspecific variation in date by extracting residuals of Date~Species
-      length(resid(m)) #459
-      resid.Date<-resid(m) 
-      
+      # (1) Ht.veg - # NO DATE EFFECT
       ---
-      #1- Ht.veg ~ Date.Recolte Regression
-      par(mfrow=c(1,1))
-      plot(Ht.veg~Date.recolte, data=H.traits) # funnel pattern, but is this due to species effect ?
-      scatterplot(Ht.veg~Date.recolte|Species, data=H.traits, 
+      plot(Ht.veg~Date.recolte, data=H.traits) 
+      # funnel pattern, but is this due to species effect ?
+      
+      scatterplot(Ht.veg~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
                   xlab="Sampling Date",
                   ylab="Vegetative Height",
                   smooth=F,
                   col=c(1:51))
-      # Ht.veg doesn't appear to be correlated with sampling date within species. 
       
-      # does sampling date have an effect, once we remove the species effect?
-      library(lme4)
-      df<-H.traits[,c('Ht.veg','Species','Date.recolte')]
-      df[,c(1,3)]<- scale(df[,c(1,3)])
-      m0<-lmer(Ht.veg~(1|Species), data=df)
-      m1<-lmer(Ht.veg~(Date.recolte|Species), data=df)
+        # Some taller species sampled later
+        # Ht.veg doesn't appear to be correlated with sampling date within species.
+      
+      m0<-lm(Ht.veg~Species, data=H.traits)
+      summary(m0)
+      
+        # Residual standard error: 13.1 on 406 degrees of freedom
+        # (2 observations deleted due to missingness)
+        # Multiple R-squared:  0.8664,	Adjusted R-squared:  0.8499 
+        # F-statistic: 52.65 on 50 and 406 DF,  p-value: < 2.2e-16
+      
+      # Height varies by species
+      
+      # Is the Sampling Date parameter significant, once we account for Species?
+      
+      m1<-lm(Ht.veg~Species+Date.recolte, data=H.traits)
+      summary(m1)
+      #Date.recolte is not significant in this model ! 
+      
       anova(m0,m1)
+      # m1 not significantly better. 
       
-          #Data: df
-          # Models:
-          #   m0: Ht.veg ~ (1 | Species)
-          # m1: Ht.veg ~ (Date.recolte | Species)
-          # Df    AIC    BIC  logLik deviance Chisq Chi Df Pr(>Chisq)
-          # m0  3 1301.9 1314.3 -647.95   1295.9                        
-          # m1  5 1305.9 1326.5 -647.95   1295.9     0      2          1
-          
-      # No effect of date, once species effect is accounted for. 
+      # NO DATE EFFECT
       
-      # Test with residuals
-      summary(lm(H.traits$Ht.veg~resid.Date))
-      # Not significant
       
+      # (2) Lamina.thck - NO DATE EFFECT
       ---
-      # 2 - Lamina.thck ~ Date.Recolte Regression
-      plot(Lamina.thck~Date.recolte, data=H.traits) # negative exponential
-      scatterplot(Lamina.thck~Date.recolte|Species, data=H.traits, # See if it is a species effect
+      plot(Lamina.thck~Date.recolte, data=H.traits) 
+      # negative exp. pattern, but is this due to species effect ?
+      
+      scatterplot(Lamina.thck~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
                   xlab="Sampling Date",
                   ylab="Lamina thickness",
                   smooth=F,
-                  col=c(1:51),
-                  legend=list(cex=0.5))
-      # largely a species effect - negative relationship within species?
+                  col=c(1:51))
       
-      df<-H.traits[,c('Lamina.thck','Species','Date.recolte')]
-      df[,c(1,3)]<- scale(df[,c(1,3)])
-      m0<-lmer(Lamina.thck~(1|Species), data=df,na.action=na.exclude)
-      m1<-lmer(Lamina.thck~(Date.recolte|Species), data=df,na.action=na.exclude)
-      anova(m0,m1)
+      # Some thicker species sampled earlier
+      # Lamina.thck doesn't appear to be correlated with sampling date within species.
       
-      # Data: df
-      # Models:
-      #   m0: Lamina.thck ~ (1 | Species)
-      # m1: Lamina.thck ~ (Date.recolte | Species)
-      # Df    AIC    BIC  logLik deviance  Chisq Chi Df Pr(>Chisq)    
-      # m0  3 356.04 368.37 -175.02   350.04                             
-      # m1  5 341.91 362.47 -165.95   331.91 18.132      2  0.0001155 ***
+      summary(m0<-lm(Lamina.thck~Species, data=H.traits))
+        # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9244 
+        # F-statistic: 111.1 on 50 and 400 DF,  p-value: < 2.2e-16
       
-      # model with sampling date much better
-      # p-values quite different whether I use na.omit or na.exclude... why?
+      # Lamina.thck varies by species
       
-      summary(m1)
+      # Is the Sampling Date parameter significant, once we account for Species?
       
-      length(H.traits$Lamina.thck)#459
-      length(resid(m1))# 451
+      summary(m1<-lm(Lamina.thck~Species+Date.recolte, data=H.traits))
+        # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9242 
+        # F-statistic: 108.7 on 51 and 399 DF,  p-value: < 2.2e-16
       
-      # don't want to asisgn the residuals of m1 bc don't want to remove species effect. 
-      # H.traits$Lamina.thck<-resid(m1) 
-      # in model m1, lamina.thck has been rescaled. I hope it doesn't cause a problem.
+      # Sampling date parameter not significant in this model. 
+      anova (m0,m1)
+      # Not significant
       
-      # Test with residuals
-      summary(lm(H.traits$Lamina.thck~resid.Date))
+      # NO DATE EFFECT
+        
+      # (3) LDMC - significant sampling effect, but effect size is 0.3%  
+      ---
+        
+      plot(LDMC~Date.recolte, data=H.traits) 
+      # positive pattern, but is this due to species effect ?
       
-      # Not significant ?!
+      scatterplot(LDMC~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
+                  xlab="Sampling Date",
+                  ylab="LDMC",
+                  smooth=F,
+                  col=c(1:51))
+      
+      summary(m0<-lm(LDMC~Species, data=H.traits))
+      # Multiple R-squared:  0.9259,	Adjusted R-squared:  0.9168 
+      # F-statistic:   102 on 50 and 408 DF,  p-value: < 2.2e-16
+      
+      # LDMC varies by species
+      
+      # Is the Sampling Date parameter significant, once we account for Species?
+      
+      summary(m1<-lm(LDMC~Species+Date.recolte, data=H.traits))
+      # Date.recolte  0.0005974  0.0001391   4.296 2.18e-05 ***
+      # ---
+      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      # 
+      # Residual standard error: 0.02767 on 407 degrees of freedom
+      # Multiple R-squared:  0.9291,	Adjusted R-squared:  0.9203 
+      # F-statistic: 104.6 on 51 and 407 DF,  p-value: < 2.2e-16
+      
+      # Sampling date parameter IS significant in this model. 
+      anova (m0,m1)
+      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+      # [1] 0.003411269
+      
+      # Yes, better with Date, BUT, R2 explained by sampling date is 0.0035
+        
+      # (4) Leaf.Area
+      ---
+      
+      plot(Leaf.Area~Date.recolte, data=H.traits) 
+      # no visible pattern
+      
+      scatterplot(Leaf.Area~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
+                  xlab="Sampling Date",
+                  ylab="Leaf.Area",
+                  smooth=F,
+                  col=c(1:51))
+      
+      summary(m0<-lm(Leaf.Area~Species, data=H.traits))
+      # Multiple R-squared:  0.7494,	Adjusted R-squared:  0.7166 
+      # F-statistic: 22.88 on 49 and 375 DF,  p-value: < 2.2e-1
+      
+      # Leaf.Area varies by species
+      
+      # Is the Sampling Date parameter significant, once we account for Species?
+      
+      summary(m1<-lm(Leaf.Area~Species+Date.recolte, data=H.traits))
+      # Multiple R-squared:  0.7496,	Adjusted R-squared:  0.7162 
+      # F-statistic:  22.4 on 50 and 374 DF,  p-value: < 2.2e-16
+      
+      # Sampling date parameter not significant in this model. 
+      anova (m0,m1)
+      
+      # Sampling date does not explain any variance after species effect taken into account.
+        
+      # (5) Leaf.Mass.Frac - significant sampling effect, but effect size is 0.1%
+      ---
+      
+      plot(Leaf.Mass.Frac~Date.recolte, data=H.traits) 
+      # positive trend
+      
+      scatterplot(Leaf.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
+                  xlab="Sampling Date",
+                  ylab="Leaf.Mass.Fraction",
+                  smooth=F,
+                  col=c(1:51))
+      
+      summary(m0<-lm(Leaf.Mass.Frac~Species, data=H.traits))
+      # Multiple R-squared:  0.8619,	Adjusted R-squared:  0.8449 
+      # F-statistic:  50.7 on 50 and 406 DF,  p-value: < 2.2e-16
       
       
+      # Leaf.Area varies by species
+      
+      # Is the Sampling Date parameter significant, once we account for Species?
+      
+      summary(m1<-lm(Leaf.Mass.Frac~Species+Date.recolte, data=H.traits))
+      # Date.recolte -0.0009841  0.0004599  -2.140 0.032954 *  
+      # ---
+      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      # 
+      # Residual standard error: 0.09108 on 405 degrees of freedom
+      # (2 observations deleted due to missingness)
+      # Multiple R-squared:  0.8635,	Adjusted R-squared:  0.8463 
+      # F-statistic: 50.23 on 51 and 405 DF,  p-value: < 2.2e-16
+      
+      # Sampling date significant, but small effect size.
+      
+      # Sampling date parameter not significant in this model. 
+      anova (m0,m1)
+      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+      # [1] 0.001355086
+          
+      # (6) Supp.Mass.Frac - significant sampling effect, but effect size is 0.2%
+      ---
+      plot(Supp.Mass.Frac~Date.recolte, data=H.traits) 
+      # positive trend
+      
+      scatterplot(Supp.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
+                  xlab="Sampling Date",
+                  ylab="Support Mass Fraction",
+                  smooth=F,
+                  col=c(1:51))
+      
+      summary(m0<-lm(Supp.Mass.Frac~Species, data=H.traits))
+        # Multiple R-squared:  0.7578,	Adjusted R-squared:  0.7279 
+        # F-statistic: 25.35 on 48 and 389 DF,  p-value: < 2.2e-16
       
       
+      # Leaf.Area varies by species
       
+      # Is the Sampling Date parameter significant, once we account for Species?
       
+      summary(m1<-lm(Supp.Mass.Frac~Species+Date.recolte, data=H.traits))
+        # Date.recolte -6.759e-04  3.188e-04  -2.120 0.034614 *  
+        # ---
+        # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+        # 
+        # Residual standard error: 0.06263 on 388 degrees of freedom
+        # (21 observations deleted due to missingness)
+        # Multiple R-squared:  0.7606,	Adjusted R-squared:  0.7303 
+        # F-statistic: 25.15 on 49 and 388 DF,  p-value: < 2.2e-16
+        
+      # Sampling date significant, but small effect size.
       
+      # Sampling date parameter not significant in this model. 
+      anova (m0,m1)
+      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+      # [1] 0.00242344
       
-      str(H.traits)
-      # 'data.frame':	459 obs. of  15 variables:
-      # $ Plant.ID      : Factor w/ 640 levels "ABBA1","ABBA10",..: 226 135 141 230 231 139 229 140 228 138 ...
-      # $ Species       : Factor w/ 75 levels "ABBA","ACPE",..: 27 16 16 27 27 16 27 16 27 16 ...
-      # $ Layer         : w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
-      # $ Date.recolte  : num  123 123 124 124 124 124 124 124 124 124 ...
-      # $ Ht.veg        : num  NA -0.68 -0.799 -0.598 -0.511 ...
-      # $ Min.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 4 ...
-      # $ Max.Root.Loca : Factor w/ 6 levels "0","1","2","3",..: 6 1 2 2 5 2 5 1 2 5 ...
-      # $ Lamina.thck   : num  0.613 0.582 0.652 0.864 0.936 ...
-      # $ LMA           : num  0.409 0.409 -0.127 0.473 0.777 ...
-      # $ LDMC          : num  -0.1908 -0.211 -0.8713 -0.2284 -0.0757 ...
-      # $ Leaf.Area     : num  0.111 -1.756 -1.747 0.516 1.09 ...
-      # $ Leaf.Mass.Frac: num  0.0392 -0.3808 -0.3933 0.2467 -0.0633 ...
-      # $ Supp.Mass.Frac: num  -0.0361 -0.1764 -0.2463 -0.0933 -0.1412 ...
-      # $ Rep.Mass.Frac : num  15.2 -29.9 -28 15.2 -30.6 ...
-      # $ Stor.Mass.Frac: num  -0.1009 -0.1619 -0.1748 -0.0586 -0.1196 ...
+      # (7) Stor.Mass.Frac - significant sampling effect, but effect size is 0.1%
+      ---
       
+      plot(Stor.Mass.Frac~Date.recolte, data=H.traits) 
+      # negative trend
+      
+      scatterplot(Stor.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
+                  xlab="Sampling Date",
+                  ylab="Storage Mass Fraction",
+                  smooth=F,
+                  col=c(1:51))
+      
+      summary(m0<-lm(Stor.Mass.Frac~Species, data=H.traits))
+        # Multiple R-squared:  0.9042,	Adjusted R-squared:  0.8927 
+        # F-statistic: 78.65 on 42 and 350 DF,  p-value: < 2.2e-16
+      
+      # Leaf.Area varies by species
+      
+      # Is the Sampling Date parameter significant, once we account for Species?
+      
+      summary(m1<-lm(Stor.Mass.Frac~Species+Date.recolte, data=H.traits))
+        # Date.recolte  0.0010184  0.0004688   2.173 0.030484 *  
+        # ---
+        # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+        # 
+        # Residual standard error: 0.08477 on 349 degrees of freedom
+        # (66 observations deleted due to missingness)
+        # Multiple R-squared:  0.9055,	Adjusted R-squared:  0.8938 
+        # F-statistic: 77.75 on 43 and 349 DF,  p-value: < 2.2e-16
+        
+      # Sampling date significant, but small effect size.
+      
+      # Sampling date parameter not significant in this model. 
+      anova (m0,m1)
+      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])  
+      # [1] 0.001128434
+        
       save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Unstandardized.RData"))
       
       # Standardize all variables
-      H.traits[8:15]<-decostand(H.traits[8:15],method='standardize', margin=2)
+      H.traits[,c(5,8:17)]<-decostand(H.traits[,c(5,8:17)],method='standardize', margin=2,na.rm=TRUE)
       save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
       
       # A1.2 - Turn individual-level table into species-level table  ####
@@ -340,13 +404,14 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       H.traits$Min.Root.Loca<-as.numeric(H.traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
       H.traits$Max.Root.Loca<-as.numeric(H.traits$Max.Root.Loca) # can't take mean or median of ordinal var. 
       
-      sp.H.traits<-as.data.frame(aggregate(H.traits[,5:11],by=list(H.traits$Species),mean,na.rm=T))
-      sp.H.traits[,2:8]<-round(sp.H.traits[2:8],digits=3)
-      sp.H.traits[is.na(sp.H.traits)] <-NA
-      rownames(sp.H.traits)<-sp.H.traits$Group.1
-      sp.H.traits<-sp.H.traits[,-1]
-      sp.H.traits<-sp.H.traits[order(rownames(sp.H.traits)),]
-      dim(sp.H.traits) # 51  7
+      H.traits.sp<-as.data.frame(aggregate(H.traits[,5:17],by=list(H.traits$Species),mean,na.rm=T))
+      head(H.traits.sp)
+      #H.traits.sp[,2:8]<-round(sp.H.traits[2:8],digits=3)
+      H.traits.sp[is.na(H.traits.sp)] <-NA # replace NaN with Na
+      rownames(H.traits.sp)<-H.traits.sp$Group.1
+      H.traits.sp<-H.traits.sp[,-1]
+      H.traits.sp<-H.traits.sp[order(rownames(H.traits.sp)),]
+      dim(H.traits.sp) # 51  7
       
       # A1.3 - Add species mean traits (Seed size and mychorizae) ####
       #=================================================================#
@@ -1099,4 +1164,104 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
     
     # date effect within species (interaction between species and date) is marginally significant
     
+    
+    
+    # Look at effect of date independent of effect of species. Species and date are correlated. 
+    
+    m<-lm(Date.recolte~Species, data=H.traits)
+    summary(m)
+    
+    lm(formula = Date.recolte ~ Species, data = H.traits)
+    
+    # Residuals:
+    #   Min      1Q  Median      3Q     Max 
+    # -38.077  -2.286   0.000   1.600  38.500 
+    # 
+    # Coefficients:
+    #             Estimate Std. Error t value Pr(>|t|)    
+    # (Intercept) 153.7778     3.2838  46.829  < 2e-16 ***
+    # SpeciesARTR  28.4444     4.6440   6.125 2.14e-09 ***
+    # SpeciesATFI  47.2222     4.9647   9.512  < 2e-16 ***
+    # SpeciesCAIN  16.6222     4.5264   3.672 0.000272 ***
+    # SpeciesCASC  27.2222     4.5264   6.014 4.02e-09 ***
+    # SpeciesCIAL  31.2222     4.7869   6.522 2.05e-10 ***
+    # SpeciesCLBO -10.1778     4.5264  -2.249 0.025076 *  
+    # SpeciesCLCA -27.5051     4.4279  -6.212 1.29e-09 ***
+    # SpeciesCOAL  26.3333     4.6440   5.670 2.70e-08 ***
+    # SpeciesCOCA   7.4222     4.5264   1.640 0.101827    
+    # SpeciesCOCO  75.3651     4.9647  15.180  < 2e-16 ***
+    # SpeciesCOTR -18.6778     4.5264  -4.126 4.47e-05 ***
+    # SpeciesCYAC  -5.2778     7.7012  -0.685 0.493534    
+    # SpeciesDEAC  60.9365     4.9647  12.274  < 2e-16 ***
+    # SpeciesDEDI  28.2222     4.5264   6.235 1.13e-09 ***
+    # SpeciesDEPU  36.7222     4.7869   7.671 1.26e-13 ***
+    # SpeciesDRIN  36.5556     4.6440   7.872 3.19e-14 ***
+    # SpeciesEPHE  39.8472     4.7869   8.324 1.29e-15 ***
+    # SpeciesERAM -29.3778     4.5264  -6.490 2.49e-10 ***
+    # SpeciesGAPR -27.7778     4.5264  -6.137 2.00e-09 ***
+    # SpeciesGATE  22.0000     4.6440   4.737 3.00e-06 ***
+    # SpeciesGATR  35.7222     5.1922   6.880 2.26e-11 ***
+    # SpeciesHULU  69.6508     4.9647  14.029  < 2e-16 ***
+    # SpeciesIMCA  18.4222     4.5264   4.070 5.65e-05 ***
+    # SpeciesLOCA  26.9495     4.4279   6.086 2.67e-09 ***
+    # SpeciesLYAN  67.5079     4.9647  13.598  < 2e-16 ***
+    # SpeciesLYOB  63.9222     4.5264  14.122  < 2e-16 ***
+    # SpeciesMACA -18.2778     4.5264  -4.038 6.44e-05 ***
+    # SpeciesMEVI  -7.5556     4.6440  -1.627 0.104521    
+    # SpeciesMIRE  41.7222     4.7869   8.716  < 2e-16 ***
+    # SpeciesOCAC  43.2991     4.2719  10.136  < 2e-16 ***
+    # SpeciesOSCI  68.9365     4.9647  13.885  < 2e-16 ***
+    # SpeciesOSCL  16.9495     4.4279   3.828 0.000150 ***
+    # SpeciesOXMO  -2.2778     4.5264  -0.503 0.615083    
+    # SpeciesPHCO  35.8222     4.5264   7.914 2.37e-14 ***
+    # SpeciesPOPU  -2.0778     4.5264  -0.459 0.646455    
+    # SpeciesPRAL  23.7222     4.5264   5.241 2.57e-07 ***
+    # SpeciesPYSE   6.3131     4.4279   1.426 0.154701    
+    # SpeciesRUID  66.6508     4.9647  13.425  < 2e-16 ***
+    # SpeciesRUPU  48.7937     4.9647   9.828  < 2e-16 ***
+    # SpeciesSAPU  43.6508     4.9647   8.792  < 2e-16 ***
+    # SpeciesSMRA  -1.2323     4.4279  -0.278 0.780916    
+    # SpeciesSTAM  16.1222     4.5264   3.562 0.000412 ***
+    # SpeciesSTLA  -0.9596     4.4279  -0.217 0.828538    
+    # SpeciesTHNO  35.2222     4.9647   7.095 5.77e-12 ***
+    # SpeciesTICO  21.3333     4.6440   4.594 5.81e-06 ***
+    # SpeciesTRBO  -7.0778     4.5264  -1.564 0.118674    
+    # SpeciesTRER -14.9778     4.5264  -3.309 0.001020 ** 
+    # SpeciesTRUN -15.1778     4.5264  -3.353 0.000874 ***
+    # SpeciesVEVI  21.5222     4.5264   4.755 2.76e-06 ***
+    # SpeciesVIAL  63.7937     4.9647  12.850  < 2e-16 ***
+    # ---
+    # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+    # 
+    # Residual standard error: 9.851 on 408 degrees of freedom
+    # Multiple R-squared:  0.8989,	Adjusted R-squared:  0.8865 
+    # F-statistic: 72.56 on 50 and 408 DF,  p-value: < 2.2e-16
+    
+    # Get intraspecific variation in date by extracting residuals of Date~Species
+    length(resid(m)) #459
+    resid.Date<-resid(m) 
+    
+    
+    
+    # does sampling date have an effect, once we remove the species effect?
+    library(lme4)
+    df<-H.traits[,c('Ht.veg','Species','Date.recolte')]
+    df[,c(1,3)]<- scale(df[,c(1,3)])
+    m0<-lmer(Ht.veg~(1|Species), data=df)
+    m1<-lmer(Ht.veg~(Date.recolte|Species), data=df)
+    anova(m0,m1)
+    
+    #Data: df
+    # Models:
+    #   m0: Ht.veg ~ (1 | Species)
+    # m1: Ht.veg ~ (Date.recolte | Species)
+    # Df    AIC    BIC  logLik deviance Chisq Chi Df Pr(>Chisq)
+    # m0  3 1301.9 1314.3 -647.95   1295.9                        
+    # m1  5 1305.9 1326.5 -647.95   1295.9     0      2          1
+    
+    # No effect of date, once species effect is accounted for. 
+    
+    # Test with residuals
+    summary(lm(H.traits$Ht.veg~resid.Date))
+    # Not significant
     
