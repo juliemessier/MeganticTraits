@@ -742,64 +742,80 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # instead of 51, which decreases our sample size a lot. 
         
         # sequentially eliminate the variables with the highest VIFs  
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Lamina.thck+log(LMA)+
+        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Stor.Mass.Frac+Log.F.Root.Diam+SRL,
                na.action=na.omit,
             data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
             ))
         
-        #   Log.Ht.veg   Min.Root.Loca   Max.Root.Loca     Lamina.thck             LMA            LDMC 
-        #     1.963256       59.738458       62.215054        3.364266       13.137585        9.443502 
-        # Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac  Stor.Mass.Frac Log.F.Root.Diam 
-        #      3.430981      288.183289       58.010807       19.698086      328.360677        3.490583 
-        #           SRL 
-        #      4.334695 
-        
+        #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
+        #       2.088027       64.270612       64.708128        4.427030       12.094997       10.354246 
+        #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac  Stor.Mass.Frac Log.F.Root.Diam 
+        #       3.439911      157.738467       33.286408       12.404597      179.907708        3.310469 
+        #            SRL 
+        #       4.605975 
+        # 
         # Storage Mass Fraction is the worst
         
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Lamina.thck+log(LMA)+
+        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Log.F.Root.Diam+SRL,
                na.action=na.omit,
                data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
         ))
         
-        #    Log.Ht.veg   Min.Root.Loca   Max.Root.Loca     Lamina.thck             LMA            LDMC 
-        #      1.795086       57.170476       59.135413        3.071305        6.314479        6.901343 
-        # Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #      2.655658        2.762958        1.683951        1.569652        3.487216        4.041608
+        #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
+        #       1.877799       63.093456       63.744531        4.523619       10.608937        9.930118 
+        #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
+        #       2.175915        3.078716        1.670315        1.683049        3.154330        4.057710
         
         # Max.Root.Loca is the worst
         
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Lamina.thck+log(LMA)+
+        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+Log.LMA+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Log.F.Root.Diam+SRL,
                na.action=na.omit,
                data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
         ))
         
-        #     Log.Ht.veg   Min.Root.Loca     Lamina.thck             LMA            LDMC   Log.Leaf.Area 
-        #       1.794950        1.789419        2.808873        5.850774        6.145105        2.644666 
+        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck         Log.LMA            LDMC   Log.Leaf.Area 
+        #       1.872089        1.850274        3.864454        9.107514        8.212370        2.126254 
         # Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #       2.613491        1.683950        1.569578        3.410896        3.979392
+        #       2.808127        1.670286        1.668985        3.122450        3.837607 
          
         # TRY without LMA
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Lamina.thck+
+        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Log.F.Root.Diam+SRL,
                na.action=na.omit,
                data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
         ))
         
-        #     Log.Ht.veg   Min.Root.Loca     Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
-        #       1.684409        1.789283        1.850284        2.492491        2.070819        2.487832 
+        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
+        #       1.724775        1.792609        1.905555        2.490835        2.046712        2.507318 
         # Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #       1.662409        1.569413        3.145098        3.856697
+        #       1.661494        1.579522        3.100699        3.782878 
+        
+        # Then try without Fine root Diameter, because I don't want to loose SRL
+        
+        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
+                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+                 SRL,
+               na.action=na.omit,
+               data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+        ))
+        
+        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
+        #       1.658229        1.637638        1.882275        1.988683        2.024708        2.205449 
+        # Supp.Mass.Frac   Rep.Mass.Frac             SRL 
+        #       1.347331        1.517007        1.761267
+        
+        # Good to go! All VIFs below 3
         
         
         
-         # A1.0.6 Relationship between Y and X. Linear?
+        # A1.0.6 Relationship between Y and X. Linear?
       
         # A1.0.7 Interactions?
       
