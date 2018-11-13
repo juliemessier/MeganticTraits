@@ -834,22 +834,37 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         MyTraits<-c("Log.Ht.veg","Log.Leaf.Area",'Supp.Mass.Frac',"Rep.Mass.Frac","Log.Lamina.thck","LDMC",
                     "Leaf.Mass.Frac","Min.Root.Loca","SRL",'Myc.Frac')
         
-        par(mfrow=c(2,2))
+        
         for (i in 1:(length(MyTraits)-1)){
           for (j in (i+1):length(MyTraits)){
             
             x1<-MyTraits[i]
             x2<-MyTraits[j]
+            
+            pdf(file=paste0(data.dir,'Data Exploration/X-interaction plots/Interactions btw ',x1,' and ',x2,'.pdf'))
+            
             data <- merge(H.abund,H.traits2.sp,by="row.names",all=T)
             
             coplot(data$abund.ratio ~ data[,x1]|data[,x2],
                  xlab = c(x1,x2),
                  ylab = "Abundance Ratio",
                  number=4,overlap=0.3)
-          }
+            dev.off()
+            
+             }
         }
-      
-        # Skip that for now because there are so many possible interactions, with 9 variables in a model.
+        
+        # Summary
+        # 45 interactions
+        # All graphs printed in C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Data/Data Exploration/X-interaction plots/
+        summary(lm(abund.ratio~Rep.Mass.Frac*Log.Lamina.thck,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+        # Rep.Mass.Fraction x Log.Lamina.thck significant (for sp with thick lamina, abundance increases 
+        # with increasing reproductive mass fraction)
+        summary(lm(abund.ratio~Rep.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+        # Rep.Mass.Fraction x Min.Root.Loca significant (for sp with shallow minimum root location, abundance increases 
+        # with increasing reproductive mass fraction)
+        summary(lm(abund.ratio~Supp.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+        # Supp.Mass.Fraction x Min.Root.Loca significant
         
         # A1.0.8 Independance?
         
