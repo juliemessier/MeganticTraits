@@ -784,7 +784,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
         #       2.808127        1.670286        1.668985        3.122450        3.837607 
          
-        # TRY without LMA
+        #1 TRY without LMA
         vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Log.F.Root.Diam+SRL,
@@ -797,7 +797,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
         #       1.661494        1.579522        3.100699        3.782878 
         
-        # Then try without Fine root Diameter, because I don't want to loose SRL
+        #2 Then try without Fine root Diameter, because I don't want to loose SRL
         
         vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
@@ -816,11 +816,44 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         
         
         # A1.0.6 Relationship between Y and X. Linear?
+        Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T),
+                 Trait.Names,'abund.ratio',MyYlab="Abundance Ratio")
+        
+        # Everything linear - good to go. 
+        # Two "outliers" - species with high abundance ratios. 
       
         # A1.0.7 Interactions?
       
+        
+        
+        coplot(abund.ratio ~ Rep.Mass.Frac |SRL,
+               data = merge(H.abund,H.traits2.sp,by="row.names",all=T), 
+               xlab = "Rep.Mass.Frac",
+               ylab = "Abundance Ratio")
+        
+        MyTraits<-c("Log.Ht.veg","Log.Leaf.Area",'Supp.Mass.Frac',"Rep.Mass.Frac","Log.Lamina.thck","LDMC",
+                    "Leaf.Mass.Frac","Min.Root.Loca","SRL",'Myc.Frac')
+        
+        par(mfrow=c(2,2))
+        for (i in 1:(length(MyTraits)-1)){
+          for (j in (i+1):length(MyTraits)){
+            
+            x1<-MyTraits[i]
+            x2<-MyTraits[j]
+            data <- merge(H.abund,H.traits2.sp,by="row.names",all=T)
+            
+            coplot(data$abund.ratio ~ data[,x1]|data[,x2],
+                 xlab = c(x1,x2),
+                 ylab = "Abundance Ratio",
+                 number=4,overlap=0.3)
+          }
+        }
       
-      
+        # Skip that for now because there are so many possible interactions, with 9 variables in a model.
+        
+        # A1.0.8 Independance?
+        
+        
       # A1.5- Transform trait data Transform trait data as needed ####
       #===========================================================#
       
