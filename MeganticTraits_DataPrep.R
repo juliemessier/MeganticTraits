@@ -460,9 +460,9 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       # A1.4 - Data Exploration (Following Highlands Stats course) ####
       #=================================================================#
       
-        #A1.4.1 - Outliers on Y and X 
+        #A1.4.1 - Outliers on Y and X  ----
         
-            #Y1 - Abundance - 1 outliers (CASC), variance homogeneous
+            #Y1 - Abundance - 1 outliers (CASC), variance homogeneous 
             ---
             par(mfrow = c(1, 2))  
             boxplot(H.abund$abund.ratio,
@@ -474,6 +474,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
             #Y2 - Elevation
             ---
             # ... to do
+            
             
             #X1 - Ht.veg - 2 outlier species - COCO and VIAL are tall (3 & 6 sd)
             ---
@@ -675,20 +676,23 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
                           "LDMC","Log.Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac",
                           "Stor.Mass.Frac","Log.F.Root.Diam","SRL",'Myc.Frac')
            
-        #A1.0.2 - Homogeneity (homoscedasticity) of Y - residuals vs fitted for each var.
+        #A1.4.2 - Homogeneity (homoscedasticity) of Y ----
          
             # Test after model is built, as validation step
+            # residuals vs fitted for each var.
       
-        #A1.0.3 - Normality of Y - (least important - use link function instead). test for normality of residuals
+        #A1.4.3 - Normality of Y ----
            
-            # Test after model is built, as validation step
+           # Test after model is built, as validation step
+           # (least important assumption - use link function instead of transforming Y).
+           # test for normality of residuals
       
-        #A1.0.4 - Zero trouble (Y) ?
+        #A1.4.4 - Zero trouble (Y) ? ----
            
             sort(H.abund$abund.ratio)
             # only one 0 value - Okay! 
             
-        #A1.0.5 - Collinearity  (X)
+        #A1.4.5 - Collinearity  (Xs) ----
         
             
         # Try PairPlots        
@@ -738,7 +742,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
          
         # Now look at the VIFs
          
-        # Do it using dataset without myccorhizal fraction because it this trait contains only 42 species
+        # Do VIF tests using dataset without myccorhizal fraction because it this trait contains only 42 species
         # instead of 51, which decreases our sample size a lot. 
         
         # sequentially eliminate the variables with the highest VIFs  
@@ -784,7 +788,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
         #       2.808127        1.670286        1.668985        3.122450        3.837607 
          
-        #1 TRY without LMA
+        #1 TRY without LMA 
         vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
                  LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
                  Log.F.Root.Diam+SRL,
@@ -813,19 +817,81 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         
         # Good to go! All VIFs below 3
         
+        # Is it better to collapse the 13 traits into PCs?
+        MyPCATraits<-c('Log.Ht.veg','Min.Root.Loca','Max.Root.Loca','Log.Lamina.thck','Log.LMA',
+                       'LDMC','Log.Leaf.Area','Leaf.Mass.Frac','Supp.Mass.Frac','Rep.Mass.Frac',
+                       'Stor.Mass.Frac','Log.F.Root.Diam','SRL')
         
+        MyPCAData<-H.traits2.sp[,MyPCATraits][complete.cases(H.traits2.sp[,MyPCATraits]),]
         
-        # A1.0.6 Relationship between Y and X. Linear?
+        my.pca<-rda(MyPCAData,scale=T)
+        biplot(my.pca,
+               display = c("sites", 
+                           "species"),
+               type = c("text",
+                        "text"))
+        summary(my.pca)
+        # Call:
+        # rda(X = MyPCAData, scale = T) 
+        # 
+        # Partitioning of correlations:
+        #               Inertia Proportion
+        # Total              13          1
+        # Unconstrained      13          1
+        # 
+        # Eigenvalues, and their contribution to the correlations 
+        # 
+        # Importance of components:
+        #                          PC1    PC2    PC3    PC4     PC5     PC6     PC7     PC8     PC9    PC10    PC11
+        # Eigenvalue            3.3980 2.6571 1.9697 1.4526 1.29771 0.84580 0.54751 0.40279 0.23704 0.13444 0.04764
+        # Proportion Explained  0.2614 0.2044 0.1515 0.1117 0.09982 0.06506 0.04212 0.03098 0.01823 0.01034 0.00366
+        # Cumulative Proportion 0.2614 0.4658 0.6173 0.7290 0.82886 0.89392 0.93604 0.96702 0.98525 0.99560 0.99926
+        # 
+        #                           PC12     PC13
+        # Eigenvalue            0.007333 0.002292
+        # Proportion Explained  0.000560 0.000180
+        # Cumulative Proportion 0.999820 1.000000
+        # 
+        # Scaling 2 for species and site scores
+        # * Species are scaled proportional to eigenvalues
+        # * Sites are unscaled: weighted dispersion equal on all dimensions
+        # * General scaling constant of scores:  4.745172 
+        # 
+        # 
+        # Species scores
+        # 
+        #                      PC1      PC2     PC3       PC4      PC5       PC6
+        # Log.Ht.veg      -0.02985 -0.21835 -0.9195 -0.272806  0.49282  0.559430
+        # Min.Root.Loca   -0.26507 -1.06552 -0.3410  0.533190 -0.27254 -0.043970
+        # Max.Root.Loca   -0.27311 -1.10149 -0.3119  0.484425 -0.24021 -0.082546
+        # Log.Lamina.thck  0.66651 -0.38192  0.8019  0.316441  0.18111 -0.423685
+        # Log.LMA         -0.69319 -0.56407  0.7795  0.031087  0.43419  0.009899
+        # LDMC            -1.05592 -0.10757  0.4676 -0.209673  0.32976  0.231548
+        # Log.Leaf.Area    0.83523 -0.32294 -0.5881 -0.002711  0.10727 -0.190455
+        # Leaf.Mass.Frac  -1.11506 -0.14794 -0.2758 -0.249071 -0.38860 -0.240577
+        # Supp.Mass.Frac  -0.33950  0.58991 -0.4020  0.164217  0.76681 -0.609162
+        # Rep.Mass.Frac   -0.15623  0.07729  0.0272  0.954380  0.61519  0.434712
+        # Stor.Mass.Frac   1.12833 -0.13501  0.4361 -0.037680 -0.08079  0.397475
+        # Log.F.Root.Diam  0.58770 -0.67438 -0.2335 -0.335773  0.57536 -0.302895
+        # SRL              0.02943  0.88160 -0.2334  0.814536 -0.27616 -0.078143
+        ---
+        
+        library(BiodiversityR)
+          
+        # A1.4.6 Relationship between Y and X linear? ----
+        
         Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T),
                  Trait.Names,'abund.ratio',MyYlab="Abundance Ratio")
         
         # Everything linear - good to go. 
         # Two "outliers" - species with high abundance ratios. 
-      
-        # A1.0.7 Interactions?
-      
         
-        
+        # Try with ratio of log abundances as response variable instead.Remove IMCA (row 19 bc is problematic)
+        Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T)[-24,],
+                Trait.Names,'ratio.log.abund',MyYlab="Log-Abundance Ratio")
+      
+        # A1.4.7 Interactions? ----
+      
         coplot(abund.ratio ~ Rep.Mass.Frac |SRL,
                data = merge(H.abund,H.traits2.sp,by="row.names",all=T), 
                xlab = "Rep.Mass.Frac",
@@ -867,7 +933,8 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # Supp.Mass.Fraction x Min.Root.Loca significant
         
         # A1.0.8 Independance?
-        
+          # No spatial or temporal variables to test against the response variable
+          # Look at independence of residuals after model fit. 
         
       # A1.5- Transform trait data Transform trait data as needed ####
       #===========================================================#
