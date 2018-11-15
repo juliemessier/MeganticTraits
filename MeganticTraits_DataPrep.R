@@ -1,21 +1,27 @@
-# <<TABLE OF CONTENTS>>
-# A - Setup trait data
-  # A1 - Herbivory layer
-    # A1.1 - Remove date effect on traits
-    # A1.2 - Turn individual-level table into species-level table.
-    # A1.3 - Add species mean traits (Seed size and mychorizae)
-    # A1.4 - Data Exploration
-    # A1.5 - Transform trait data as needed
-    
+# <<TABLE OF CONTENTS>> ####
+# A- Setup abundance data
+  # A1- Create abundance dataframe & new variables 
+  # A2 - Problem with infinity values
+  # A3 - Look at temporal patterns
+  
+# B - Setup trait data    
+  # B1 - HERBACEOUS LAYER
+    # B1.1 - Remove date effect on traits
+    # B1.2 - Turn individual-level table into species-level table
+    # B1.3 - Add species mean traits (Seed size and mychorizae)
+  # B2 - CANOPY LAYER 
 
-  # A2 - Canopy layer
-    # A2.1 - Transform trait data for normality
-    # A2.2 - Remove date effect on traits
-    # A2.3 - Turn individual-level table into species-level table.
-    # A2.4 - Add species mean traits (Seed size and mychorizae)
-# B- Setup abundance data
-# B2- Create abundance dataframe & new variables
-# B3 - Problem with infinity values
+# C - Data Exploration (Following Highlands Stats course) 
+  # C1 - Outliers on Y and X
+  # C2 - Homogeneity (homoscedasticity) of Y 
+  # C3 - Normality of Y
+  # C4 - Zero trouble (Y) ?
+  # C5 - Collinearity  (Xs)
+    # C5.1 Deal with colinearity using VIFs
+    # C5.2 Deal with colinearity using PCs 
+  # C6 Relationship between Y and X linear? 
+  # C7 Interactions?
+
 
 #<<WORKSPACES>>
 wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Workspaces/") # Workspaces
@@ -32,10 +38,168 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
 
 # ==================================================================================#
 
-# A - Setup trait data ####
+# A- Setup abundance data ####
+# ===========================#
+
+load(file=paste0(wrk.dir,'Species.abundances.full.data.Rdata')) # object = abund
+load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abund.c
+str(abund.c)
+
+# 'data.frame':	107 obs. of  13 variables:
+# $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
+# $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
+# $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
+# $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
+# $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
+# $ presence.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
+# $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
+# $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
+# $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
+# $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
+# $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
+# $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
+# $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
+
+# Remove PT.presence.ratio bc afterall, it doesn't make sense to transform response 
+# variable just for normality. 
+
+abund.c$PT.abund.ratio<-NULL
+abund.c$PT.presence.ratio<-NULL
+
+# some species were not present in 1974 and were present in 2012. The abndance ratio
+# for those is infinity, which is useless. Those species were removed. 
+
+# A1- Create abundance dataframe & new variables ####
+#=====================================================#
+
+abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
+rownames(abund)<-abund$Species
+abund$Species<-NULL
+
+# Abundance/Presence Ratios
+
+abund[,'coverage.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
+abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
+abund$abund.ratio
+rownames(abund[abund$abund.ratio=='Inf',]) 
+# [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
+# [17] "RARE" "TAOF
+# loosing 18 data points to "Inf"
+plot(density(abund$abund.ratio))
+plot(density(log(abund$abund.ratio+0.01)))
+
+
+# Ratios of log Abundance/Presence
+
+abund[,'ratio.log.coverage']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
+abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
+abund$ratio.log.abund
+plot(density(abund$ratio.log.abund))
+# Outliers?
+rownames((abund)[abund$ratio.log.abund<=-10,])# IMCA, POTR
+rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
+
+# If this is an issue - link function of glms (negative binomial) made to deal with lack of normality of response variable. 
+
+str(abund)
+#'data.frame':	125 obs. of  9 variables:
+# $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
+# $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
+# $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
+# $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
+# $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
+# $ coverage.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
+# $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
+# $ ratio.log.coverage   : num  0.995 1.078 1.15 1.036 0.973 ...
+# $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ..
+# 
+save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
+
+
+# A2 - Problem with infinity values ####
+#========================================#
+
+# Species absent in 1974 that are present in 2012 give a ratio of infinity
+
+# ABUNDANCE
+
+# Which species were absent in 1970?
+rownames(abund)[which(abund$avg.abundance.1970==0)]  
+# [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN"  "MOUN" "PAQU" "POGR" 
+# [17]"RARE" "TAOF"
+
+# What is the minimum value in dataset?
+abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
+#0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+
+# try replacing 0s with half of minimum value
+abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
+abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
+        "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01/2 
+
+#Re-calculate abundance
+non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
+plot(density(non0.abund.change)) 
+# now ranges from 0-400, with a single value at 400. 
+# Therefore, it is a bad idea to replace 1970's 0s with a tiny number.
+
+# Delete this column
+abund$non0.avg.abundance.1970<-NULL
+
+#save new abundance dataset without INF values
+abund.c<-abund[!rownames(abund)%in% c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
+                                      "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
+                                      "RARE","TAOF"),]
+
+dim(abund.c) # 107 9
+
+save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
+
+
+# A3 - Look at temporal patterns ####
+# ====================================#
+
+par(mfrow=c(1,2))
+
+plot(abund.c[abund.c$Layer=='H','avg.abundance.2012']~abund.c[abund.c$Layer=='H','avg.abundance.1970'],type='n',
+     xlab='av abundance 1970', ylab='avg abundance 2012',main='Abundance, herbaceous')
+text(abund.c[abund.c$Layer=='H','avg.abundance.1970'],abund.c[abund.c$Layer=='H','avg.abundance.2012'],
+     labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
+abline(0,1)
+
+# DRIN and OXMO are "outliers" : abundance ratios much larger/smaller than other species 
+
+#on log-scale, much better
+plot(log(abund.c[abund.c$Layer=='H','avg.abundance.2012'])~log(abund.c[abund.c$Layer=='H','avg.abundance.1970']),type='n',
+     xlab='log(av abundance 1970)', ylab='log(avg abundance 2012)',main='Abundance, log herbaceous')
+text(log(abund.c[abund.c$Layer=='H','avg.abundance.1970']),log(abund.c[abund.c$Layer=='H','avg.abundance.2012']),
+     labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
+abline(0,1)
+
+# for coverage : 
+
+plot(abund.c[abund.c$Layer=='H','pct.plot.present.2012']~abund.c[abund.c$Layer=='H','pct.plot.present.1970'],type='n',
+     xlab='pct.plot.present.1970', ylab='pct.plot.present.2012',main='coverage herbaceous')
+text(abund.c[abund.c$Layer=='H','pct.plot.present.1970'],abund.c[abund.c$Layer=='H','pct.plot.present.2012'],
+     labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
+abline(0,1)
+
+# DRIN and OXMO are "outliers" : abundance ratios much larger/smaller than other species 
+
+#on log-scale, much better
+plot(log(abund.c[abund.c$Layer=='H','pct.plot.present.2012'])~log(abund.c[abund.c$Layer=='H','pct.plot.present.1970']),type='n',
+     xlab='log(pct.plot.present.1970)', ylab='log(pct.plot.present.2012)',main='coverage, log herbaceous')
+text(log(abund.c[abund.c$Layer=='H','pct.plot.present.1970']),log(abund.c[abund.c$Layer=='H','pct.plot.present.2012']),
+     labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
+abline(0,1)
+
+
+
+
+# B - Setup trait data ####
 # ========================#
 
-  # A1 - HERBACEOUS LAYER ####
+  # B1 - HERBACEOUS LAYER ####
   #=======================#
 
     Megtraits<-read.csv(paste0(data.dir,'MegTraits_20181106.csv'))
@@ -93,7 +257,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       head(H.abund)
       save(H.abund,file=paste0(wrk.dir,'Herbaceous.layer.species.abundance.change.for.sp.with.traits.RData'))
       
-      # A1.1 - Remove date effect on traits  ####
+      # B1.1 - Remove date effect on traits  ####
       # =======================================#
       
       names(H.traits)
@@ -251,7 +415,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       # Yes, better with Date, BUT, R2 explained by sampling date is 0.0035
         
-      # (4) Leaf.Area
+      # (4) Leaf.Area - No Date effect
       ---
       
       plot(Leaf.Area~Date.recolte, data=H.traits) 
@@ -277,6 +441,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       # Sampling date parameter not significant in this model. 
       anova (m0,m1)
+      #NS
       
       # Sampling date does not explain any variance after species effect taken into account.
         
@@ -333,8 +498,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
         # Multiple R-squared:  0.7578,	Adjusted R-squared:  0.7279 
         # F-statistic: 25.35 on 48 and 389 DF,  p-value: < 2.2e-16
       
-      
-      # Leaf.Area varies by species
+      # Supp.Mass.Frac  varies by species
       
       # Is the Sampling Date parameter significant, once we account for Species?
       
@@ -400,7 +564,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       H.traits.stand<-decostand(H.traits[,c(5,8:17)],method='standardize', margin=2,na.rm=TRUE)
       save(H.traits.stand,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
       
-      # A1.2 - Turn individual-level table into species-level table  ####
+      # B1.2 - Turn individual-level table into species-level table  ####
       #=================================================================#    
       #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
       
@@ -419,7 +583,7 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       
       save(H.traits.sp,file=paste0(wrk.dir,"Species-Level.Herbaceous.Layer.Traits.RData"))
       
-      # A1.3 - Add species mean traits (Seed size and mychorizae) ####
+      # B1.3 - Add species mean traits (Seed size and mychorizae) ####
       #=================================================================#
       
       load(paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.RData')) #H.traits.sp
@@ -458,672 +622,550 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
       # dim(seed.file)
       # View (seed.file)
       
-      # A1.4 - Data Exploration (Following Highlands Stats course) ####
-      #=================================================================#
+    # B2 - CANOPY LAYER ####
+    #=======================#
       
-        #A1.4.1 - Outliers on Y and X  ----
-        
-            #Y1 - Abundance - 1 outliers (CASC), variance homogeneous 
-            ---
-            par(mfrow = c(1, 2))  
-            boxplot(H.abund$abund.ratio,
-                    main = "Abundance Ratio")
-            dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
-                     labels=rownames(H.abund),
-                     xlab='range of data', ylab='Order of the data', main='abundance ratios') # 1 outlier
+      # TO DO 
+      
+# C - Data Exploration (Following Highlands Stats course) ####
+#=================================================================#
 
-            #Y2 - Elevation
-            ---
-            # ... to do
-            
-            
-            #X1 - Ht.veg - 2 outlier species - COCO and VIAL are tall (3 & 6 sd)
-            ---
-            par(mfrow=c(1,2))
-            boxplot(H.traits2.sp$Ht.veg,
-                    main = "vegetative height")
-            dotchart(H.traits2.sp$Ht.veg, #i.e. cleveland dot chart
-                     xlab='range of data', ylab='Order of the data',main='Ht.veg',
-                     labels=H.traits2.sp$Species)
-            
-            # X2 - Min.Root.Loca - no outliers - only 6 categories. 7 species with NAs
-            ---
-            boxplot(H.traits2.sp$Min.Root.Loca,
-                    main = "Minimum Root Location")
-            
-            H.traits2.sp[,c('Species','Min.Root.Loca')] 
-              # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
-            
-            dotchart(as.numeric(H.traits2.sp$Min.Root.Loca), #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     main='Min.root.Loca',
-                     labels=H.traits2.sp$Species)
-            
-            plot(as.numeric(H.traits2.sp$Max.Root.Loca)~as.numeric(H.traits2.sp$Min.Root.Loca))
-            # pretty well correlated, but not fully redundant.
-            
-            # X3 - Max.Root.Loca - no outliers - only 6 categories. 7 species with NAs
-            ---
-            boxplot(H.traits2.sp$Max.Root.Loca,
-                    main = "Maximum Root Location")
-            
-            H.traits2.sp[,c('Species','Max.Root.Loca')]  
-              # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
-            
-            # X4 - Lamina.thck - CLBO, GAPR and ERAM are over 2 SD thicker than other species
-            ---
-            boxplot(H.traits2.sp$Lamina.thck,
-                    main = "Lamina.thck") # a few outliers
-            
-            dotchart(H.traits2.sp$Lamina.thck, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     main='Lamina.thickness',
-                     labels=H.traits2.sp$Species)  # two species are very thick
-            
-            dotchart(log(H.traits2.sp$Lamina.thck), #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     main='Lamina.thickness',
-                     labels=H.traits2.sp$Species)
-            
-            dotchart(decostand(H.traits2.sp$Lamina.thck,method='standardize',margin=2),
-                        xlab='range of data',
-                        ylab='Order of the data',
-                        main='Lamina.thickness',
-                        labels=H.traits2.sp$Species)
-            
-            # X5 - LMA - GAPR and LYOB have LMA over 2 SD higher than other species
-            ---
-            boxplot(H.traits2.sp$LMA,
-                    main = "LMA") # 3 outliers
-            
-            dotchart(H.traits2.sp$LMA, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     main='LMA',
-                     labels=H.traits2.sp$Species) # two outlier species
-            
-            H.traits2.sp[(H.traits2.sp$Species=='SAPU'|H.traits2.sp$Species=='COAL'),'LMA']
-            
-            # X6 - LDMC - okay
-            boxplot(H.traits2.sp$LDMC,
-                    main = "LDMC")
-            
-            dotchart(H.traits2.sp$LDMC, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     main='LDMC') # fine
-            
-            # X7 - Leaf.Area # VEVI and SAPU leaf area over 2 SD larger than other sp. 
-            ---
-              
-            boxplot(H.traits2.sp$Leaf.Area,
-                    main = "Leaf.Area") # 5 outliers
-            
-            dotchart(H.traits2.sp$Leaf.Area, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main='Leaf.Area') # one species outlier
-            
-            # X8 - Leaf.Mass.Frac - okay
-            ---
-            boxplot(H.traits2.sp$Leaf.Mass.Frac,
-                    main = "Leaf.Mass.Frac") # fine
-            
-            dotchart(H.traits2.sp$Leaf.Mass.Frac, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main='Leaf.Mass.Frac') # fine
-            
-            # X9 - Supp.Mass.Frac - Okay
-            ---
-            boxplot(H.traits2.sp$Supp.Mass.Frac,
-                    main = "Supp.Mass.Frac") # fine
-            
-            dotchart(H.traits2.sp$Supp.Mass.Frac, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main='Supp.Mass.Frac')
-            
-            # X10 - Rep.Mass.Frac # skewed distribution (lots of very low values), CYAC and CASC over 2SD larger Rep.Mass.Frac than other sp.
-            ---
-            boxplot(H.traits2.sp$Rep.Mass.Frac,
-                    main = "Rep.Mass.Frac") # 0 inflated / Skewed
-            
-            dotchart(H.traits2.sp$Rep.Mass.Frac, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main='Rep.Mass.Frac') # 0 inflated
-            
-            # X11 - Stor.Mass.Frac - 0 inflated at species level (turn into presence/absence?)/ Skewed
-            ---
-            boxplot(H.traits2.sp$Stor.Mass.Frac,
-                    main = "Rep.Mass.Frac") # 0 inflated / Skewed
-            
-            dotchart(H.traits2.sp$Stor.Mass.Frac, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main='Stor.Mass.Frac') # 0 inflated - no outliers
-            
-            # X12 - F.Root.Diam - CYAC & EPHE have fine roots 6 SD thicker than other spp.
-            ---
-            boxplot(H.traits2.sp$F.Root.Diam,
-                    main = "F.Root.Diam")
-            
-            dotchart(H.traits2.sp$F.Root.Diam, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main="Fine Root thickness") # 2 sp with large diameter
-            
-            # X13 - SRL - okay
-            ---
-            boxplot(H.traits2.sp$SRL,
-                    main = "SRL") # 2 outliers
-            
-            dotchart(H.traits2.sp$SRL, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main="SRL") # No outliers
-            
-            
-           # X14 Myc.Frac - Okay
-            ---
-            boxplot(H.traits2.sp$Myc.Frac,
-                      main = "Myccorhizal Fraction") # 2 outliers
-            
-            dotchart(H.traits2.sp$Myc.Frac, #i.e. cleveland dot chart
-                     xlab='range of data',
-                     ylab='Order of the data',
-                     labels=H.traits2.sp$Species,
-                     main="Myccorhizal Fraction") # No outliers
-           
-           # TRY HighlandStats code
-           
-           # Source Highland library v.10 for Highland's own wrapper function for Cleveland dotplots
-           source("C:/Users/Julie/Desktop/Postdoc/Workshops/Highland Stats_GLM, GAMS/HighstatLibV10.R")   #<---
-           
-           Mydotplot(H.traits2.sp[ ,Trait.Names])
-          
-           
-           # Summary
-           # log transform leaf area, vegetative height and fine root thickness for sure 
-           # because of outliers
-           
-           # Transformed Leaf thickness and LMA because log forms work better latter on in the models. 
-           
-           
-           # Pay attention to Storage mass Fraction: 0-inflated. Transform to presence/absence?
-           # Pay attention to Reproductive mass Fraction: skewed distribution. May need to be transf.
-           
-           
-           # Can't log transform standardized values because values smaller than 1.
-           H.traits2.sp$Log.Ht.veg<-log(H.traits2.sp$Ht.veg)
-           H.traits2.sp$Log.Leaf.Area<-log(H.traits2.sp$Leaf.Area)
-           H.traits2.sp$Log.F.Root.Diam<-log(H.traits2.sp$F.Root.Diam)
-           H.traits2.sp$Log.LMA<-log(H.traits2.sp$LMA)
-           H.traits2.sp$Log.Lamina.thck<-log(H.traits2.sp$Lamina.thck)
-           
-          # Update list of traits to use
-           Trait.Names<-c("Log.Ht.veg","Min.Root.Loca","Max.Root.Loca","Log.Lamina.thck","Log.LMA",
-                          "LDMC","Log.Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac",
-                          "Stor.Mass.Frac","Log.F.Root.Diam","SRL",'Myc.Frac')
-           
-        #A1.4.2 - Homogeneity (homoscedasticity) of Y ----
-         
-            # Test after model is built, as validation step
-            # residuals vs fitted for each var.
-      
-        #A1.4.3 - Normality of Y ----
-           
-           # Test after model is built, as validation step
-           # (least important assumption - use link function instead of transforming Y).
-           # test for normality of residuals
-      
-        #A1.4.4 - Zero trouble (Y) ? ----
-           
-            sort(H.abund$abund.ratio)
-            # only one 0 value - Okay! 
-            
-        #A1.4.5 - Collinearity  (Xs) ----
-        
-            
-        # Try PairPlots        
-        pairs(H.traits2.sp[,Trait.Names],
-              lower.panel = panel.cor) # Requires to source HighstatlibV10.R
-        
-          # Summary
-          # Problem with Min and Max root location: R2 = 0.97 - Pick one
-          # Problem with LMA and LDMC: R2=0.8 - Pick one
-          # Problem with Leaf Mass Fraction and Storage Mass Fraction: R2=-0.9 - Pick one
-          # Problem with Fine Root Diameter and SRL: R2=-0.6 - Pick one
-        
-          # Maybe problem with Storage Mass fraction and Support Mass Fraction: R2=-0.5 - Pick one
-          # Maybe problem with Veg.Height and Leaf Area: R2 = 0.4
-          # Maybe problem with Support Mass Fraction and Veg.height: R2 =0.4
-          # Maybe problem with LMA and Leaf thickness: R2=0.4
-          # Maybe problem with LDMC and Leaf Mass Fraction: R2=0.4
-          # Maybe problem with LDMC and Storage Mass Fraction: R2=-0.4
-          # Maybe problem with Fine Root Diameter and Leaf Area: R2=0.4
-          # Maybe problem with Fine Root Diameter and Rep. Mass Fraction: R2=0.4
-        
-          # Worry about y1-y2 covariance between 0.5-0.8 if relationshps between X and each of Y1
-          # and y2 are weak. 
-        
-         summary(lm(abund.ratio~Log.F.Root.Diam,
-                    data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-                    ))
-         # NS
-         summary(lm(abund.ratio~SRL,
-                    data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-         ))
-         # NS   
-         
-         # Both X-Y correlations are week, so remove one of Fine Root Diameter or SRL
-         
-         summary(lm(abund.ratio~Supp.Mass.Frac,
-                    data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-         ))
-         # NS
-         
-         summary(lm(abund.ratio~Stor.Mass.Frac,
-                    data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-         ))
-        # NS
-         
-        # Both X-Y correlations are week, so remove one of Storage or Support Mass Fraction
-         
-        # Now look at the VIFs
-         
-        # Do VIF tests using dataset without myccorhizal fraction because it this trait contains only 42 species
-        # instead of 51, which decreases our sample size a lot. 
-        
-        # sequentially eliminate the variables with the highest VIFs  
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
-                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
-                 Stor.Mass.Frac+Log.F.Root.Diam+SRL,
-               na.action=na.omit,
-            data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-            ))
-        
-        #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
-        #       2.088027       64.270612       64.708128        4.427030       12.094997       10.354246 
-        #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac  Stor.Mass.Frac Log.F.Root.Diam 
-        #       3.439911      157.738467       33.286408       12.404597      179.907708        3.310469 
-        #            SRL 
-        #       4.605975 
-        # 
-        # Storage Mass Fraction is the worst
-        
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
-                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
-                 Log.F.Root.Diam+SRL,
-               na.action=na.omit,
-               data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-        ))
-        
-        #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
-        #       1.877799       63.093456       63.744531        4.523619       10.608937        9.930118 
-        #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #       2.175915        3.078716        1.670315        1.683049        3.154330        4.057710
-        
-        # Max.Root.Loca is the worst
-        
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+Log.LMA+
-                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
-                 Log.F.Root.Diam+SRL,
-               na.action=na.omit,
-               data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-        ))
-        
-        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck         Log.LMA            LDMC   Log.Leaf.Area 
-        #       1.872089        1.850274        3.864454        9.107514        8.212370        2.126254 
-        # Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #       2.808127        1.670286        1.668985        3.122450        3.837607 
-         
-        #1 TRY without LMA 
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
-                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
-                 Log.F.Root.Diam+SRL,
-               na.action=na.omit,
-               data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-        ))
-        
-        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
-        #       1.724775        1.792609        1.905555        2.490835        2.046712        2.507318 
-        # Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
-        #       1.661494        1.579522        3.100699        3.782878 
-        
-        #2 Then try without Fine root Diameter, because I don't want to loose SRL
-        
-        vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
-                 LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
-                 SRL,
-               na.action=na.omit,
-               data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
-        ))
-        
-        #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
-        #       1.658229        1.637638        1.882275        1.988683        2.024708        2.205449 
-        # Supp.Mass.Frac   Rep.Mass.Frac             SRL 
-        #       1.347331        1.517007        1.761267
-        
-        # Good to go! All VIFs below 3
-        
-        # Is it better to collapse the 13 traits into PCs?
-        MyPCATraits<-c('Log.Ht.veg','Min.Root.Loca','Max.Root.Loca','Log.Lamina.thck','Log.LMA',
-                       'LDMC','Log.Leaf.Area','Leaf.Mass.Frac','Supp.Mass.Frac','Rep.Mass.Frac',
-                       'Stor.Mass.Frac','Log.F.Root.Diam','SRL')
-        
-        MyPCAData<-H.traits2.sp[,MyPCATraits][complete.cases(H.traits2.sp[,MyPCATraits]),]
-        
-        library(vegan)
-        
-        my.pca<-rda(MyPCAData,scale=T)
-        biplot(my.pca,
-               display = c("sites", 
-                           "species"),
-               type = c("text",
-                        "text"))
-        
-        biplot(my.pca,
-               choices=c(3,4),
-               display = c("sites", 
-                           "species"),
-               type = c("text",
-                        "text"))
-        
-        # Plot with vegan functions to test for significance of axes and variables
-        
-        # "scaling = 1" means that we are looking at correlation biplot
-        #  angles between lines reflect their correlations
-        
-        ordi12<-ordiplot(my.pca, scaling=1, type="t",
-                         main = "PCA 1-2")
-        ordiequilibriumcircle(my.pca, ordi12) 
-        
-        ordi34<-ordiplot(my.pca, scaling=1, type="t",choices=c(3,4),
-                         main = "PCA 3-4")
-        ordiequilibriumcircle(my.pca, ordi34) 
-        
-        ordi56<-ordiplot(my.pca, scaling=1, type="t",choices=c(5,6),
-                         main = "PCA 3-4")
-        ordiequilibriumcircle(my.pca, ordi56) 
-        
-        summary(my.pca)
-        # Call:
-        # rda(X = MyPCAData, scale = T) 
-        # 
-        # Partitioning of correlations:
-        #               Inertia Proportion
-        # Total              13          1
-        # Unconstrained      13          1
-        # 
-        # Eigenvalues, and their contribution to the correlations 
-        # 
-        # Importance of components:
-        #                          PC1    PC2    PC3    PC4     PC5     PC6     PC7     PC8     PC9    PC10    PC11
-        # Eigenvalue            3.3980 2.6571 1.9697 1.4526 1.29771 0.84580 0.54751 0.40279 0.23704 0.13444 0.04764
-        # Proportion Explained  0.2614 0.2044 0.1515 0.1117 0.09982 0.06506 0.04212 0.03098 0.01823 0.01034 0.00366
-        # Cumulative Proportion 0.2614 0.4658 0.6173 0.7290 0.82886 0.89392 0.93604 0.96702 0.98525 0.99560 0.99926
-        # 
-        #                           PC12     PC13
-        # Eigenvalue            0.007333 0.002292
-        # Proportion Explained  0.000560 0.000180
-        # Cumulative Proportion 0.999820 1.000000
-        # 
-        # Scaling 2 for species and site scores
-        # * Species are scaled proportional to eigenvalues
-        # * Sites are unscaled: weighted dispersion equal on all dimensions
-        # * General scaling constant of scores:  4.745172 
-        # 
-        # 
-        # Species scores
-        # 
-        #                      PC1      PC2     PC3       PC4      PC5       PC6
-        # Log.Ht.veg      -0.02985 -0.21835 -0.9195 -0.272806  0.49282  0.559430
-        # Min.Root.Loca   -0.26507 -1.06552 -0.3410  0.533190 -0.27254 -0.043970
-        # Max.Root.Loca   -0.27311 -1.10149 -0.3119  0.484425 -0.24021 -0.082546
-        # Log.Lamina.thck  0.66651 -0.38192  0.8019  0.316441  0.18111 -0.423685
-        # Log.LMA         -0.69319 -0.56407  0.7795  0.031087  0.43419  0.009899
-        # LDMC            -1.05592 -0.10757  0.4676 -0.209673  0.32976  0.231548
-        # Log.Leaf.Area    0.83523 -0.32294 -0.5881 -0.002711  0.10727 -0.190455
-        # Leaf.Mass.Frac  -1.11506 -0.14794 -0.2758 -0.249071 -0.38860 -0.240577
-        # Supp.Mass.Frac  -0.33950  0.58991 -0.4020  0.164217  0.76681 -0.609162
-        # Rep.Mass.Frac   -0.15623  0.07729  0.0272  0.954380  0.61519  0.434712
-        # Stor.Mass.Frac   1.12833 -0.13501  0.4361 -0.037680 -0.08079  0.397475
-        # Log.F.Root.Diam  0.58770 -0.67438 -0.2335 -0.335773  0.57536 -0.302895
-        # SRL              0.02943  0.88160 -0.2334  0.814536 -0.27616 -0.078143
-        ---
-        
-        # which PCs are statistically significant?
-          
-        library(BiodiversityR) # for PCAsignificance() and ordiequilibriumcircle()
-        PCAsignificance(my.pca)
-        # First 5 PCs are significant
-        
-        # save those values to trait data frame
-        PCA.scores<-my.pca$CA$u[,1:5]
-        H.traits3.sp<-merge(H.traits2.sp,PCA.scores,by='row.names',all=T)
-        
-        save(H.traits3.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.PCs.RData'))
-        
-        # A1.4.6 Relationship between Y and X linear? ----
-        
-        Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T),
-                 Trait.Names,'abund.ratio',MyYlab="Abundance Ratio")
-        
-        # Everything linear - good to go. 
-        # Two "outliers" - species with high abundance ratios. 
-        
-        # Try with ratio of log abundances as response variable instead.Remove IMCA (row 19 bc is problematic)
-        Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T)[-24,],
-                Trait.Names,'ratio.log.abund',MyYlab="Log-Abundance Ratio")
-      
-        # A1.4.7 Interactions? ----
-      
-        coplot(abund.ratio ~ Rep.Mass.Frac |SRL,
-               data = merge(H.abund,H.traits2.sp,by="row.names",all=T), 
-               xlab = "Rep.Mass.Frac",
-               ylab = "Abundance Ratio")
-        
-        MyTraits<-c("Log.Ht.veg","Log.Leaf.Area",'Supp.Mass.Frac',"Rep.Mass.Frac","Log.Lamina.thck","LDMC",
-                    "Leaf.Mass.Frac","Min.Root.Loca","SRL",'Myc.Frac')
-        
-        
-        for (i in 1:(length(MyTraits)-1)){
-          for (j in (i+1):length(MyTraits)){
-            
-            x1<-MyTraits[i]
-            x2<-MyTraits[j]
-            
-            pdf(file=paste0(data.dir,'Data Exploration/X-interaction plots/Interactions btw ',x1,' and ',x2,'.pdf'))
-            
-            data <- merge(H.abund,H.traits2.sp,by="row.names",all=T)
-            
-            coplot(data$abund.ratio ~ data[,x1]|data[,x2],
-                 xlab = c(x1,x2),
-                 ylab = "Abundance Ratio",
-                 number=4,overlap=0.3)
-            dev.off()
-            
-             }
-        }
-        
-        # Summary
-        # 45 interactions
-        # All graphs printed in C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Data/Data Exploration/X-interaction plots/
-        summary(lm(abund.ratio~Rep.Mass.Frac*Log.Lamina.thck,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
-        # Rep.Mass.Fraction x Log.Lamina.thck significant (for sp with thick lamina, abundance increases 
-        # with increasing reproductive mass fraction)
-        summary(lm(abund.ratio~Rep.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
-        # Rep.Mass.Fraction x Min.Root.Loca significant (for sp with shallow minimum root location, abundance increases 
-        # with increasing reproductive mass fraction)
-        summary(lm(abund.ratio~Supp.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
-        # Supp.Mass.Fraction x Min.Root.Loca significant
-        
-        # A1.0.8 Independance?
-          # No spatial or temporal variables to test against the response variable
-          # Look at independence of residuals after model fit. 
+  #C1 - Outliers on Y and X  ----
+  
+      #Y1 - Abundance - 1 outliers (CASC), variance homogeneous 
+      ---
+      par(mfrow = c(1, 2))  
+      boxplot(H.abund$abund.ratio,
+              main = "Abundance Ratio")
+      dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
+               labels=rownames(H.abund),
+               xlab='range of data', ylab='Order of the data', main='abundance ratios') # 1 outlier
+
+      #Y2 - Elevation
+      ---
+      # ... to do
         
       
+      #Y3 - coverage
+      ---
+      # ... to do
+      
+      
+      #X1 - Ht.veg - 2 outlier species - COCO and VIAL are tall (3 & 6 sd)
+      ---
+      par(mfrow=c(1,2))
+      boxplot(H.traits2.sp$Ht.veg,
+              main = "vegetative height")
+      dotchart(H.traits2.sp$Ht.veg, #i.e. cleveland dot chart
+               xlab='range of data', ylab='Order of the data',main='Ht.veg',
+               labels=H.traits2.sp$Species)
+      
+      # X2 - Min.Root.Loca - no outliers - only 6 categories. 7 species with NAs
+      ---
+      boxplot(H.traits2.sp$Min.Root.Loca,
+              main = "Minimum Root Location")
+      
+      H.traits2.sp[,c('Species','Min.Root.Loca')] 
+        # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
+      
+      dotchart(as.numeric(H.traits2.sp$Min.Root.Loca), #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               main='Min.root.Loca',
+               labels=H.traits2.sp$Species)
+      
+      plot(as.numeric(H.traits2.sp$Max.Root.Loca)~as.numeric(H.traits2.sp$Min.Root.Loca))
+      # pretty well correlated, but not fully redundant.
+      
+      # X3 - Max.Root.Loca - no outliers - only 6 categories. 7 species with NAs
+      ---
+      boxplot(H.traits2.sp$Max.Root.Loca,
+              main = "Maximum Root Location")
+      
+      H.traits2.sp[,c('Species','Max.Root.Loca')]  
+        # All VIAL, SAPU, RUID, LOCA, COCO & COAL are 'NA'
+      
+      # X4 - Lamina.thck - CLBO, GAPR and ERAM are over 2 SD thicker than other species
+      ---
+      boxplot(H.traits2.sp$Lamina.thck,
+              main = "Lamina.thck") # a few outliers
+      
+      dotchart(H.traits2.sp$Lamina.thck, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               main='Lamina.thickness',
+               labels=H.traits2.sp$Species)  # two species are very thick
+      
+      dotchart(log(H.traits2.sp$Lamina.thck), #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               main='Lamina.thickness',
+               labels=H.traits2.sp$Species)
+      
+      dotchart(decostand(H.traits2.sp$Lamina.thck,method='standardize',margin=2),
+                  xlab='range of data',
+                  ylab='Order of the data',
+                  main='Lamina.thickness',
+                  labels=H.traits2.sp$Species)
+      
+      # X5 - LMA - GAPR and LYOB have LMA over 2 SD higher than other species
+      ---
+      boxplot(H.traits2.sp$LMA,
+              main = "LMA") # 3 outliers
+      
+      dotchart(H.traits2.sp$LMA, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               main='LMA',
+               labels=H.traits2.sp$Species) # two outlier species
+      
+      H.traits2.sp[(H.traits2.sp$Species=='SAPU'|H.traits2.sp$Species=='COAL'),'LMA']
+      
+      # X6 - LDMC - okay
+      boxplot(H.traits2.sp$LDMC,
+              main = "LDMC")
+      
+      dotchart(H.traits2.sp$LDMC, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               main='LDMC') # fine
+      
+      # X7 - Leaf.Area # VEVI and SAPU leaf area over 2 SD larger than other sp. 
+      ---
+        
+      boxplot(H.traits2.sp$Leaf.Area,
+              main = "Leaf.Area") # 5 outliers
+      
+      dotchart(H.traits2.sp$Leaf.Area, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main='Leaf.Area') # one species outlier
+      
+      # X8 - Leaf.Mass.Frac - okay
+      ---
+      boxplot(H.traits2.sp$Leaf.Mass.Frac,
+              main = "Leaf.Mass.Frac") # fine
+      
+      dotchart(H.traits2.sp$Leaf.Mass.Frac, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main='Leaf.Mass.Frac') # fine
+      
+      # X9 - Supp.Mass.Frac - Okay
+      ---
+      boxplot(H.traits2.sp$Supp.Mass.Frac,
+              main = "Supp.Mass.Frac") # fine
+      
+      dotchart(H.traits2.sp$Supp.Mass.Frac, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main='Supp.Mass.Frac')
+      
+      # X10 - Rep.Mass.Frac # skewed distribution (lots of very low values), CYAC and CASC over 2SD larger Rep.Mass.Frac than other sp.
+      ---
+      boxplot(H.traits2.sp$Rep.Mass.Frac,
+              main = "Rep.Mass.Frac") # 0 inflated / Skewed
+      
+      dotchart(H.traits2.sp$Rep.Mass.Frac, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main='Rep.Mass.Frac') # 0 inflated
+      
+      # X11 - Stor.Mass.Frac - 0 inflated at species level (turn into presence/absence?)/ Skewed
+      ---
+      boxplot(H.traits2.sp$Stor.Mass.Frac,
+              main = "Rep.Mass.Frac") # 0 inflated / Skewed
+      
+      dotchart(H.traits2.sp$Stor.Mass.Frac, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main='Stor.Mass.Frac',
+               cex=0.6) # 0 inflated - no outliers
+      
+      # X12 - F.Root.Diam - CYAC & EPHE have fine roots 6 SD thicker than other spp.
+      ---
+      boxplot(H.traits2.sp$F.Root.Diam,
+              main = "F.Root.Diam")
+      
+      dotchart(H.traits2.sp$F.Root.Diam, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main="Fine Root thickness") # 2 sp with large diameter
+      
+      # X13 - SRL - okay
+      ---
+      boxplot(H.traits2.sp$SRL,
+              main = "SRL") # 2 outliers
+      
+      dotchart(H.traits2.sp$SRL, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main="SRL") # No outliers
+      
+      
+     # X14 Myc.Frac - Okay
+      ---
+      boxplot(H.traits2.sp$Myc.Frac,
+                main = "Myccorhizal Fraction") # 2 outliers
+      
+      dotchart(H.traits2.sp$Myc.Frac, #i.e. cleveland dot chart
+               xlab='range of data',
+               ylab='Order of the data',
+               labels=H.traits2.sp$Species,
+               main="Myccorhizal Fraction") # No outliers
+     
+     # TRY HighlandStats code
+     
+     # Source Highland library v.10 for Highland's own wrapper function for Cleveland dotplots
+     source("C:/Users/Julie/Desktop/Postdoc/Workshops/Highland Stats_GLM, GAMS/HighstatLibV10.R")   #<---
+     
+     Mydotplot(H.traits2.sp[ ,Trait.Names])
+    
+     
+     # Summary
+     # log transform leaf area, vegetative height and fine root thickness for sure 
+     # because of outliers
+     
+     # Transformed Leaf thickness and LMA because log forms work better latter on in the models. 
+     
+     
+     # Pay attention to Storage mass Fraction: 0-inflated. Transform to presence/absence?
+     # Pay attention to Reproductive mass Fraction: skewed distribution. May need to be transf.
+     
+     
+     # Can't log transform standardized values because values smaller than 1.
+     H.traits2.sp$Log.Ht.veg<-log(H.traits2.sp$Ht.veg)
+     H.traits2.sp$Log.Leaf.Area<-log(H.traits2.sp$Leaf.Area)
+     H.traits2.sp$Log.F.Root.Diam<-log(H.traits2.sp$F.Root.Diam)
+     H.traits2.sp$Log.LMA<-log(H.traits2.sp$LMA)
+     H.traits2.sp$Log.Lamina.thck<-log(H.traits2.sp$Lamina.thck)
+     
+    # Update list of traits to use
+     Trait.Names<-c("Log.Ht.veg","Min.Root.Loca","Max.Root.Loca","Log.Lamina.thck","Log.LMA",
+                    "LDMC","Log.Leaf.Area","Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac",
+                    "Stor.Mass.Frac","Log.F.Root.Diam","SRL",'Myc.Frac')
+     
+  #C2 - Homogeneity (homoscedasticity) of Y ----
+   
+      # Test after model is built, as validation step
+      # residuals vs fitted for each var.
+
+  #C3 - Normality of Y ----
+     
+     # Test after model is built, as validation step
+     # (least important assumption - use link function instead of transforming Y).
+     # test for normality of residuals
+
+  #C4 - Zero trouble (Y) ? ----
+     
+      sort(H.abund$abund.ratio)
+      # only one 0 value - Okay! 
+      
+  #C5 - Collinearity  (Xs) ----
+  
+      
+  # Try PairPlots        
+  pairs(H.traits2.sp[,Trait.Names],
+        lower.panel = panel.cor) # Requires to source HighstatlibV10.R
+  
+    # Summary
+    # Problem with Min and Max root location: R2 = 0.97 - Pick one
+    # Problem with LMA and LDMC: R2=0.8 - Pick one
+    # Problem with Leaf Mass Fraction and Storage Mass Fraction: R2=-0.9 - Pick one
+    # Problem with Fine Root Diameter and SRL: R2=-0.6 - Pick one
+  
+    # Maybe problem with Storage Mass fraction and Support Mass Fraction: R2=-0.5 - Pick one
+    # Maybe problem with Veg.Height and Leaf Area: R2 = 0.4
+    # Maybe problem with Support Mass Fraction and Veg.height: R2 =0.4
+    # Maybe problem with LMA and Leaf thickness: R2=0.4
+    # Maybe problem with LDMC and Leaf Mass Fraction: R2=0.4
+    # Maybe problem with LDMC and Storage Mass Fraction: R2=-0.4
+    # Maybe problem with Fine Root Diameter and Leaf Area: R2=0.4
+    # Maybe problem with Fine Root Diameter and Rep. Mass Fraction: R2=0.4
+  
+    # Worry about y1-y2 covariance between 0.5-0.8 if relationshps between X and each of Y1
+    # and y2 are weak. 
+  
+   summary(lm(abund.ratio~Log.F.Root.Diam,
+              data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+              ))
+   # NS
+   summary(lm(abund.ratio~SRL,
+              data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+   ))
+   # NS   
+   
+   # Both X-Y correlations are week, so remove one of Fine Root Diameter or SRL
+   
+   summary(lm(abund.ratio~Supp.Mass.Frac,
+              data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+   ))
+   # NS
+   
+   summary(lm(abund.ratio~Stor.Mass.Frac,
+              data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+   ))
+  # NS
+   
+  # Both X-Y correlations are week, so remove one of Storage or Support Mass Fraction
+   
+  # C5.1 Deal with colinearity using VIFs ####
+  #-----------------------------------------#
+   
+  # Do VIF tests using dataset without myccorhizal fraction because it this trait contains only 42 species
+  # instead of 51, which decreases our sample size a lot. 
+  
+  # sequentially eliminate the variables with the highest VIFs  
+  vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
+           LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+           Stor.Mass.Frac+Log.F.Root.Diam+SRL,
+         na.action=na.omit,
+      data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+      ))
+  
+  #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
+  #       2.088027       64.270612       64.708128        4.427030       12.094997       10.354246 
+  #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac  Stor.Mass.Frac Log.F.Root.Diam 
+  #       3.439911      157.738467       33.286408       12.404597      179.907708        3.310469 
+  #            SRL 
+  #       4.605975 
+  # 
+  # Storage Mass Fraction is the worst
+  
+  vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Max.Root.Loca+Log.Lamina.thck+Log.LMA+
+           LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+           Log.F.Root.Diam+SRL,
+         na.action=na.omit,
+         data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+  ))
+  
+  #     Log.Ht.veg   Min.Root.Loca   Max.Root.Loca Log.Lamina.thck         Log.LMA            LDMC 
+  #       1.877799       63.093456       63.744531        4.523619       10.608937        9.930118 
+  #  Log.Leaf.Area  Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
+  #       2.175915        3.078716        1.670315        1.683049        3.154330        4.057710
+  
+  # Max.Root.Loca is the worst
+  
+  vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+Log.LMA+
+           LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+           Log.F.Root.Diam+SRL,
+         na.action=na.omit,
+         data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+  ))
+  
+  #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck         Log.LMA            LDMC   Log.Leaf.Area 
+  #       1.872089        1.850274        3.864454        9.107514        8.212370        2.126254 
+  # Leaf.Mass.Frac  Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
+  #       2.808127        1.670286        1.668985        3.122450        3.837607 
+   
+  #1 TRY without LMA 
+  vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
+           LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+           Log.F.Root.Diam+SRL,
+         na.action=na.omit,
+         data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+  ))
+  
+  #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
+  #       1.724775        1.792609        1.905555        2.490835        2.046712        2.507318 
+  # Supp.Mass.Frac   Rep.Mass.Frac Log.F.Root.Diam             SRL 
+  #       1.661494        1.579522        3.100699        3.782878 
+  
+  #2 Then try without Fine root Diameter, because I don't want to loose SRL
+  
+  vif(lm(abund.ratio~Log.Ht.veg+Min.Root.Loca+Log.Lamina.thck+
+           LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Supp.Mass.Frac+Rep.Mass.Frac+
+           SRL,
+         na.action=na.omit,
+         data=merge(H.abund,H.traits2.sp,by="row.names",all=T)
+  ))
+  
+  #     Log.Ht.veg   Min.Root.Loca Log.Lamina.thck            LDMC   Log.Leaf.Area  Leaf.Mass.Frac 
+  #       1.658229        1.637638        1.882275        1.988683        2.024708        2.205449 
+  # Supp.Mass.Frac   Rep.Mass.Frac             SRL 
+  #       1.347331        1.517007        1.761267
+  
+  # Good to go! All VIFs below 3
+  
+  # C5.2 Deal with colinearity using PCs ####
+  #-----------------------------------------#
+  
+  # Is it better to collapse the 13 traits into PCs?
+  MyPCATraits<-c('Log.Ht.veg','Min.Root.Loca','Max.Root.Loca','Log.Lamina.thck','Log.LMA',
+                 'LDMC','Log.Leaf.Area','Leaf.Mass.Frac','Supp.Mass.Frac','Rep.Mass.Frac',
+                 'Stor.Mass.Frac','Log.F.Root.Diam','SRL')
+  
+  MyPCAData<-H.traits2.sp[,MyPCATraits][complete.cases(H.traits2.sp[,MyPCATraits]),]
+  
+  library(vegan)
+  
+  my.pca<-rda(MyPCAData,scale=T)
+  biplot(my.pca,
+         display = c("sites", 
+                     "species"),
+         type = c("text",
+                  "text"))
+  
+  biplot(my.pca,
+         choices=c(3,4),
+         display = c("sites", 
+                     "species"),
+         type = c("text",
+                  "text"))
+  
+  # Plot with vegan functions to test for significance of axes and variables
+  
+  # "scaling = 1" means that we are looking at correlation biplot
+  #  angles between lines reflect their correlations
+  
+  ordi12<-ordiplot(my.pca, scaling=1, type="t",
+                   main = "PCA 1-2")
+  ordiequilibriumcircle(my.pca, ordi12) 
+  
+  ordi34<-ordiplot(my.pca, scaling=1, type="t",choices=c(3,4),
+                   main = "PCA 3-4")
+  ordiequilibriumcircle(my.pca, ordi34) 
+  
+  ordi56<-ordiplot(my.pca, scaling=1, type="t",choices=c(5,6),
+                   main = "PCA 3-4")
+  ordiequilibriumcircle(my.pca, ordi56) 
+  
+  summary(my.pca)
+  # Call:
+  # rda(X = MyPCAData, scale = T) 
+  # 
+  # Partitioning of correlations:
+  #               Inertia Proportion
+  # Total              13          1
+  # Unconstrained      13          1
+  # 
+  # Eigenvalues, and their contribution to the correlations 
+  # 
+  # Importance of components:
+  #                          PC1    PC2    PC3    PC4     PC5     PC6     PC7     PC8     PC9    PC10    PC11
+  # Eigenvalue            3.3980 2.6571 1.9697 1.4526 1.29771 0.84580 0.54751 0.40279 0.23704 0.13444 0.04764
+  # Proportion Explained  0.2614 0.2044 0.1515 0.1117 0.09982 0.06506 0.04212 0.03098 0.01823 0.01034 0.00366
+  # Cumulative Proportion 0.2614 0.4658 0.6173 0.7290 0.82886 0.89392 0.93604 0.96702 0.98525 0.99560 0.99926
+  # 
+  #                           PC12     PC13
+  # Eigenvalue            0.007333 0.002292
+  # Proportion Explained  0.000560 0.000180
+  # Cumulative Proportion 0.999820 1.000000
+  # 
+  # Scaling 2 for species and site scores
+  # * Species are scaled proportional to eigenvalues
+  # * Sites are unscaled: weighted dispersion equal on all dimensions
+  # * General scaling constant of scores:  4.745172 
+  # 
+  # 
+  # Species scores
+  # 
+  #                      PC1      PC2     PC3       PC4      PC5       PC6
+  # Log.Ht.veg      -0.02985 -0.21835 -0.9195 -0.272806  0.49282  0.559430
+  # Min.Root.Loca   -0.26507 -1.06552 -0.3410  0.533190 -0.27254 -0.043970
+  # Max.Root.Loca   -0.27311 -1.10149 -0.3119  0.484425 -0.24021 -0.082546
+  # Log.Lamina.thck  0.66651 -0.38192  0.8019  0.316441  0.18111 -0.423685
+  # Log.LMA         -0.69319 -0.56407  0.7795  0.031087  0.43419  0.009899
+  # LDMC            -1.05592 -0.10757  0.4676 -0.209673  0.32976  0.231548
+  # Log.Leaf.Area    0.83523 -0.32294 -0.5881 -0.002711  0.10727 -0.190455
+  # Leaf.Mass.Frac  -1.11506 -0.14794 -0.2758 -0.249071 -0.38860 -0.240577
+  # Supp.Mass.Frac  -0.33950  0.58991 -0.4020  0.164217  0.76681 -0.609162
+  # Rep.Mass.Frac   -0.15623  0.07729  0.0272  0.954380  0.61519  0.434712
+  # Stor.Mass.Frac   1.12833 -0.13501  0.4361 -0.037680 -0.08079  0.397475
+  # Log.F.Root.Diam  0.58770 -0.67438 -0.2335 -0.335773  0.57536 -0.302895
+  # SRL              0.02943  0.88160 -0.2334  0.814536 -0.27616 -0.078143
+  ---
+  
+  # which PCs are statistically significant?
+    
+  library(BiodiversityR) # for PCAsignificance() and ordiequilibriumcircle()
+  PCAsignificance(my.pca)
+  # First 5 PCs are significant
+  
+  # save those values to trait data frame
+  PCA.scores<-my.pca$CA$u[,1:5]
+  H.traits3.sp<-merge(H.traits2.sp,PCA.scores,by='row.names',all=T)
+  
+  save(H.traits3.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.PCs.RData'))
+  
+  # C6 Relationship between Y and X linear? ----
+  
+  Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T),
+           Trait.Names,'abund.ratio',MyYlab="Abundance Ratio")
+  
+  # Everything linear - good to go. 
+  # Two "outliers" - species with high abundance ratios. 
+  
+  # Try with ratio of log abundances as response variable instead.Remove IMCA (row 19 bc is problematic)
+  Myxyplot(merge(H.abund,H.traits2.sp,by="row.names",all=T)[-24,],
+          Trait.Names,'ratio.log.abund',MyYlab="Log-Abundance Ratio")
+
+  # C7 Interactions? ----
+
+  coplot(abund.ratio ~ Rep.Mass.Frac |SRL,
+         data = merge(H.abund,H.traits2.sp,by="row.names",all=T), 
+         xlab = "Rep.Mass.Frac",
+         ylab = "Abundance Ratio")
+  
+  MyTraits<-c("Log.Ht.veg","Log.Leaf.Area",'Supp.Mass.Frac',"Rep.Mass.Frac","Log.Lamina.thck","LDMC",
+              "Leaf.Mass.Frac","Min.Root.Loca","SRL",'Myc.Frac')
+  
+  
+  for (i in 1:(length(MyTraits)-1)){
+    for (j in (i+1):length(MyTraits)){
+      
+      x1<-MyTraits[i]
+      x2<-MyTraits[j]
+      
+      pdf(file=paste0(data.dir,'Data Exploration/X-interaction plots/Interactions btw ',x1,' and ',x2,'.pdf'))
+      
+      data <- merge(H.abund,H.traits2.sp,by="row.names",all=T)
+      
+      coplot(data$abund.ratio ~ data[,x1]|data[,x2],
+           xlab = c(x1,x2),
+           ylab = "Abundance Ratio",
+           number=4,overlap=0.3)
+      dev.off()
+      
+       }
+  }
+  
+  # Summary
+  # 45 interactions
+  # All graphs printed in C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Data/Data Exploration/X-interaction plots/
+  summary(lm(abund.ratio~Rep.Mass.Frac*Log.Lamina.thck,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+  # Rep.Mass.Fraction x Log.Lamina.thck significant (for sp with thick lamina, abundance increases 
+  # with increasing reproductive mass fraction)
+  summary(lm(abund.ratio~Rep.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+  # Rep.Mass.Fraction x Min.Root.Loca significant (for sp with shallow minimum root location, abundance increases 
+  # with increasing reproductive mass fraction)
+  summary(lm(abund.ratio~Supp.Mass.Frac*Min.Root.Loca,data=merge(H.abund,H.traits2.sp,by="row.names",all=T)))
+  # Supp.Mass.Fraction x Min.Root.Loca significant
+  
+  # A1.0.8 Independance?
+    # No spatial or temporal variables to test against the response variable
+    # Look at independence of residuals after model fit. 
   
 
-        
-  # A2 - Canopy layer ####
-  #=======================#
-        
-    # redo based on Highland Stats protocol
-        
-    
-      
-        
-# B- Setup abundance data ####
-# ===========================#
 
-      # B1 - Look at temporal patterns ####
-      # ====================================#
-      
-      plot(abund[abund$Layer=='H','avg.abundance.2012']~abund[abund$Layer=='H','avg.abundance.1970'],type='n',
-           xlab='av abundance 1970', ylab='avg abundance 2012',main='herbaceous')
-      text(abund[abund$Layer=='H','avg.abundance.1970'],abund[abund$Layer=='H','avg.abundance.2012'],
-           labels=rownames(abund)[which(abund$Layer=='H')])
-      abline(0,1)
-      
-      #on log-scale, much better
-      plot(log(abund[abund$Layer=='H','avg.abundance.2012'])~log(abund[abund$Layer=='H','avg.abundance.1970']),type='n',
-           xlab='log(av abundance 1970)', ylab='log(avg abundance 2012)',main='log herbaceous')
-      text(log(abund[abund$Layer=='H','avg.abundance.1970']),log(abund[abund$Layer=='H','avg.abundance.2012']),
-           labels=rownames(abund)[which(abund$Layer=='H')])
-      abline(0,1)
-      
-      # for Canopy layer: 
-      plot(abund[abund$Layer=='C','avg.abundance.2012']~abund[abund$Layer=='C','avg.abundance.1970'],type='n',
-           xlab='av abundance 1970', ylab='avg abundance 2012',main='canopy')
-      text(abund[abund$Layer=='C','avg.abundance.1970'],abund[abund$Layer=='C','avg.abundance.2012'],
-           labels=rownames(abund)[which(abund$Layer=='C')])
-      abline(0,1)
-      
-      plot(log(abund[abund$Layer=='C','avg.abundance.2012'])~log(abund[abund$Layer=='C','avg.abundance.1970']),type='n',
-           xlab='log(av abundance 1970)', ylab='log(avg abundance 2012)',main='log canopy')
-      text(log(abund[abund$Layer=='C','avg.abundance.1970']),log(abund[abund$Layer=='C','avg.abundance.2012']),
-           labels=rownames(abund)[which(abund$Layer=='C')])
-      abline(0,1)
-        
-    # B2- Create abundance dataframe & new variables ####
-    #=====================================================#
-        
-    abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
-    rownames(abund)<-abund$Species
-    abund$Species<-NULL
-    
-      # Abundance/Presence Ratios
-      
-      abund[,'presence.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
-      abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
-      abund$abund.ratio
-      rownames(abund[abund$abund.ratio=='Inf',]) 
-      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
-      # [17] "RARE" "TAOF
-      # loosing 18 data points to "Inf"
-      plot(density(abund$abund.ratio))
-      plot(density(log(abund$abund.ratio+0.01)))
-      
-      # Log of Abundance/Presence Ratios
-      
-      abund[,'log.presence.ratio']<-log(abund$presence.ratio+0.01)
-      abund[,'log.abund.ratio']<-log(abund$abund.ratio+0.01)
-      abund$log.abund.ratio
-      rownames(abund[abund$log.abund.ratio=='Inf',])
-      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
-      # [17] "RARE" "TAOF"
-      #loosing 18 data points to Inf
-      plot(density(abund$log.abund.ratio))
-      rownames(abund[abund$log.abund.ratio<=-3,])
-      # [1] "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "OXMO"  "TSCA" 
-      # sencond density peak has 10 species. 
-      
-      # Ratios of log Abundance/Presence
-      
-      abund[,'ratio.log.presence']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
-      abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
-      abund$ratio.log.abund
-      plot(density(abund$ratio.log.abund))
-      rownames((abund)[abund$ratio.log.abund<=-10,]) # IMCA, POTR
-      rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
-      
-      # powerTransform Abundance/Presence ####
-      
-      a<-abund$abund.ratio
-      a[which(a=='Inf')]<-NA
-      powerTransform(a+0.01) # 0.181293
-      abund[,'PT.abund.ratio']<-(a+0.01)^0.181293
-      b<-abund$presence.ratio
-      b[which(b==Inf)]<-NA
-      powerTransform(b+0.01)# -.3390714
-      abund[,'PT.presence.ratio']<-(b+0.01)^0.3390714
-    
-    str(abund)
-      # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
-      # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
-      # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
-      # $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
-      # $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
-      # $ presence.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
-      # $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
-      # $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
-      # $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
-      # $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
-      # $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
-      # $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
-      # $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
-    
-    save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
+
   
-    # link function of glms (negative binomial) made to deal with lack of normality of response variable. 
+# Canopy layer ? ####
+#=======================#
+  
+# To do
+  
 
-    # B3 - Problem with infinity values ####
-    #========================================#
     
-      # ABUNDANCE
-    
-      # Which species were absent in 1970?
-      rownames(abund)[which(abund$avg.abundance.1970==0)]  
-      # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN"  "MOUN" "PAQU" "POGR" 
-      # [17]"RARE" "TAOF"
       
-      # What is the minimum value in dataset?
-      abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
-      #0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
-      
-      # replace 0s with minimum value
-      abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
-      abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-              "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01 
-      
-      #Re-calculate abundance
-      non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
-      plot(density(non0.abund.change)) 
-      # now ranges from 0-200, with a single value at 200. Bad idea to replace 1970's 0s.
-      
-      abund$non0.avg.abundance.1970<-NULL
-      
-      #save new abundance dataset without INF values
-      abund.c<-abund[!rownames(abund)%in% c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-                                     "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
-                                     "RARE","TAOF"),]
-    
-    dim(abund.c) # 107 13
-    
-    save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
+
     
     
     
@@ -1377,7 +1419,9 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
     dotchart(H.traits$Stor.Mass.Frac, #i.e. cleveland dot chart - conditional on species
              groups=H.traits$Species,
              xlab='range of data',
-             ylab='Order of the data') # some species at 0, others not. 
+             ylab='Order of the data',
+             cex=0.6,
+             main="Storage Mass Fraction") # some species at 0, others not. 
     
     # X12 - F.Root.Diam - CYAC & EPHE have 4x thicker fine roots
     boxplot(H.traits$F.Root.Diam,
