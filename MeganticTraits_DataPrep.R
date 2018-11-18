@@ -614,13 +614,32 @@ abline(0,1)
       
       dim(H.traits2.sp) # 51 15
       
+      # save(H.traits2.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.Rdata'))
+      
+      # Add in Seed Size 
+      
+      load(paste0(wrk.dir,'Seed.Size.TRY.and.TOPIC.RData'))
+      dim(Seed.Size)
+      # 60 4
+      str(Seed.Size)
+      # 'data.frame':	60 obs. of  4 variables:
+      #   $ SpeciesName      : Factor w/ 60 levels "Abies balsamea",..: 1 2 3 4 5 6 7 8 9 10 ...
+      # $ Seed.Weight.TOPIC: num  7.59 23.23 69.44 4.19 1.02 ...
+      # $ Seed.Weight.TRY  : num  7.37 20.36 NA 6.37 1.85 ...
+      # $ Combined.DataSets: num  7.59 23.23 69.44 4.19 1.02 ...
+      
+      H.traits2.sp<-merge(H.traits2.sp,Seed.Size[,-c(1:3),drop=FALSE],
+                  by="row.names",all.x=T)
+      head(H.traits2.sp)
+      H.traits2.sp$Row.names<-NULL
+      rownames(H.traits2.sp)<-H.traits2.sp$Species
+      dim(H.traits2.sp)
+      #51 16
+      
+      colnames(H.traits2.sp)[colnames(H.traits2.sp)=='Combined.DataSets']<-'Seed.Size'
+      
+      
       save(H.traits2.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.Rdata'))
-      
-      # Add in Seed size some other time
-      
-      # seed.file<-read.delim('C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Data/Seed size/2950_05042017080522/Seed.size.2950.txt')
-      # dim(seed.file)
-      # View (seed.file)
       
     # B2 - CANOPY LAYER ####
     #=======================#
@@ -1092,6 +1111,11 @@ abline(0,1)
   # save those values to trait data frame
   PCA.scores<-my.pca$CA$u[,1:5]
   H.traits3.sp<-merge(H.traits2.sp,PCA.scores,by='row.names',all=T)
+  head(H.traits3.sp)
+  H.traits3.sp$Row.names<-NULL
+  dim(H.traits3.sp)
+  #51 21
+  
   
   save(H.traits3.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.PCs.RData'))
   
