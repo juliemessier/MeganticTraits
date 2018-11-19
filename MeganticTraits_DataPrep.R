@@ -38,95 +38,78 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
 
 # ==================================================================================#
 
-# A- Setup abundance data ####
+# A- Setup response variables ####
 # ===========================#
 
-load(file=paste0(wrk.dir,'Species.abundances.full.data.Rdata')) # object = abund
-load(file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) # object = abund.c
-str(abund.c)
+# A1 - Setup Abundance & Occurence Data ####
+#-----------------------------#
 
-# 'data.frame':	107 obs. of  13 variables:
-# $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
-# $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
-# $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
-# $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
-# $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
-# $ presence.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
-# $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
-# $ log.presence.ratio   : num  0.00995 0.34359 0.47623 0.19062 -0.09431 ...
-# $ log.abund.ratio      : num  -0.3425 1.3635 -0.3425 -0.0943 -0.3425 ...
-# $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ...
-# $ ratio.log.presence   : num  0.995 1.078 1.15 1.036 0.973 ...
-# $ PT.abund.ratio       : num  0.94 1.28 0.94 0.983 0.94 ...
-# $ PT.presence.ratio    : num  1.003 1.124 1.175 1.067 0.969 ...
-
-# Remove PT.presence.ratio bc afterall, it doesn't make sense to transform response 
-# variable just for normality. 
-
-abund.c$PT.abund.ratio<-NULL
-abund.c$PT.presence.ratio<-NULL
-
-# some species were not present in 1974 and were present in 2012. The abndance ratio
-# for those is infinity, which is useless. Those species were removed. 
-
-# A1- Create abundance dataframe & new variables ####
+# A1.1- Create abundance dataframe & new variables ####
 #=====================================================#
 
 abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
+str(abund)
+
 rownames(abund)<-abund$Species
-abund$Species<-NULL
+colnames(abund)[1]<-'SpCode'
 
-# Abundance/Presence Ratios
+# Abundance and Occurence ratios
 
-abund[,'coverage.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
-abund[,'abund.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
-abund$abund.ratio
-rownames(abund[abund$abund.ratio=='Inf',]) 
-# [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
-# [17] "RARE" "TAOF
-# loosing 18 data points to "Inf"
-plot(density(abund$abund.ratio))
-plot(density(log(abund$abund.ratio+0.01)))
+abund[,'occurence.ratio']<-round(abund$pct.plot.present.2012/abund$pct.plot.present.1970,digits=1)
+abund[,'abundance.ratio']<-round(abund$avg.abundance.2012/abund$avg.abundance.1970,digits=1)
+abund$abundance.ratio
 
 
-# Ratios of log Abundance/Presence
+# Ratios of log Abundance & Occurence
 
-abund[,'ratio.log.coverage']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
-abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
-abund$ratio.log.abund
-plot(density(abund$ratio.log.abund))
-# Outliers?
-rownames((abund)[abund$ratio.log.abund<=-10,])# IMCA, POTR
-rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
+# abund[,'ratio.log.coverage']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
+# abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
+# abund$ratio.log.abund
+# plot(density(abund$ratio.log.abund))
+# # Outliers?
+# rownames((abund)[abund$ratio.log.abund<=-10,])# IMCA, POTR
+# rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
 
 # If this is an issue - link function of glms (negative binomial) made to deal with lack of normality of response variable. 
 
 str(abund)
-#'data.frame':	125 obs. of  9 variables:
+# data.frame':	125 obs. of  8 variables:
+# $ Species              : Factor w/ 125 levels "ABBA","ACPE",..: 1 2 3 4 5 6 7 8 9 10 ...
 # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
 # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
 # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
 # $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
 # $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
-# $ coverage.ratio       : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
+# $ occurence.ratio      : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
 # $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
-# $ ratio.log.coverage   : num  0.995 1.078 1.15 1.036 0.973 ...
-# $ ratio.log.abund      : num  0.911 45.921 0.821 0.98 0.829 ..
-# 
+
+
+
 save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
 
 
-# A2 - Problem with infinity values ####
-#========================================#
+# A1.2 - Remove infinity values ####
+#===============================#
 
 # Species absent in 1974 that are present in 2012 give a ratio of infinity
+# Which species have ratios of infinity?
 
-# ABUNDANCE
+rownames(abund[abund$abund.ratio=='Inf',]) 
+# [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
+# [17] "RARE" "TAOF
+# loosing 18 data points to "Inf"
 
-# Which species were absent in 1970?
-rownames(abund)[which(abund$avg.abundance.1970==0)]  
-# [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN"  "MOUN" "PAQU" "POGR" 
-# [17]"RARE" "TAOF"
+dim(abund[abund$occurence.ratio=='Inf',])
+#18 
+# we loose 18 species to infinity
+
+# are the infinity values for abundance and occurence the same? 
+all(rownames(abund[abund$occurence.ratio=='Inf',])==rownames(abund[abund$abund.ratio=='Inf',])) 
+# TRUE
+
+
+# Try replacing inf values with a number, 
+# where value for 1970 is half of the smallest observed
 
 # What is the minimum value in dataset?
 abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
@@ -137,7 +120,7 @@ abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
 abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
         "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01/2 
 
-#Re-calculate abundance
+# Re-calculate abundance
 non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
 plot(density(non0.abund.change)) 
 # now ranges from 0-400, with a single value at 400. 
@@ -147,22 +130,27 @@ plot(density(non0.abund.change))
 abund$non0.avg.abundance.1970<-NULL
 
 #save new abundance dataset without INF values
-abund.c<-abund[!rownames(abund)%in% c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-                                      "HYAM","JUTE","LICO","LYCL","LYUN","MOUN","PAQU","POGR",
-                                      "RARE","TAOF"),]
+abund.c<-abund[abund$abundance.ratio!='Inf',]
 
 dim(abund.c) # 107 9
+
+# look at distribution of values
+plot(density(abund$abund.ratio)) # right skewed
+plot(density(log(abund$abund.ratio+0.01))) # bimodal
+
+plot(density(abund$occurence.ratio)) # right skewed
+plot(density(log(abund$occurence.ratio))) # normal-ish. 
 
 save(abund.c,file=paste0(wrk.dir,'Species.abundances.Inf.removed.Rdata')) 
 
 
-# A3 - Look at temporal patterns ####
+# A1.3 - Look at temporal patterns ####
 # ====================================#
 
 par(mfrow=c(1,2))
 
 plot(abund.c[abund.c$Layer=='H','avg.abundance.2012']~abund.c[abund.c$Layer=='H','avg.abundance.1970'],type='n',
-     xlab='av abundance 1970', ylab='avg abundance 2012',main='Abundance, herbaceous')
+     xlab='mean abundance 1970', ylab='mean abundance 2012',main='Abundance, herbaceous')
 text(abund.c[abund.c$Layer=='H','avg.abundance.1970'],abund.c[abund.c$Layer=='H','avg.abundance.2012'],
      labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
 abline(0,1)
@@ -193,9 +181,105 @@ text(log(abund.c[abund.c$Layer=='H','pct.plot.present.1970']),log(abund.c[abund.
      labels=rownames(abund.c)[which(abund.c$Layer=='H')],cex=0.8)
 abline(0,1)
 
+# A2 - Setup elevation change data ####
+#=====================================#
 
+  # A2.1 - Create elevation shift data ####
+  #=====================================================#
+  elev<-read.csv(paste0(data.dir,'Elevation_shifts.csv'))
+  str(elev)
+  # 'data.frame':	58 obs. of  8 variables:
+  # $ CodeSP    : Factor w/ 58 levels "ABIBAL","ACEPEN",..: 6 7 8 9 10 13 14 15 16 18 ...
+  # $ latin.name: Factor w/ 58 levels "abies balsamea",..: 6 7 31 8 19 11 12 13 14 16 ...
+  # $ my.code   : Factor w/ 58 levels "ABBA","ACPE",..: 6 7 31 8 18 11 12 13 17 15 ...
+  # $ PotStrata : Factor w/ 2 levels "Canopy","Understory": 2 2 2 2 2 2 2 2 2 2 ...
+  # $ SpElev1970: int  613 632 699 616 605 587 590 706 650 803 ...
+  # $ SpElev2012: int  692 611 680 623 584 655 655 870 774 897 ...
+  # $ ElevMean  : num  652 622 690 620 594 ...
+  # $ ElevDif   : int  79 -21 -19 7 -21 68 65 164 124 94 ...
+  dim(elev)
+  # 58 8
+  
+  # Remove unnecessary columns
+  elev$CodeSP<-NULL
+  elev$ElevMean<-NULL
+  rownames(elev)<-elev$my.code
+  
+  # A2.2 - Remove infinity values #### 
+  # ====================================#
+  # Cleaning already done by José Savage - no 0s or Inf in dataset
+  
+  # A2.3 - Look at temporal patterns ####
+  # ====================================#
+  
+  par(mfrow=c(1,2))
+  
+  plot(elev[elev$PotStrata=='Understory','SpElev2012']~elev[elev$PotStrata=='Understory','SpElev1970'],type='n',
+       xlab='mean elevation 1970', ylab='mean elevation 2012',main='Elevation Shift,\ Understorey')
+  text(elev[elev$PotStrata=='Understory','SpElev1970'],elev[elev$PotStrata=='Understory','SpElev2012'],
+       labels=rownames(elev)[which(elev$PotStrata=='Understory')],cex=0.8)
+  abline(0,1)
+  
+  # No outliers ! 
+  
+  save(elev,file=paste0(wrk.dir,'Species.elevation.shifts.Rdata'))
 
+# A3 - Combine Abundance, Occurence and Elevation shifts into one dataset ####
+#============================================================================#
+  
+  colnames(abund)
+  # [1] "SpCode"               "Layer"                 "pct.plot.present.1970" "pct.plot.present.2012"
+  # [5] "avg.abundance.1970"    "avg.abundance.2012"    "occurence.ratio"       "abundance.ratio"  
+  colnames(elev)
+  # [1] "latin.name" "my.code"    "PotStrata"  "SpElev1970" "SpElev2012" "ElevDif" 
 
+  # Match colnames
+  colnames(elev)[1:3]<-c('LatinName','SpCode','Layer')
+  
+  # Match layer names
+  levels(abund$Layer)[levels(abund$Layer)=="H"] <- "Understory"
+  levels(abund$Layer)[levels(abund$Layer)=="C"] <- "Canopy"
+  
+  # How many species in 'abund' dataset absent from 'elev' dataset?
+  length(abund$SpCode[which(!abund$SpCode%in%elev$SpCode)])
+  # 68 species! 
+  # How many Understory species in abund dataset absent from elev dataset?
+  dim(abund[!(abund$SpCode%in%elev$SpCode) & abund$Layer=='Understory',])
+  # 58 species
+  
+  # How many species in "elev" dataset absent from 'abund' dataset?
+  length(elev$SpCode[which(!elev$SpCode%in%abund$SpCode)])
+  # 1 
+  elev$SpCode[which(!elev$SpCode%in%abund$SpCode)]
+  # BEPO
+  
+  Ys<-merge(abund,elev,by="SpCode",all=T)
+  dim(Ys)
+  # 126 13
+  dim(abund)
+  # 125 13 - one new column from elev that wasn't in abund
+  
+  # reorder columns
+  colnames(Ys)
+  Ys<-Ys[,c(1,9,2,10,5,6,3,4,11,12,8,7,13)]
+  View(Ys)
+  # I checked there are no contradictions between the two layer columns
+  
+  # Replace NAs in Layer.x
+  Ys$Layer.x[126]<-Ys$Layer.y[126]
+
+  # Remove duplicate column
+  Ys$Layer.y<-NULL
+  colnames(Ys)[3]<-'Layer'
+  
+  save(Ys,file=paste0(wrk.dir,'All.Response.variables.RData')) #Ys
+  
+  Ys.c<-Ys[Ys$abundance.ratio!='Inf',]
+  dim(Ys.c)
+  # 108.12
+  
+  save(Ys.c,file=paste0(wrk.dir,'All.Response.variables.Inf.removed.RData')) 
+    
 # B - Setup trait data ####
 # ========================#
 
