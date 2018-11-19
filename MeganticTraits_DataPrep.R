@@ -62,26 +62,29 @@ abund$abundance.ratio
 
 # Ratios of log Abundance & Occurence
 
-# abund[,'ratio.log.coverage']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
-# abund[,'ratio.log.abund']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
-# abund$ratio.log.abund
-# plot(density(abund$ratio.log.abund))
+ abund[,'logabundance.ratio']<-round(log(abund$avg.abundance.2012)/log(abund$avg.abundance.1970),digits=3)
+ abund[,'logoccurence.ratio']<-round(log(abund$pct.plot.present.2012)/log(abund$pct.plot.present.1970),digits=3)
+ abund$logabundance.ratio
+ plot(density(abund$logabundance.ratio))
 # # Outliers?
-# rownames((abund)[abund$ratio.log.abund<=-10,])# IMCA, POTR
-# rownames((abund)[abund$ratio.log.abund>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST"  "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
+ rownames((abund)[abund$logabundance.ratio<=-10,])# IMCA, POTR
+ rownames((abund)[abund$logabundance.ratio>=20,]) # "ACPE"  "ALTR"  "DRGO"  "EPAN"  "ERST" 
+                                              # "EUPMA" "FRNI"  "GORE"  "LIBO"  "TSCA"
 
 # If this is an issue - link function of glms (negative binomial) made to deal with lack of normality of response variable. 
 
 str(abund)
-# data.frame':	125 obs. of  8 variables:
-# $ Species              : Factor w/ 125 levels "ABBA","ACPE",..: 1 2 3 4 5 6 7 8 9 10 ...
-# $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
-# $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
-# $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
-# $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
-# $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
-# $ occurence.ratio      : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
-# $ abund.ratio          : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
+  # $ SpCode               : Factor w/ 125 levels "ABBA","ACPE",..: 1 2 3 4 5 6 7 8 9 10 ...
+  # $ LatinName            : Factor w/ 125 levels "Abies balsamea",..: 1 2 3 4 5 6 7 8 9 10 ...
+  # $ Layer                : Factor w/ 2 levels "C","H": 1 1 1 1 2 2 2 2 2 2 ...
+  # $ pct.plot.present.1970: num  87.5 52.1 18.8 54.2 89.6 14.6 2.1 58.3 4.2 12.5 ...
+  # $ pct.plot.present.2012: num  85.4 70.8 29.2 62.5 79.2 4.2 0 75 6.3 27.1 ...
+  # $ avg.abundance.1970   : num  27.2 1.03 5.12 25.97 6.73 ...
+  # $ avg.abundance.2012   : num  20.27 4.06 3.82 24.3 4.85 ...
+  # $ occurence.ratio      : num  1 1.4 1.6 1.2 0.9 0.3 0 1.3 1.5 2.2 ...
+  # $ abundance.ratio      : num  0.7 3.9 0.7 0.9 0.7 0.3 0 1.1 1.5 2.1 ...
+  # $ logabund.ratio       : num  0.911 45.921 0.821 0.98 0.829 ...
+  # $ logoccurence.ratio   : num  0.995 1.078 1.15 1.036 0.973 ...
 
 
 
@@ -94,7 +97,7 @@ save(abund,file=paste0(wrk.dir,'Species.abundances.full.data.Rdata'))
 # Species absent in 1974 that are present in 2012 give a ratio of infinity
 # Which species have ratios of infinity?
 
-rownames(abund[abund$abund.ratio=='Inf',]) 
+rownames(abund[abund$abundance.ratio=='Inf',]) 
 # [1] "CAAL" "CACR" "CAPE" "CATH" "COMA" "DEPU" "GAPR" "GATE" "HYAM" "JUTE" "LICO" "LYCL" "LYUN" "MOUN" "PAQU" "POGR"
 # [17] "RARE" "TAOF
 # loosing 18 data points to "Inf"
@@ -111,28 +114,28 @@ all(rownames(abund[abund$occurence.ratio=='Inf',])==rownames(abund[abund$abund.r
 # Try replacing inf values with a number, 
 # where value for 1970 is half of the smallest observed
 
-# What is the minimum value in dataset?
-abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
-#0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
-
-# try replacing 0s with half of minimum value
-abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
-abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
-        "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01/2 
-
-# Re-calculate abundance
-non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
-plot(density(non0.abund.change)) 
-# now ranges from 0-400, with a single value at 400. 
-# Therefore, it is a bad idea to replace 1970's 0s with a tiny number.
-
-# Delete this column
-abund$non0.avg.abundance.1970<-NULL
+    # # What is the minimum value in dataset?
+    # abund$avg.abundance.1970[order(abund$avg.abundance.1970)][15:25]
+    # #0.00 0.00 0.00 0.00 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+    # 
+    # # try replacing 0s with half of minimum value
+    # abund$non0.avg.abundance.1970<-abund$avg.abundance.1970
+    # abund[c("CAAL","CACR","CAPE","CATH","COMA","DEPU","GAPR","GATE",
+    #         "HYAM","JUTE","LICO","LYCL","LYUN"),'non0.avg.abundance.1970']<-0.01/2 
+    # 
+    # # Re-calculate abundance
+    # non0.abund.change<-round(abund$avg.abundance.2012/abund$non0.avg.abundance.1970,digits=2)
+    # plot(density(non0.abund.change)) 
+    # # now ranges from 0-400, with a single value at 400. 
+    # # Therefore, it is a bad idea to replace 1970's 0s with a tiny number.
+    # 
+    # # Delete this column
+    # abund$non0.avg.abundance.1970<-NULL
 
 #save new abundance dataset without INF values
 abund.c<-abund[abund$abundance.ratio!='Inf',]
 
-dim(abund.c) # 107 9
+dim(abund.c) # 107 11
 
 # look at distribution of values
 plot(density(abund$abund.ratio)) # right skewed
@@ -228,10 +231,11 @@ abline(0,1)
 #============================================================================#
   
   colnames(abund)
-  # [1] "SpCode"               "Layer"                 "pct.plot.present.1970" "pct.plot.present.2012"
-  # [5] "avg.abundance.1970"    "avg.abundance.2012"    "occurence.ratio"       "abundance.ratio"  
+    # [1] "SpCode"                "LatinName"             "Layer"                 "pct.plot.present.1970"
+    # [5] "pct.plot.present.2012" "avg.abundance.1970"    "avg.abundance.2012"    "occurence.ratio"      
+    # [9] "abundance.ratio"       "logabund.ratio"        "logcoverage.ratio"      
   colnames(elev)
-  # [1] "latin.name" "my.code"    "PotStrata"  "SpElev1970" "SpElev2012" "ElevDif" 
+    # [1] "latin.name" "my.code"    "PotStrata"  "SpElev1970" "SpElev2012" "ElevDif" 
 
   # Match colnames
   colnames(elev)[1:3]<-c('LatinName','SpCode','Layer')
@@ -242,41 +246,53 @@ abline(0,1)
   
   # How many species in 'abund' dataset absent from 'elev' dataset?
   length(abund$SpCode[which(!abund$SpCode%in%elev$SpCode)])
-  # 68 species! 
+    # 68 species! 
   # How many Understory species in abund dataset absent from elev dataset?
   dim(abund[!(abund$SpCode%in%elev$SpCode) & abund$Layer=='Understory',])
-  # 58 species
+    # 58 species
   
   # How many species in "elev" dataset absent from 'abund' dataset?
   length(elev$SpCode[which(!elev$SpCode%in%abund$SpCode)])
-  # 1 
+    # 1 
   elev$SpCode[which(!elev$SpCode%in%abund$SpCode)]
-  # BEPO
+    # BEPO
   
   Ys<-merge(abund,elev,by="SpCode",all=T)
   dim(Ys)
-  # 126 13
+    # 126 16
   dim(abund)
-  # 125 13 - one new column from elev that wasn't in abund
+    # 125 11 - one new column from elev that wasn't in abund
   
   # reorder columns
   colnames(Ys)
-  Ys<-Ys[,c(1,9,2,10,5,6,3,4,11,12,8,7,13)]
+  Ys<-Ys[,c("SpCode","LatinName.x","LatinName.y","Layer.x","Layer.y",
+            "avg.abundance.1970","avg.abundance.2012","pct.plot.present.1970",
+            "pct.plot.present.2012","SpElev1970","SpElev2012","abundance.ratio",
+            "occurence.ratio","logabundance.ratio","logoccurence.ratio","ElevDif")]
   View(Ys)
   # I checked there are no contradictions between the two layer columns
+  # I checked there are no contradictions between the two latin names columns
   
   # Replace NAs in Layer.x
   Ys$Layer.x[126]<-Ys$Layer.y[126]
-
-  # Remove duplicate column
+  
+    # Replace NA (row 126) in LatinName.x with correct name 
+  levels(Ys$LatinName.x)<-c(levels(Ys$LatinName.x),"Betula populifolia")
+  Ys$LatinName.x[126]<-'Betula populifolia'
+  
+  # Remove duplicate columns
   Ys$Layer.y<-NULL
-  colnames(Ys)[3]<-'Layer'
+  colnames(Ys)[colnames(Ys)=='Layer.x']<-'Layer'
+  Ys$LatinName.y<-NULL
+  colnames(Ys)[colnames(Ys)=='LatinName.x']<-'LatinName'
+  dim(Ys)
+    # 126  14
   
   save(Ys,file=paste0(wrk.dir,'All.Response.variables.RData')) #Ys
   
   Ys.c<-Ys[Ys$abundance.ratio!='Inf',]
   dim(Ys.c)
-  # 108.12
+    # 108.14
   
   save(Ys.c,file=paste0(wrk.dir,'All.Response.variables.Inf.removed.RData')) 
     
