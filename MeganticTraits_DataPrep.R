@@ -38,14 +38,14 @@ source(paste0(wrk.dir,"HighstatLibV10.R")) # to make fancy graphs
 
 # ==================================================================================#
 
-# A- Setup response variables ####
+# A- Setup Ys - response variables ####
 # ===========================#
 
 # A1 - Setup Abundance & Occurence Data ####
 #-----------------------------#
 
 # A1.1- Create abundance dataframe & new variables ####
-#=====================================================#
+#-----------------------------#
 
 abund<-read.csv(paste0(data.dir,'sp.abund.csv'))
 str(abund)
@@ -285,221 +285,246 @@ abline(0,1)
   colnames(Ys)[colnames(Ys)=='Layer.x']<-'Layer'
   Ys$LatinName.y<-NULL
   colnames(Ys)[colnames(Ys)=='LatinName.x']<-'LatinName'
+  rownames(Ys)<-Ys$SpCode
   dim(Ys)
     # 126  14
   
   save(Ys,file=paste0(wrk.dir,'All.Response.variables.RData')) #Ys
   
+  # Remove Inf values
   Ys.c<-Ys[Ys$abundance.ratio!='Inf',]
   dim(Ys.c)
     # 108.14
   
-  save(Ys.c,file=paste0(wrk.dir,'All.Response.variables.Inf.removed.RData')) 
+  # retain only species for which we have trait values
+  Ys.c<-Ys.c[which(rownames(Ys.c)%in%rownames(Traits.sp)),]
+  dim(Ys.c)
+  
+    # 66 14
+  
+  save(Ys.c,file=paste0(wrk.dir,'All.Response.variables.Inf.removed.onlySpecieswTraits.RData')) 
     
-# B - Setup trait data ####
+# B - Setup Xs - trait data ####
 # ========================#
 
-  # B1 - HERBACEOUS LAYER ####
-  #=======================#
-
-    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20181106.csv'))
-    dim(Megtraits) #640 47
+    Megtraits<-read.csv(paste0(data.dir,'MegTraits_20181119.csv'))
+    dim(Megtraits) 
+      #640 48
     str(Megtraits)
     Megtraits$Min.Root.Loca<-as.ordered(Megtraits$Min.Root.Loca) # remains a factor, but is ordered (ordinal)
     Megtraits$Max.Root.Loca<-as.ordered(Megtraits$Max.Root.Loca) # remains a factor, but is ordered (ordinal)
     
-      # Simplify names
-      names(Megtraits)[names(Megtraits)=="Lamina.thck.æm."] <- "Lamina.thck"
-      names(Megtraits)[names(Megtraits)=='Vein.thck.æm.']<-'Vein.thck'
-      names(Megtraits)[names(Megtraits)=='LMA.g.cm2.']<-'LMA'
-      names(Megtraits)[names(Megtraits)=='LDMC.g.g.']<-'LDMC'
-      names(Megtraits)[names(Megtraits)=='Leaf.Area.cm2.']<-'Leaf.Area'
-      names(Megtraits)[names(Megtraits)=='Fine.Root.Diam.mm.']<-'F.Root.Diam'
-      names(Megtraits)[names(Megtraits)=='SRL.cm.mg.']<-'SRL'
-      
-      # create herbaceous trait dataframe with traits I will work with
-      
-      H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca",
-                                                 "Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac",
-                                                 "Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam","SRL")]
-      
-      dim(H.traits)
-      # 459 17
-      H.traits<-droplevels(H.traits)
-      names(H.traits)
-      # [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"         "Min.Root.Loca"  "Max.Root.Loca" 
-      # [8] "Lamina.thck"    "LMA"            "LDMC"           "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac" 
-      # [15] "Stor.Mass.Frac" "F.Root.Diam"    "SRL"
-      
-      str(H.traits)
-      
-        # 'data.frame':	459 obs. of  17 variables:
-        # $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 1 2 3 4 5 6 7 8 9 10 ...
-        # $ Species       : Factor w/ 51 levels "ARNU","ARTR",..: 1 1 1 1 1 1 1 1 1 2 ...
-        # $ Layer         : Factor w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
-        # $ Date.recolte  : Factor w/ 49 levels "01-06-2016","01-08-2016",..: 47 49 49 49 1 1 1 1 24 44 ...
-        # $ Ht.veg        : num  32 24 34.5 42 28 47.5 26 14 56 15.5 ...
-        # $ Min.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 1 1 1 1 3 1 2 2 5 ...
-        # $ Max.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 2 1 1 1 3 1 2 2 5 ...
-        # $ Lamina.thck   : num  71.3 73.8 70.5 67.8 73.8 ...
-        # $ LMA           : num  0.0012 0.0013 0.0011 0.0014 0.0015 0.0017 0.0011 0.0012 0.0015 0.0014 ...
-        # $ LDMC          : num  0.16 0.182 0.153 0.175 0.193 0.203 0.181 0.18 0.194 0.102 ...
-        # $ Leaf.Area     : num  18 14 21.2 37 18.3 ...
-        # $ Leaf.Mass.Frac: num  0.21 0.3 0.09 0.3 0.5 0.41 0.59 0.22 0.29 0.42 ...
-        # $ Supp.Mass.Frac: num  0.17 0.2 0.16 0.27 0.28 0.31 0.36 0.17 0.22 0.11 ...
-        # $ Rep.Mass.Frac : num  0 0 0 0 0 0 0 0 0.11 0 ...
-        # $ Stor.Mass.Frac: num  0.62 0.49 0.75 0.43 0.22 0.28 0.04 0.61 0.38 0.47 ...
-        # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
-        # $ SRL           : num  NA 2.37 NA 1.42 2.38 ...      
-      
-      # Reponse Variables
-      names(H.abund)
-      head(H.abund)
-      save(H.abund,file=paste0(wrk.dir,'Herbaceous.layer.species.abundance.change.for.sp.with.traits.RData'))
-      
-      # B1.1 - Remove date effect on traits  ####
-      # =======================================#
-      
-      names(H.traits)
-      # [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"        
-      # [6] "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"            "LDMC"          
-      # [11] "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac"  "Stor.Mass.Frac"
-      # [16] "F.Root.Diam"    "SRL"
-      
-      Trait.Names <- c("Ht.veg","Min.Root.Loca","Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area",
-                       "Leaf.Mass.Frac","Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam",
-                       "SRL")
-      
-      Trait.Names         # list of trait names
+    # Simplify names
+    names(Megtraits)[names(Megtraits)=="Lamina.thck.µm."] <- "Lamina.thck"
+    names(Megtraits)[names(Megtraits)=='Vein.thck.µm.']<-'Vein.thck'
+    names(Megtraits)[names(Megtraits)=='LMA.g.cm2.']<-'LMA'
+    names(Megtraits)[names(Megtraits)=='LDMC.g.g.']<-'LDMC'
+    names(Megtraits)[names(Megtraits)=='Leaf.Area.cm2.']<-'Leaf.Area'
+    names(Megtraits)[names(Megtraits)=='Fine.Root.Diam.mm.']<-'F.Root.Diam'
+    names(Megtraits)[names(Megtraits)=='SRL.cm.mg.']<-'SRL'
+    
+    # Change Layers from H and C to Understory and Canopy
+    levels(Megtraits$Layer)[levels(Megtraits$Layer)=="H"] <- "Understory"
+    levels(Megtraits$Layer)[levels(Megtraits$Layer)=="C"] <- "Canopy"
+    
+    # create trait dataframe with traits I will work with (both understory and canopy layers)
+    
+    Traits<-Megtraits[,c("Plant.ID","SpCode",'LatinName',"Layer",'Life.Form',
+                         "Date.recolte","Ht.veg","Min.Root.Loca","Max.Root.Loca",
+                         "Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac",
+                         "Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac",
+                         "F.Root.Diam","SRL")]
+    
+    dim(Traits)
+      # 640 19
+    # remove unused levels from factors
+    Traits<-droplevels(Traits)
+    names(Traits)
+      # [1] "Plant.ID"       "Species"        "Layer"          "Date.recolte"   "Ht.veg"         "Min.Root.Loca" 
+      # [7] "Max.Root.Loca"  "Lamina.thck"    "LMA"            "LDMC"           "Leaf.Area"      "Leaf.Mass.Frac"
+      # [13] "Supp.Mass.Frac" "Rep.Mass.Frac"  "Stor.Mass.Frac" "F.Root.Diam"    "SRL" 
+     
+    str(Traits)
+      # 'data.frame':	459 obs. of  17 variables:
+      # $ Plant.ID      : Factor w/ 459 levels "ARNU1","ARNU2",..: 1 2 3 4 5 6 7 8 9 10 ...
+      # $ Species       : Factor w/ 51 levels "ARNU","ARTR",..: 1 1 1 1 1 1 1 1 1 2 ...
+      # $ Layer         : Factor w/ 1 level "H": 1 1 1 1 1 1 1 1 1 1 ...
+      # $ Date.recolte  : Factor w/ 49 levels "01-06-2016","01-08-2016",..: 47 49 49 49 1 1 1 1 24 44 ...
+      # $ Ht.veg        : num  32 24 34.5 42 28 47.5 26 14 56 15.5 ...
+      # $ Min.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 1 1 1 1 3 1 2 2 5 ...
+      # $ Max.Root.Loca : Ord.factor w/ 6 levels "0"<"1"<"2"<"3"<..: 1 2 1 1 1 3 1 2 2 5 ...
+      # $ Lamina.thck   : num  71.3 73.8 70.5 67.8 73.8 ...
+      # $ LMA           : num  0.0012 0.0013 0.0011 0.0014 0.0015 0.0017 0.0011 0.0012 0.0015 0.0014 ...
+      # $ LDMC          : num  0.16 0.182 0.153 0.175 0.193 0.203 0.181 0.18 0.194 0.102 ...
+      # $ Leaf.Area     : num  18 14 21.2 37 18.3 ...
+      # $ Leaf.Mass.Frac: num  0.21 0.3 0.09 0.3 0.5 0.41 0.59 0.22 0.29 0.42 ...
+      # $ Supp.Mass.Frac: num  0.17 0.2 0.16 0.27 0.28 0.31 0.36 0.17 0.22 0.11 ...
+      # $ Rep.Mass.Frac : num  0 0 0 0 0 0 0 0 0.11 0 ...
+      # $ Stor.Mass.Frac: num  0.62 0.49 0.75 0.43 0.22 0.28 0.04 0.61 0.38 0.47 ...
+      # $ F.Root.Diam   : num  NA 0.567 NA 0.74 0.548 ...
+      # $ SRL           : num  NA 2.37 NA 1.42 2.38 ...
+    
+    # B1 - Remove date effect on traits  ####
+    # #-----------------------------#
+    
+    names(Traits)
+    #  [1] "Plant.ID"       "SpCode"         "LatinName"      "Layer"          "Life.Form"      "Date.recolte"  
+    # [7] "Ht.veg"         "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"            "LDMC"          
+    # [13] "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac"  "Stor.Mass.Frac" "F.Root.Diam"   
+    # [19] "SRL" 
+    
+    Trait.Names <- colnames(Traits)[7:19]
+    
+    Trait.Names         # list of trait names
       # [1] "Ht.veg"         "Min.Root.Loca"  "Max.Root.Loca"  "Lamina.thck"    "LMA"           
       # [6] "LDMC"           "Leaf.Area"      "Leaf.Mass.Frac" "Supp.Mass.Frac" "Rep.Mass.Frac" 
       # [11] "Stor.Mass.Frac" "F.Root.Diam"    "SRL"
-      length(Trait.Names) #13
-      
-      save(Trait.Names,file=paste0(wrk.dir,'list.trait.names.herbivory.layer.Rdata'))
-      
-      # Change calendar dates into julian dates
-      H.traits$Date.recolte<- as.numeric(format(as.Date(H.traits$Date.recolte, format = "%d-%m-%Y"),"%j"))
+    length(Trait.Names) 
+      #13
+    
+    save(Trait.Names,file=paste0(wrk.dir,'list.trait.names.herbivory.layer.Rdata'))
+    
+    dim(Traits[Traits$Layer=='Understory',]) 
+      # 459  19
+    
+    # Change calendar dates into julian dates
+    Traits$Date.recolte<- as.numeric(format(as.Date(Traits$Date.recolte, format = "%d-%m-%Y"),"%j"))
 
 
-      # loop testing for date effects and replacing with regression residuals
+    # loop testing for date effects and replacing with regression residuals
+    
+    for (t in Trait.Names[-c(2:3)]){  # not for min. and max. root location, because they are factors
+      x<-lm(Traits[[t]]~Traits$Date.recolte,na.action=na.exclude,
+            subset=Traits$Layer=='Understory')  # # regress the trait against the julian date
       
-      for (t in Trait.Names[-c(2:3)]){  # not for min. and max. root location, because they are factors
-        x<-lm(H.traits[[t]]~H.traits$Date.recolte,na.action=na.exclude)  # # regress the trait against the julian date
-        
-        if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
-        
-          # show me which traits
-            print(c(names(H.traits[t]),
-                  paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
-                  paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
-        
-          # replace with residuals
-        # for (i in 1:nrow(H.traits[t])){                                                   # if each row is numeric (not an NA)
-        #   if (is.numeric(H.traits[t][i,]))
-        #   {H.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
-        # }                                                                           # else, do nothing to the cells with value of NA
-      }
+      if (summary(x)$adj.r.squared > 0.02 & summary(x)[["coefficients"]][2,4] < 0.05) # if regression R2 > 0.02 AND it is statistically significant (with P-value<0.05), go through this next loop
       
-      # [1] "Ht.veg"     "R2=  0.163" "Sign=  1"  
-      # [1] "Lamina.thck" "R2=  0.274"  "Sign=  -1"  
-      # [1] "LDMC"       "R2=  0.143" "Sign=  1"  
-      # [1] "Leaf.Area" "R2=  0.03" "Sign=  1" 
-      # [1] "Leaf.Mass.Frac" "R2=  0.097"     "Sign=  1"      
-      # [1] "Supp.Mass.Frac" "R2=  0.089"     "Sign=  1"      
-      # [1] "Stor.Mass.Frac" "R2=  0.215"     "Sign=  -1" 
+        # show me which traits
+          print(c(names(Traits[t]),
+                paste( "R2= ",round(summary(x)$adj.r.squared,digits=3)),
+                paste('Sign= ',sign(summary(x)[["coefficients"]][2,1])))) 
       
-      # Okay, but look visually to see if these relationships are (a) linear and (b) due to species-date association? 
-      
+        # replace with residuals
+      # for (i in 1:nrow(H.traits[t])){                                                   # if each row is numeric (not an NA)
+      #   if (is.numeric(H.traits[t][i,]))
+      #   {H.traits[t][i,]<-resid(x)[i]}                                              # then replace the value with the residual
+      # }                                                                           # else, do nothing to the cells with value of NA
+    }
+    
+    # [1] "Ht.veg"     "R2=  0.163" "Sign=  1"  
+    # [1] "Lamina.thck" "R2=  0.274"  "Sign=  -1"  
+    # [1] "LDMC"       "R2=  0.143" "Sign=  1"  
+    # [1] "Leaf.Area" "R2=  0.03" "Sign=  1" 
+    # [1] "Leaf.Mass.Frac" "R2=  0.097"     "Sign=  1"      
+    # [1] "Supp.Mass.Frac" "R2=  0.089"     "Sign=  1"      
+    # [1] "Stor.Mass.Frac" "R2=  0.215"     "Sign=  -1" 
+    
+    # Okay, but look visually to see if these relationships are either: 
+    # (a) linear or (b) due to species-date collinearity
       # (1) Ht.veg - # NO DATE EFFECT
-      ---
-      plot(Ht.veg~Date.recolte, data=H.traits) 
-      # funnel pattern, but is this due to species effect ?
-      
-      scatterplot(Ht.veg~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Vegetative Height",
-                  smooth=F,
-                  col=c(1:51))
-      
-        # Some taller species sampled later
-        # Ht.veg doesn't appear to be correlated with sampling date within species.
-      
-      m0<-lm(Ht.veg~Species, data=H.traits)
-      summary(m0)
-      
-        # Residual standard error: 13.1 on 406 degrees of freedom
-        # (2 observations deleted due to missingness)
-        # Multiple R-squared:  0.8664,	Adjusted R-squared:  0.8499 
-        # F-statistic: 52.65 on 50 and 406 DF,  p-value: < 2.2e-16
-      
-      # Height varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      m1<-lm(Ht.veg~Species+Date.recolte, data=H.traits)
-      summary(m1)
-      #Date.recolte is not significant in this model ! 
-      
-      anova(m0,m1)
-      # m1 not significantly better. 
-      
-      # NO DATE EFFECT
-      
-      
-      # (2) Lamina.thck - NO DATE EFFECT
-      ---
-      plot(Lamina.thck~Date.recolte, data=H.traits) 
+    ---
+    plot(Ht.veg~Date.recolte, data=Traits[Traits$Layer=='Understory',]) 
+    # funnel pattern, but is this due to species effect ?
+    
+    
+    scatterplot(Ht.veg~Date.recolte|SpCode, 
+                data=Traits[Traits$Layer=='Understory',], 
+                legend=list(cex=0.8),
+                xlab="Sampling Date",
+                ylab="Vegetative Height",
+                smooth=F,
+                col=c(1:51)
+                )
+    
+      # Some taller species sampled later
+      # Ht.veg doesn't appear to be correlated with sampling date within species.
+    
+    m0<-lm(Ht.veg~SpCode, 
+           data=Traits[Traits$Layer=='Understory',])
+    summary(m0)
+    
+      # Residual standard error: 13.1 on 406 degrees of freedom
+      # (2 observations deleted due to missingness)
+      # Multiple R-squared:  0.8664,	Adjusted R-squared:  0.8499 
+      # F-statistic: 52.65 on 50 and 406 DF,  p-value: < 2.2e-16
+    
+    # Height varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    m1<-lm(Ht.veg~SpCode+Date.recolte, 
+           data=Traits[Traits$Layer=='Understory',])
+    summary(m1)
+    #Date.recolte is not significant in this model ! 
+    
+    anova(m0,m1)
+    # m1 not significantly better. 
+    
+    # NO DATE EFFECT
+    
+    
+    # (2) Lamina.thck - NO DATE EFFECT
+    #---
+    plot(Lamina.thck~Date.recolte, 
+         data=Traits[Traits$Layer=='Understory',])
       # negative exp. pattern, but is this due to species effect ?
-      
-      scatterplot(Lamina.thck~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Lamina thickness",
-                  smooth=F,
-                  col=c(1:51))
-      
-      # Some thicker species sampled earlier
-      # Lamina.thck doesn't appear to be correlated with sampling date within species.
-      
-      summary(m0<-lm(Lamina.thck~Species, data=H.traits))
-        # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9244 
-        # F-statistic: 111.1 on 50 and 400 DF,  p-value: < 2.2e-16
-      
-      # Lamina.thck varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(Lamina.thck~Species+Date.recolte, data=H.traits))
-        # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9242 
-        # F-statistic: 108.7 on 51 and 399 DF,  p-value: < 2.2e-16
-      
-      # Sampling date parameter not significant in this model. 
-      anova (m0,m1)
+    
+    scatterplot(Lamina.thck~Date.recolte|SpCode, 
+                data=Traits[Traits$Layer=='Understory',], 
+                legend=F,
+                xlab="Sampling Date",
+                ylab="Lamina thickness",
+                smooth=F,
+                col=c(1:51))
+    
+    # Some thicker species sampled earlier
+    # Lamina.thck doesn't appear to be correlated with sampling date within species.
+    
+    summary(m0<-lm(Lamina.thck~SpCode, 
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9244 
+      # F-statistic: 111.1 on 50 and 400 DF,  p-value: < 2.2e-16
+    
+    # Lamina.thck varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(Lamina.thck~SpCode+Date.recolte, 
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Multiple R-squared:  0.9328,	Adjusted R-squared:  0.9242 
+      # F-statistic: 108.7 on 51 and 399 DF,  p-value: < 2.2e-16
+    
+    # Sampling date parameter not significant in this model. 
+    anova (m0,m1)
       # Not significant
+    
+    # NO DATE EFFECT
       
-      # NO DATE EFFECT
-        
-      # (3) LDMC - significant sampling effect, but effect size is 0.3%  
-      ---
-        
-      plot(LDMC~Date.recolte, data=H.traits) 
+    # (3) LDMC - significant sampling effect, but effect size is 0.3%  
+    #---
+      
+    plot(LDMC~Date.recolte,data=Traits[Traits$Layer=='Understory',]) 
       # positive pattern, but is this due to species effect ?
-      
-      scatterplot(LDMC~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="LDMC",
-                  smooth=F,
-                  col=c(1:51))
-      
-      summary(m0<-lm(LDMC~Species, data=H.traits))
+    
+    scatterplot(LDMC~Date.recolte|SpCode,
+                data=Traits[Traits$Layer=='Understory',], 
+                legend=F,
+                xlab="Sampling Date",
+                ylab="LDMC",
+                smooth=F,
+                col=c(1:51))
+    
+    summary(m0<-lm(LDMC~SpCode, 
+                   data=Traits[Traits$Layer=='Understory',]))
       # Multiple R-squared:  0.9259,	Adjusted R-squared:  0.9168 
       # F-statistic:   102 on 50 and 408 DF,  p-value: < 2.2e-16
       
-      # LDMC varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(LDMC~Species+Date.recolte, data=H.traits))
+    # LDMC varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(LDMC~SpCode+Date.recolte,
+                   data=Traits[Traits$Layer=='Understory',]))
       # Date.recolte  0.0005974  0.0001391   4.296 2.18e-05 ***
       # ---
       # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -507,66 +532,75 @@ abline(0,1)
       # Residual standard error: 0.02767 on 407 degrees of freedom
       # Multiple R-squared:  0.9291,	Adjusted R-squared:  0.9203 
       # F-statistic: 104.6 on 51 and 407 DF,  p-value: < 2.2e-16
-      
-      # Sampling date parameter IS significant in this model. 
-      anova (m0,m1)
-      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+    
+    # Sampling date parameter IS significant in this model. 
+    anova (m0,m1)
+    as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
       # [1] 0.003411269
+    
+    # Yes, better with Date, BUT, R2 explained by sampling date is 0.0035
       
-      # Yes, better with Date, BUT, R2 explained by sampling date is 0.0035
-        
-      # (4) Leaf.Area - No Date effect
-      ---
-      
-      plot(Leaf.Area~Date.recolte, data=H.traits) 
-      # no visible pattern
-      
-      scatterplot(Leaf.Area~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Leaf.Area",
-                  smooth=F,
-                  col=c(1:51))
-      
-      summary(m0<-lm(Leaf.Area~Species, data=H.traits))
+    # (4) Leaf.Area - No Date effect
+    ---
+    
+    plot(Leaf.Area~Date.recolte, 
+         data=Traits[Traits$Layer=='Understory',]) 
+    # no visible pattern
+    
+    scatterplot(Leaf.Area~Date.recolte|SpCode,
+                data=Traits[Traits$Layer=='Understory',],
+                legend=F,
+                xlab="Sampling Date",
+                ylab="Leaf.Area",
+                smooth=F,
+                col=c(1:51))
+    
+    summary(m0<-lm(Leaf.Area~SpCode, 
+                   data=Traits[Traits$Layer=='Understory',]))
       # Multiple R-squared:  0.7494,	Adjusted R-squared:  0.7166 
       # F-statistic: 22.88 on 49 and 375 DF,  p-value: < 2.2e-1
       
-      # Leaf.Area varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(Leaf.Area~Species+Date.recolte, data=H.traits))
+    # Leaf.Area varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(Leaf.Area~SpCode+Date.recolte,
+                   data=Traits[Traits$Layer=='Understory',]))
       # Multiple R-squared:  0.7496,	Adjusted R-squared:  0.7162 
       # F-statistic:  22.4 on 50 and 374 DF,  p-value: < 2.2e-16
       
-      # Sampling date parameter not significant in this model. 
-      anova (m0,m1)
+    # Sampling date parameter not significant in this model. 
+    anova (m0,m1)
       #NS
-      
-      # Sampling date does not explain any variance after species effect taken into account.
-        
-      # (5) Leaf.Mass.Frac - significant sampling effect, but effect size is 0.1%
-      ---
-      
-      plot(Leaf.Mass.Frac~Date.recolte, data=H.traits) 
-      # positive trend
-      
-      scatterplot(Leaf.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Leaf.Mass.Fraction",
-                  smooth=F,
-                  col=c(1:51))
-      
-      summary(m0<-lm(Leaf.Mass.Frac~Species, data=H.traits))
+    
+    # Sampling date does not explain any variance after species effect taken into account.
+    
+    # (5) Leaf.Mass.Frac - significant sampling effect, but effect size is 0.1%
+    #---
+    
+    plot(Leaf.Mass.Frac~Date.recolte, 
+         data=Traits[Traits$Layer=='Understory',]) 
+    # positive trend
+    
+    scatterplot(Leaf.Mass.Frac~Date.recolte|SpCode, 
+                data=Traits[Traits$Layer=='Understory',],
+                legend=F,
+                xlab="Sampling Date",
+                ylab="Leaf.Mass.Fraction",
+                smooth=F,
+                col=c(1:51))
+    
+    summary(m0<-lm(Leaf.Mass.Frac~SpCode, 
+                   data=Traits[Traits$Layer=='Understory',]))
       # Multiple R-squared:  0.8619,	Adjusted R-squared:  0.8449 
       # F-statistic:  50.7 on 50 and 406 DF,  p-value: < 2.2e-16
       
-      
-      # Leaf.Area varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(Leaf.Mass.Frac~Species+Date.recolte, data=H.traits))
+    # Leaf.Area varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(Leaf.Mass.Frac~SpCode+Date.recolte,
+                   data=Traits[Traits$Layer=='Understory',]))
       # Date.recolte -0.0009841  0.0004599  -2.140 0.032954 *  
       # ---
       # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -576,208 +610,267 @@ abline(0,1)
       # Multiple R-squared:  0.8635,	Adjusted R-squared:  0.8463 
       # F-statistic: 50.23 on 51 and 405 DF,  p-value: < 2.2e-16
       
-      # Sampling date significant, but small effect size.
-      
-      # Sampling date parameter not significant in this model. 
-      anova (m0,m1)
-      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+    anova (m0,m1)
+    as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
       # [1] 0.001355086
-          
-      # (6) Supp.Mass.Frac - significant sampling effect, but effect size is 0.2%
-      ---
-      plot(Supp.Mass.Frac~Date.recolte, data=H.traits) 
-      # positive trend
-      
-      scatterplot(Supp.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Support Mass Fraction",
-                  smooth=F,
-                  col=c(1:51))
-      
-      summary(m0<-lm(Supp.Mass.Frac~Species, data=H.traits))
-        # Multiple R-squared:  0.7578,	Adjusted R-squared:  0.7279 
-        # F-statistic: 25.35 on 48 and 389 DF,  p-value: < 2.2e-16
-      
-      # Supp.Mass.Frac  varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(Supp.Mass.Frac~Species+Date.recolte, data=H.traits))
-        # Date.recolte -6.759e-04  3.188e-04  -2.120 0.034614 *  
-        # ---
-        # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-        # 
-        # Residual standard error: 0.06263 on 388 degrees of freedom
-        # (21 observations deleted due to missingness)
-        # Multiple R-squared:  0.7606,	Adjusted R-squared:  0.7303 
-        # F-statistic: 25.15 on 49 and 388 DF,  p-value: < 2.2e-16
-        
-      # Sampling date significant, but small effect size.
-      
-      # Sampling date parameter not significant in this model. 
-      anova (m0,m1)
-      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
+       
+    # Sampling date significant, but small effect size. 
+ 
+       # (6) Supp.Mass.Frac - significant sampling effect, but effect size is 0.2%
+    #---
+    
+    plot(Supp.Mass.Frac~Date.recolte, 
+         data=Traits[Traits$Layer=='Understory',]) 
+    # positive trend
+    
+    scatterplot(Supp.Mass.Frac~Date.recolte|SpCode,
+                data=Traits[Traits$Layer=='Understory',],
+                legend=F,
+                xlab="Sampling Date",
+                ylab="Support Mass Fraction",
+                smooth=F,
+                col=c(1:51))
+    
+    summary(m0<-lm(Supp.Mass.Frac~SpCode,
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Multiple R-squared:  0.7578,	Adjusted R-squared:  0.7279 
+      # F-statistic: 25.35 on 48 and 389 DF,  p-value: < 2.2e-16
+    
+    # Supp.Mass.Frac  varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(Supp.Mass.Frac~SpCode+Date.recolte, 
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Date.recolte -6.759e-04  3.188e-04  -2.120 0.034614 *  
+      # ---
+      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      # 
+      # Residual standard error: 0.06263 on 388 degrees of freedom
+      # (21 observations deleted due to missingness)
+      # Multiple R-squared:  0.7606,	Adjusted R-squared:  0.7303 
+      # F-statistic: 25.15 on 49 and 388 DF,  p-value: < 2.2e-16
+    
+    anova (m0,m1)
+    as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])
       # [1] 0.00242344
+    
+    # Sampling date significant, but small effect size.
+    
+    # (7) Stor.Mass.Frac - significant sampling effect, but effect size is 0.1%
+    #---
+    
+    plot(Stor.Mass.Frac~Date.recolte,
+         data=Traits[Traits$Layer=='Understory',]) 
+    # negative trend
+    
+    scatterplot(Stor.Mass.Frac~Date.recolte|SpCode, 
+                data=Traits[Traits$Layer=='Understory',],
+                legend=F,
+                xlab="Sampling Date",
+                ylab="Storage Mass Fraction",
+                smooth=F,
+                col=c(1:51))
+    
+    summary(m0<-lm(Stor.Mass.Frac~SpCode,
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Multiple R-squared:  0.9042,	Adjusted R-squared:  0.8927 
+      # F-statistic: 78.65 on 42 and 350 DF,  p-value: < 2.2e-16
+    
+    # Leaf.Area varies by species
+    
+    # Is the Sampling Date parameter significant, once we account for Species?
+    
+    summary(m1<-lm(Stor.Mass.Frac~SpCode+Date.recolte,
+                   data=Traits[Traits$Layer=='Understory',]))
+      # Date.recolte  0.0010184  0.0004688   2.173 0.030484 *  
+      # ---
+      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      # 
+      # Residual standard error: 0.08477 on 349 degrees of freedom
+      # (66 observations deleted due to missingness)
+      # Multiple R-squared:  0.9055,	Adjusted R-squared:  0.8938 
+      # F-statistic: 77.75 on 43 and 349 DF,  p-value: < 2.2e-16
       
-      # (7) Stor.Mass.Frac - significant sampling effect, but effect size is 0.1%
-      ---
+    anova (m0,m1)
+    as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])  
+    # [1] 0.001128434
+    
+    # Sampling date significant, but small effect size.
       
-      plot(Stor.Mass.Frac~Date.recolte, data=H.traits) 
-      # negative trend
-      
-      scatterplot(Stor.Mass.Frac~Date.recolte|Species, data=H.traits, legend=list(cex=0.8),
-                  xlab="Sampling Date",
-                  ylab="Storage Mass Fraction",
-                  smooth=F,
-                  col=c(1:51))
-      
-      summary(m0<-lm(Stor.Mass.Frac~Species, data=H.traits))
-        # Multiple R-squared:  0.9042,	Adjusted R-squared:  0.8927 
-        # F-statistic: 78.65 on 42 and 350 DF,  p-value: < 2.2e-16
-      
-      # Leaf.Area varies by species
-      
-      # Is the Sampling Date parameter significant, once we account for Species?
-      
-      summary(m1<-lm(Stor.Mass.Frac~Species+Date.recolte, data=H.traits))
-        # Date.recolte  0.0010184  0.0004688   2.173 0.030484 *  
-        # ---
-        # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-        # 
-        # Residual standard error: 0.08477 on 349 degrees of freedom
-        # (66 observations deleted due to missingness)
-        # Multiple R-squared:  0.9055,	Adjusted R-squared:  0.8938 
-        # F-statistic: 77.75 on 43 and 349 DF,  p-value: < 2.2e-16
-        
-      # Sampling date significant, but small effect size.
-      
-      # Sampling date parameter not significant in this model. 
-      anova (m0,m1)
-      as.numeric(RsquareAdj(m1)[2])-as.numeric(RsquareAdj(m0)[2])  
-      # [1] 0.001128434
-        
-      save(H.traits,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Unstandardized.RData"))
-      
-      load(paste0(wrk.dir,"Herbaceous.Layer.Traits.Unstandardized.RData"))
-      
-      # Standardize all variables
-      H.traits.stand<-decostand(H.traits[,c(5,8:17)],method='standardize', margin=2,na.rm=TRUE)
-      save(H.traits.stand,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
-      
-      # B1.2 - Turn individual-level table into species-level table  ####
-      #=================================================================#    
-      #apply(H.traits[,5:11], 2, function(x) tapply(x, H.traits$Species, mean,na.rm=T))
-      
-      H.traits$Min.Root.Loca<-as.numeric(H.traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
-      H.traits$Max.Root.Loca<-as.numeric(H.traits$Max.Root.Loca) # can't take mean or median of ordinal var. 
-      
-      H.traits.sp<-as.data.frame(aggregate(H.traits[,5:17],by=list(H.traits$Species),mean,na.rm=T))
-      head(H.traits.sp)
-      #H.traits.sp[,2:8]<-round(sp.H.traits[2:8],digits=3)
-      H.traits.sp[is.na(H.traits.sp)] <-NA # replace NaN with Na
-      rownames(H.traits.sp)<-H.traits.sp$Group.1 
-      colnames(H.traits.sp)[1]<-'Species'
-      #H.traits.sp<-H.traits.sp[,-1]
-      H.traits.sp<-H.traits.sp[order(rownames(H.traits.sp)),]
-      dim(H.traits.sp) # 51  14
-      
-      save(H.traits.sp,file=paste0(wrk.dir,"Species-Level.Herbaceous.Layer.Traits.RData"))
-      
-      # B1.3 - Add species mean traits (Seed size and mychorizae) ####
-      #=================================================================#
-      
-      load(paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.RData')) #H.traits.sp
-      dim(H.traits.sp)
-        #51 14
-      
-      myc<-read.csv(paste0(data.dir,'myc.csv'))
-      head(myc)
-      dim(myc) #43 2
-      rownames(myc)<-myc$species
-      myc<-myc[-1]
-      #myc<-decostand(myc,method='standardize',margin=2)
-      dim(myc) #43 1
-      names(myc)<-"Myc.Frac"
-      # rows TRGR and TNCO don't exist. Replace TRGR with TRER. Delete TNCO bc we already have a value 
-      # for TICO
-      row.names(myc)[which(row.names(myc)=='TRGR')]<-'TRER'
-      which(row.names(myc)=='TNCO')
-        #39
-      myc<-myc[-c(39),,drop = FALSE]
-      dim(myc)
-        # 42 1
-      
-      H.traits2.sp<-merge(H.traits.sp,myc, by="row.names",all=T)
-      head(H.traits2.sp)
-      H.traits2.sp$Row.names<-NULL
-      rownames(H.traits2.sp)<-H.traits2.sp$Species
-      
-      dim(H.traits2.sp) # 51 15
-      
-      # save(H.traits2.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.Rdata'))
-      
-      # Add in Seed Size 
-      
-      load(paste0(wrk.dir,'Seed.Size.TRY.and.TOPIC.RData'))
-      dim(Seed.Size)
-      # 60 4
-      str(Seed.Size)
-      # 'data.frame':	60 obs. of  4 variables:
-      #   $ SpeciesName      : Factor w/ 60 levels "Abies balsamea",..: 1 2 3 4 5 6 7 8 9 10 ...
-      # $ Seed.Weight.TOPIC: num  7.59 23.23 69.44 4.19 1.02 ...
-      # $ Seed.Weight.TRY  : num  7.37 20.36 NA 6.37 1.85 ...
-      # $ Combined.DataSets: num  7.59 23.23 69.44 4.19 1.02 ...
-      
-      H.traits2.sp<-merge(H.traits2.sp,Seed.Size[,-c(1:3),drop=FALSE],
-                  by="row.names",all.x=T)
-      head(H.traits2.sp)
-      H.traits2.sp$Row.names<-NULL
-      rownames(H.traits2.sp)<-H.traits2.sp$Species
-      dim(H.traits2.sp)
-      #51 16
-      
-      colnames(H.traits2.sp)[colnames(H.traits2.sp)=='Combined.DataSets']<-'Seed.Size'
-      
-      
-      save(H.traits2.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.Rdata'))
-      
-    # B2 - CANOPY LAYER ####
-    #=======================#
-      
-      # TO DO 
-      
+    save(Traits,file=paste0(wrk.dir,"Traits.Unstandardized.RData"))
+    
+    load(paste0(wrk.dir,"Traits.Unstandardized.RData"))
+    
+    # Standardize all variables
+    # H.traits.stand<-decostand(H.traits[,c(5,8:17)],method='standardize', margin=2,na.rm=TRUE)
+    # save(H.traits.stand,file=paste0(wrk.dir,"Herbaceous.Layer.Traits.Standardized.RData"))
+    
+    # B2 - Create species-level table from individual-level table ####
+    #=================================================================#    
+    
+    Traits$Min.Root.Loca<-as.numeric(Traits$Min.Root.Loca) # can't take mean or median of ordinal var. 
+    Traits$Max.Root.Loca<-as.numeric(Traits$Max.Root.Loca) # can't take mean or median of ordinal var. 
+    
+    Traits.sp<-as.data.frame(aggregate(Traits[7:19],
+                                       by=list(Traits$SpCode),
+                                       mean,
+                                       na.rm=T))
+    
+    # Get unique values for LatinName, Layer and Life.Form
+    info.sp<-as.data.frame(aggregate(Traits[3:5],
+                                     by=list(Traits$SpCode),
+                                     unique,
+                                     na.rm=T))
+    head(Traits.sp)
+    head(info.sp)
+    
+    Traits.sp<-merge(info.sp,Traits.sp,by="Group.1",all=T)
+    
+    Traits.sp[is.na(Traits.sp)] <-NA # replace NaN with Na
+    rownames(Traits.sp)<-Traits.sp$Group.1 
+    colnames(Traits.sp)[1]<-'SpCode'
+    Traits.sp<-Traits.sp[order(rownames(Traits.sp)),]
+    dim(Traits.sp) 
+      # 75  17
+    
+    # Retain only species for which we have abundances 
+    # (we sampled traits of a few spring ephemerals which arn't in the abundance database)
+    # some species with Inf abundance ratios were also removed
+    Traits.sp<-Traits.sp[which(rownames(Traits.sp)%in%rownames(Ys.c)),]
+    
+    save(Traits.sp,file=paste0(wrk.dir,"Species-Level.Traits.RData"))
+  
+    # B3 - Add species mean traits (Seed size and mychorizae) ####
+    #=================================================================#
+    
+    # load(paste0(wrk.dir,'Species-Level.Traits.RData')) #H.traits.sp
+    dim(Traits.sp)
+      #75 17
+    
+    myc<-read.csv(paste0(data.dir,'myc.csv'))
+    head(myc)
+    dim(myc) 
+      #43 2
+    rownames(myc)<-myc$species
+    myc<-myc[-1]
+    #myc<-decostand(myc,method='standardize',margin=2)
+    dim(myc) #43 1
+    names(myc)<-"Myc.Frac"
+    # rows TRGR and TNCO don't exist. Replace TRGR with TRER. Delete TNCO bc we already have a value 
+    # for TICO, which is the only thing I think it can be.
+    row.names(myc)[which(row.names(myc)=='TRGR')]<-'TRER'
+    which(row.names(myc)=='TNCO')
+      #39
+    myc<-myc[-c(39),,drop = FALSE]
+    dim(myc)
+      # 42 1
+    
+    Traits2.sp<-merge(Traits.sp,myc, by="row.names",all=T)
+    head(Traits2.sp)
+    Traits2.sp$Row.names<-NULL
+    rownames(Traits2.sp)<-Traits2.sp$SpCode
+    
+    dim(Traits2.sp) 
+      # 75 18
+    
+    save(Traits2.sp,file=paste0(wrk.dir,'Species-Level.Traits.with.MycFrac.Rdata'))
+    
+    # Add in Seed Size 
+    
+    load(paste0(wrk.dir,'Seed.Size.TRY.and.TOPIC.RData'))
+    dim(Seed.Size)
+      # 59 4
+    str(Seed.Size)
+    # 'data.frame':	60 obs. of  4 variables:
+    #   $ SpeciesName      : Factor w/ 60 levels "Abies balsamea",..: 1 2 3 4 5 6 7 8 9 10 ...
+    # $ Seed.Weight.TOPIC: num  7.59 23.23 69.44 4.19 1.02 ...
+    # $ Seed.Weight.TRY  : num  7.37 20.36 NA 6.37 1.85 ...
+    # $ Combined.DataSets: num  7.59 23.23 69.44 4.19 1.02 ...
+    
+    Traits2.sp<-merge(Traits2.sp,Seed.Size[,-c(1:3),drop=FALSE],
+                by="row.names",all.x=T)
+    head(Traits2.sp)
+    Traits2.sp$Row.names<-NULL
+    rownames(Traits2.sp)<-Traits2.sp$SpCode
+    dim(Traits2.sp)
+      #75 19
+    
+    colnames(Traits2.sp)[colnames(Traits2.sp)=='Combined.DataSets']<-'Seed.Size'
+    
+    save(Traits2.sp,file=paste0(wrk.dir,'Species-Level.Traits.withMycFrac.Rdata'))
+    
 # C - Data Exploration (Following Highlands Stats course) ####
 #=================================================================#
 
+    
+    # Can't use The full Ys.c dataframe and subset it by Layer. boxplot() and 
+    # dotchart() functions use labels from full dataset even when I specify to subset it. 
+    dim(Ys.c)
+      # 108  14
+    H.Ys.c<-Ys.c[Ys.c$Layer=='Understory',]
+    dim(H.Ys.c)
+      #87 14
+    
   #C1 - Outliers on Y and X  ----
   
       #Y1 - Abundance - 1 outliers (CASC), variance homogeneous 
       ---
       par(mfrow = c(1, 2))  
-      boxplot(H.abund$abund.ratio,
+      boxplot(H.Ys.c$abundance.ratio,
               main = "Abundance Ratio")
-      dotchart(H.abund$abund.ratio, #i.e. cleveland dot chart
-               labels=rownames(H.abund),
-               xlab='range of data', ylab='Order of the data', main='abundance ratios') # 1 outlier
+              
+      dotchart(H.Ys.c$'abundance.ratio', #i.e. cleveland dot chart
+               labels=H.Ys.c$SpCode,
+               xlab='value of data', 
+               ylab='Order of the data', 
+               main='abundance ratios',
+               las=1,
+               cex=0.5) 
+        # 2 larger values (CASC & CADE), but no outlier ( no gap in graph)
 
-      #Y2 - Elevation
+      #Y2 - Occurence (i.e. coverage)
       ---
-      # ... to do
+      boxplot(H.Ys.c$occurence.ratio,
+                main = "Occurence Ratio")
+      dotchart(H.Ys.c$occurence.ratio, #i.e. cleveland dot chart
+               labels=H.Ys.c$SpCode,
+               xlab='Value of data', 
+               ylab='Order of the data', 
+               main='Occurence ratio',
+               las=1,cex=0.5)
+        # 1 larger value (CADE), but not sur eif it is an outlier
         
       
       #Y3 - coverage
       ---
-      # ... to do
+      boxplot(H.Ys.c$ElevDif,
+                main = "Elevational Shift")
+      dotchart(H.Ys.c$ElevDif, #i.e. cleveland dot chart
+               labels=H.Ys.c$SpCode,
+               xlab='Value of data', 
+               ylab='Order of the data', 
+               main='Elevational Shift',
+               las=1,cex=0.5)
+      # No outliers (no gap in data)
       
+      # Can't use The full Traits2.sp dataframe and subset it by Layer. boxplot() and 
+      # dotchart() functions use labels from full dataset even when I specify to subset it. 
       
-      #X1 - Ht.veg - 2 outlier species - COCO and VIAL are tall (3 & 6 sd)
+      dim(Traits2.sp)
+        #75 19
+      H.traits2.sp<-Traits2.sp[Traits2.sp$Layer=='Understory',]
+      dim(H.traits2.sp)
+        # 51 19
+      
+      #X1 - Ht.veg - 1 outlier - COCO is tall 
       ---
       par(mfrow=c(1,2))
       boxplot(H.traits2.sp$Ht.veg,
               main = "vegetative height")
       dotchart(H.traits2.sp$Ht.veg, #i.e. cleveland dot chart
-               xlab='range of data', ylab='Order of the data',main='Ht.veg',
-               labels=H.traits2.sp$Species)
+               xlab='value of data', ylab='Order of the data',main='Ht.veg',
+               labels=H.traits2.sp$SpCode)
       
       # X2 - Min.Root.Loca - no outliers - only 6 categories. 7 species with NAs
       ---
@@ -904,7 +997,7 @@ abline(0,1)
                ylab='Order of the data',
                labels=H.traits2.sp$Species,
                main='Stor.Mass.Frac',
-               cex=0.6) # 0 inflated - no outliers
+               cex.lab=0.6) # 0 inflated - no outliers
       
       # X12 - F.Root.Diam - CYAC & EPHE have fine roots 6 SD thicker than other spp.
       ---
@@ -984,7 +1077,7 @@ abline(0,1)
 
   #C4 - Zero trouble (Y) ? ----
      
-      sort(H.abund$abund.ratio)
+      sort(H.Ys.c$abundance.ratio) #(8 0 values now...)
       # only one 0 value - Okay! 
       
   #C5 - Collinearity  (Xs) ----
@@ -1295,6 +1388,10 @@ abline(0,1)
     
     ###############################################
     #Scrap Pile ####
+  
+  H.traits<-Megtraits[Megtraits$Layer=='H',c("Plant.ID","Species","Layer","Date.recolte","Ht.veg","Min.Root.Loca",
+                                             "Max.Root.Loca","Lamina.thck","LMA","LDMC","Leaf.Area","Leaf.Mass.Frac",
+                                             "Supp.Mass.Frac","Rep.Mass.Frac","Stor.Mass.Frac","F.Root.Diam","SRL")]
     
     library(nlme)
     date.effect<-lme(Ht.veg~1,random=~1|Species/Date.recolte,data=H.traits,na.action=na.exclude)
