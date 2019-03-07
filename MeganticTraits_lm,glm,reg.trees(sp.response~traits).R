@@ -1753,7 +1753,6 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    par(mfrow=c(2,2)); plot(best.lm.elev.8t.minus6)
    # Looks awesome
    
-   AQUI
    # Plot residuals vs each variable (in the model)
    plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Ht.veg'])
    plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Max.Root.Loca'])
