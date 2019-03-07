@@ -703,20 +703,59 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
                     Myc.Frac:SRL:Log.Ht.veg,
                  data=dat.8t,
                  family=Gamma(link='log'),
-                 maxit=1000,na.action='na.fail')
+                 maxit=10000,na.action='na.fail')
          
          d.abund<-dredge(H1,beta='sd',rank=AIC,trace=F)
          head(d.abund)
-         # best model includes:
-         # log(Myc.Frac) + Myc.Frac +
-         # SRL+ Log.Ht.veg + Log.Lmn.thc +
-         # Log.Ht.veg:SRL + Myc.Frc:SRL
-         # Log.Ht.veg:Myc.Frc:SRL
+            # 10 equivalent models (within 2 AIC of best model )
+            # :-(
+            
+            # best model includes:
+            # log(Myc.Frac) +
+            # Log.Ht.veg + 
+            # Log.Lmn.thc + 
+            # Myc.Frac +
+            # SRL+  
+            # 
+            # Log.Ht.veg:SRL + 
+            # Myc.Frc:SRL + 
+            # Log.Ht.veg:Myc.Frc:SRL
+         
+         #  A3.2.1b AICc model selection ####
+         #------------#
          
          d.abund.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
+            # Warning message:
+            # glm.fit: algorithm did not converge 
          head(d.abund.aicc)
-         # best model includes:
-         # Myc.Frac + log(Myc.Frac)
+            # 10 equivalent models (within 2 AIC of best model )
+            # :-(
+         
+            # best model includes:
+            # log (Myc.Frac) +
+            # Myc.Frac
+         
+         best.abund.aicc<-glm(abundance.ratio~
+                           log(Myc.Frac)+Myc.Frac,
+                        data=dat.8t,
+                        family=Gamma(link='log'),
+                        maxit=10000,na.action='na.fail')
+         1-(best.abund.aicc$deviance/best.abund.aicc$null)
+         # 0.3562679
+         
+         # Too many internations for # of variables. 
+         # Try with 1st order effect only
+         H1.1order<-glm(abundance.ratio~
+                           Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+
+                           + Myc.Frac,
+                        data=dat.8t,
+                        family=Gamma(link='log'),
+                        maxit=1000,na.action='na.fail')
+         
+         d.abund.aicc.1order<-dredge(H1.1order,beta='sd',rank=AICc,trace=F)
+         d.abund.aicc.1order[1:5]
+         # 5 equivalent models! 
+         # :-(
          
          
          
@@ -888,7 +927,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        # 
        # Number of Fisher Scoring iterations: 11
     
-
+      
     
        # SUMMARY OF GLMs ===============================================# 
        # Model w both Myc.Frac and log(Myc.Frac) is best  
@@ -1231,9 +1270,45 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          # 2nd equivalently good model (same AIC) includes:
          # Myc.Frac + log(Myc.Frac) 
       
+      
+      
+      
+      # B3.2.1b AICc model selection ####
+      #------------#
+      
       d.occur.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
+         # Warning message:
+         # glm.fit: algorithm did not converge 
       head(d.occur.aicc)
-         # # best model includes Myc.Frac + log(Myc.Frac)
+         # 3 equivalent models (within 2 AIC of best model )
+         # :-(
+      d.occur.aicc[1]   
+         # best model includes:
+         # log (Myc.Frac) +
+         # Myc.Frac
+      
+      best.occur.aicc<-glm(occurence.ratio~
+                           Myc.Frac+log(Myc.Frac),
+                           data=dat.8t,
+                           family=Gamma(link='log'),
+                           maxit=1000,na.action='na.fail')
+      1-(best.occur.aicc$deviance/best.occur.aicc$null)
+      # 0.4943197
+      
+      # Too many internations for # of variables. 
+      # Try with 1st order effect only
+      H1.1order<-glm(occurence.ratio~
+                        Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+
+                        + Myc.Frac,
+                     data=dat.8t,
+                     family=Gamma(link='log'),
+                     maxit=1000,na.action='na.fail')
+
+      d.occur.aicc.1order<-dredge(H1.1order,beta='sd',rank=AICc,trace=F)
+      d.occur.aicc.1order[1:7]
+      # now there are 7 equivalent best models! 
+      # :-( 
+      
       
       # B3.2.2 glm full with myc.frac only ####
       #=========================================#
@@ -1742,7 +1817,6 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # Multiple R-squared:  0.6916,	Adjusted R-squared:  0.6016 
       # F-statistic: 7.688 on 7 and 24 DF,  p-value: 6.754e-05
 
-   #library(Mumin)
    library(MuMIn)
    AICc(best.lm.elev.8t)
    # 355.01
@@ -1767,7 +1841,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'SRL'])
 
    # Try with MuMIn{} dredge()
-   # rewrite H1 with na.action='fail' - required by dredge (), add dat8[!is.na(ElevDif),] to remove rows with NA
+   # rewrite H1 with na.action='fail' - required by dredge (), 
+   # add dat8[!is.na(ElevDif),] to remove 3 rows with NA
    dat.8t.nona<-dat.8t[!is.na(dat.8t$ElevDif),]
    H1<-lm(ElevDif~
              Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
@@ -1777,28 +1852,63 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
           data=dat.8t.nona,
           na.action='na.fail')
    
-   d.abund<-dredge(H1,beta='sd',rank=AIC,trace=F)
-   head(d.abund)
-   # 40 models within 2 AIC points... 
+   d.elev<-dredge(H1,beta='sd',rank=AIC,trace=F)
+   head(d.elev)
+      # 40 models within 2 AIC points... 
+      
+      # best model includes (AIC = 325):
+      # LDMC
+      # Leaf.Mass.Frac 
+      # Log.Ht.veg 
+      # Log.Leaf.Area 
+      # Log.Leaf.Area^2 
+      # Max.Root.Loca
+      # Myc.Frac    
+      # SRL  
+      # SRL^2 
+      # Log.Ht.veg:Max.Rot.Loc
+      # Log.Lef.Are:Myc.Frc
    
-   # best model includes (AIC = 325):
-   # Lef.Mss.Frc 
-   # Log.Ht.veg 
-   # Log.Lmn.thc 
-   # Log.Lef.Are 
-   # Log.Lef.Are^2 
-   # Max.Rot.Loc
-   # Myc.Frc    
-   # SRL  
-   # SRL^2 
-   # Log.Ht.veg:Max.Rot.Loc
-   # Log.Lef.Are:Myc.Frc
+   # Too many interaction terms for too small sample size.
+   # Explore best model with only 1st order effects
+   H1.1order<-lm(ElevDif~
+                    +            Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
+                 +        data=dat.8t.nona,
+                 +        na.action='na.fail')
+   d.elev.aicc.1order<-dredge(H1.1order,beta='sd',rank=AICc,trace=F)
+   head(d.elev.aicc.1order)
+   # 4 equivalent models (within 2 AICc points)
+      
+   # C3.2.1b AICc model selection ####
+   #------------
    
-   d.abund.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
-   head(d.abund.aicc)
+   d.elev.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
+     
+   head(d.elev.aicc)
+      # 7 equivalent models (within 2 AIC of best model )
+      # :-(
+   
+   d.elev.aicc[1]   
+      # best model includes:
+      # LDMC +
+      # Leaf.Mass.Frac
+      # Log.Leaf.Area^2
+      # Max.Root.Loc^2
+      # SRL
+      # SRL^2
+   
+   
+   best.elev.aicc<-lm(ElevDif~
+                          LDMC + Leaf.Mass.Frac +
+                          Log.Leaf.Area^2 + Max.Root.Loca^2 +
+                          SRL + SRL^2,
+                        data=dat.8t)
+   summary(best.elev.aicc)
+   # AdjR2 = 0.3947
+   
    # 7 models within 3 AICc points of each other 
 
-   # best model includes (AIC = 333.8):
+   # best model includes (AICc = 333.8):
    # LDMC
    # Lef.Mss.Frc
    # Log.Lef.Are^2
