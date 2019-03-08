@@ -92,10 +92,11 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    
     # A1.1 - Tree Model
     par(mfrow=c(1,1))
-    tree.model<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t])
+    tree.model<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
+                     control=tree.control(nobs=36,mincut=3))
     plot(tree.model); text(tree.model);title('Regression Tree \n Abundance.ratio vs 8 traits')
-    # Myc.frac is most important variable, 
-    # for those with high myc.frac, SRL matters
+       # Myc.frac is most important variable, 
+       # for those with high myc.frac, SRL matters
     
     tree.model 
     # node), split, n, deviance, yval
@@ -131,9 +132,12 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     plot(cv.tree(tree.model)) 
     # c.v.  splits the data into 'training' set for model fitting and a 
     # validation set to evaluate goodness of fit 
-    # look for how many splits produces the minimum deviance - run multiple times
+    # look for how many splits produces the minimum deviance - run this multiple times
     
     # lowest deviations at 2-4 branches
+    
+    pruned.tree.model<-prune.tree(tree.model,best=2)
+    plot(pruned.tree.model);text(pruned.tree.model)
     
           # See if regression tree retains Myc.Frac-log(Myc.Frac), like lm and glms do.
           Xs$Log.Myc.Frac<-log(Xs$Myc.Frac)
@@ -183,13 +187,19 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        # Regression Tree retains Myc.Frac, Max.Root.Loca, SRL and their interactions - R2 = 0.29
        # Regression Tree does not retain log(Myc.Frac) like glm does. This is because it does 
        # need to fit the exact shape of the regression. Instead, it pools species into bins
+       #
+       # Need to test for optimal tree size - size = 2 ? :-(
+       #     
        #=====================================================================================#
     
-    # A1.2 - Test trait-trait interactions 
+    # A1.2 - Test trait-trait interactions w lm
     ----
        
-    # need to check in subgroups because sample size too small to test all interactions
-    # simultaneously
+      # A1.2.1
+      # -------# 
+    
+    # Check all possible interactions in subgroups because sample size too small to test 
+    # all interactions simultaneously
     summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
  
@@ -198,43 +208,90 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     summary(lm(sp.response$abundance.ratio~(Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
     
-    # SRL:Myc.Frac significant @p=0.01
-    # Log.Leaf.Area:SRL significant @p=0.01
-    
+       # SRL:Myc.Frac significant @p=0.01
+       # Log.Leaf.Area:SRL significant @p=0.01
+       
     summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Leaf.Area+Leaf.Mass.Frac)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
     
-    # Log.Ht.veg:Max.Root.Loca marginally significant @p=0.0584
-    # Max.Root.Loca:Leaf.Mass.Frac marginally significant @p=0.0977
+       # Log.Ht.veg:Max.Root.Loca marginally significant @p=0.0584
+       # Max.Root.Loca:Leaf.Mass.Frac marginally significant @p=0.0977
     
     summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+SRL+Myc.Frac)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
-    # SRL:Myc.Frac significant @p=0.001
-    # Log.Ht.veg:SRL marginally significant @p=0.077
-    # Max.Root.Loca:SRL marginally significant @p=0.059
+    
+       # SRL:Myc.Frac significant @p=0.001
+       # Log.Ht.veg:SRL marginally significant @p=0.077
+       # Max.Root.Loca:SRL marginally significant @p=0.059
 
     
     summary(lm(sp.response$abundance.ratio~(Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
     
-    # No significant interactions
-    
+       # No significant interactions
+       
     summary(lm(sp.response$abundance.ratio~(Log.Lamina.thck+LDMC+SRL+Myc.Frac)^2,
                data=merge(sp.response,Xs,by="row.names",all=T)))
     
-    # SRL:Myc.Frac significant @p=0.0004
-    # LDMC:SRL significant @p=0.02
+       # SRL:Myc.Frac significant @p=0.0004
+       # LDMC:SRL significant @p=0.02
+    
+    # Test 3-way interactions because regression trees suggest they may be occuring
+    summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+SRL+Myc.Frac+Leaf.Area+Leaf.Mass.Frac+
+                                               SRL:Myc.Frac+SRL:Max.Root.Loca+SRL:Log.Ht.veg+
+                                               Myc.Frac:SRL:Max.Root.Loca+Myc.Frac:SRL:Log.Ht.veg),
+                                            data=merge(sp.response,Xs,by="row.names",all=T)))
+    
+    # after model selection on this model, best model is : 
+    summary(h)
+    
+    # Coefficients:
+    #                         Estimate Std. Error t value Pr(>|t|)    
+    # (Intercept)               5.2533     2.8781   1.825 0.077929 .  
+    # Log.Ht.veg               -1.1983     0.7576  -1.582 0.124227    
+    # SRL                      -1.4500     0.4610  -3.145 0.003728 ** 
+    # Myc.Frac                 -0.1889     2.8569  -0.066 0.947731    
+    # SRL:Myc.Frac              1.5465     0.5721   2.703 0.011196 *  
+    # Log.Ht.veg:SRL            0.5906     0.1342   4.402 0.000125 ***
+    # Log.Ht.veg:SRL:Myc.Frac  -0.6538     0.1666  -3.924 0.000471 ***
+    # ---
+    # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+    # 
+    # Residual standard error: 1.358 on 30 degrees of freedom
+    # (10 observations deleted due to missingness)
+    # Multiple R-squared:  0.6895,	Adjusted R-squared:  0.6274 
+    # F-statistic:  11.1 on 6 and 30 DF,  p-value: 1.644e-06
+    
+      # overfitted, with 6 parameters?
+   
+    # A1.2.1
+    # -------# 
+      # Simultaneously test all interactions in same model to make them compete against each other. 
+    
+    summary(lm(sp.response$abundance.ratio~(Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Log.Ht.veg+
+                                               SRL:Myc.Frac+Log.Leaf.Area:SRL+
+                                               Log.Ht.veg:Max.Root.Loca+Max.Root.Loca:Leaf.Mass.Frac+
+                                               Log.Ht.veg:SRL+Max.Root.Loca:SRL+ 
+                                               SRL:Myc.Frac+LDMC:SRL+
+                                               Myc.Frac:SRL:Max.Root.Loca+Myc.Frac:SRL:Log.),
+               data=merge(sp.response,Xs,by="row.names",all=T)))
+    
+      # Now only SRL:Myc.Frac and SRL:Myc.Frac:Max.Root.Loca are significant ! 
     
     #===============================================================#
     # SUMMARY of trait interactions #
     # significant trait-trait interactions to include in full model: 
-    #    SRL:Myc.Frac  
-    #    Log.Leaf.Area:SRL
-    #    Log.Ht.veg:Max.Root.Loca
-    #    Max.Root.Loca:Leaf.Mass.Frac
+    #
+    #    From Regression Tree: 
+    #    Myc.Frac:SRL 
+    #    SRL:Max.Root.Loca
+    #    Myc.Frac:SRL:Max.Root.Loca
+    #    
+    #    From lm
+    #    Myc.Frac:SRL 
     #    Log.Ht.veg:SRL
-    #    Max.Root.Loca:SRL 
-    #    LDMC:SRL
+    #    Log.Ht.veg:SRL:Myc.Frac
+    #    
     #===============================================================#
     
     # A2 - Explore non-linearity ####
@@ -257,14 +314,23 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     
     # A2.2 Test polynomial relationships 
     ----
-    summary(lm(sp.response$abundance.ratio~I(Log.Ht.veg^2)+I(Max.Root.Loca^2)+I(Log.Lamina.thck^2)+
-                  I(LDMC^2)+I(Log.Leaf.Area^2)+I(Leaf.Mass.Frac^2)+I(SRL^2)+I(Myc.Frac^2),
+    summary(lm(sp.response$abundance.ratio~Log.Ht.veg^2+I(Log.Ht.veg^2)+
+                  Max.Root.Loca+I(Max.Root.Loca^2)+
+                  Log.Lamina.thck+I(Log.Lamina.thck^2)+
+                  LDMC+I(LDMC^2)+
+                  Log.Leaf.Area+I(Log.Leaf.Area^2)+
+                  Leaf.Mass.Frac+I(Leaf.Mass.Frac^2)+
+                  SRL+I(SRL^2)+
+                  Myc.Frac+I(Myc.Frac^2),
                data=merge(sp.response,Xs,by="row.names",all=T)))
-      # myc.frac^2 significant @ p=0.01
+      # Myc.Frac + (Myc.fFrac)^2 are significant @ p=0.03 & 0.01
     
-    summary(lm(sp.response$abundance.ratio~log(Myc.Frac),
+    
+    summary(lm(sp.response$abundance.ratio~Myc.Frac+log(Myc.Frac),
                data=merge(sp.response,Xs,by="row.names",all=T)))
       # log(myc.frac) significant @ p=0.0004
+    
+      # Okay, but that non-linearity is also captured by a log transform
     
    
 # A3 - Model selection ####
@@ -304,7 +370,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
   H1<-lm(abundance.ratio~
             Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
             log(Myc.Frac)+
-            SRL:Myc.Frac + Log.Leaf.Area:SRL + Max.Root.Loca:SRL + Log.Ht.veg:SRL+
+            SRL:Myc.Frac+
             Myc.Frac:SRL:Log.Ht.veg,
          data=dat.8t)
     # use 3-way interactions with Myc.Frac
@@ -314,45 +380,37 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
   best.lm.abund.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
   
   summary(best.lm.abund.8t)
-   # Call:
-   # lm(formula = abundance.ratio ~ Log.Ht.veg + SRL + Myc.Frac + 
-   #     log(Myc.Frac) + SRL:Myc.Frac + Log.Ht.veg:SRL + Log.Ht.veg:SRL:Myc.Frac, 
-   #     data = dat.8t)
-   # 
-   # Residuals:
-   #     Min      1Q  Median      3Q     Max 
-   # -1.8856 -0.6668 -0.0396  0.3563  3.4124 
-   # 
-   # Coefficients:
-   #                         Estimate Std. Error t value Pr(>|t|)    
-   # (Intercept)             -26.0082     8.3353  -3.120 0.004163 ** 
-   # Log.Ht.veg               -1.5515     0.6471  -2.398 0.023407 *  
-   # SRL                      -1.6238     0.3844  -4.225 0.000230 ***
-   # Myc.Frac                 33.3629     8.7854   3.798 0.000721 ***
-   # log(Myc.Frac)           -23.2078     5.8643  -3.957 0.000471 ***
-   # SRL:Myc.Frac              1.7504     0.4750   3.685 0.000971 ***
-   # Log.Ht.veg:SRL            0.6201     0.1115   5.560 6.02e-06 ***
-   # Log.Ht.veg:SRL:Myc.Frac  -0.6856     0.1379  -4.972 2.99e-05 ***
-   # ---
-   # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-   # 
-   # Residual standard error: 1.121 on 28 degrees of freedom
-   # Multiple R-squared:  0.8026,	Adjusted R-squared:  0.7532 
-   # F-statistic: 16.26 on 7 and 28 DF,  p-value: 2.43e-08
+   #Coefficients:
+  #               Estimate Std. Error t value Pr(>|t|)   
+  # Intercept)   -34.8219    11.6515  -2.989  0.00566 **
+  # Max.Root.Loca   0.4005     0.2831   1.415  0.16774   
+  # Log.Leaf.Area   0.2101     0.1551   1.355  0.18580   
+  # SRL             0.4553     0.1342   3.392  0.00202 **
+  # Myc.Frac       36.0844    12.1883   2.961  0.00607 **
+  # log(Myc.Frac) -24.7579     8.1606  -3.034  0.00505 **
+  # SRL:Myc.Frac   -0.5574     0.1784  -3.124  0.00402 **
+  # ---
+  # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # 
+  # Residual standard error: 1.517 on 29 degrees of freedom
+  # Multiple R-squared:  0.6252,	Adjusted R-squared:  0.5476 
+  # F-statistic: 8.062 on 6 and 29 DF,  p-value: 3.569e-05
   
-  AIC(best.lm.abund.8t) # 119.319
+   # Overfit ? 6 parameters
+  
+  AIC(best.lm.abund.8t) # 140.39
   
   plot(best.lm.abund.8t) # Abnormal. points clumped to left w strong negative slope 
                         # datapoints 30,8 and 11 are poorly fitted (high residuals vs fitted) -- osmorhiza claytonii, circea alpina & Cornus canadensis
                         # datapoints 30 and 7 have high leverage (>1) -- Carex scabrata and osmorhiza claytonii 
   
+   # Take home - lm assumptions violated. use glm
+  
   vif(best.lm.abund.8t)
-   #               Log.Ht.veg                     SRL                Myc.Frac 
-   #                3.953579              456.477998               48.486129 
-   #           log(Myc.Frac)            SRL:Myc.Frac          Log.Ht.veg:SRL 
-   #               50.038599              434.131104              351.792030 
-   # Log.Ht.veg:SRL:Myc.Frac 
-   #              318.856627
+  # Max.Root.Loca Log.Leaf.Area           SRL      Myc.Frac log(Myc.Frac) 
+  # 1.303267      1.189649     30.365028     50.912979     52.865430 
+  # SRL:Myc.Frac 
+  # 33.409884
       # It is normal to have high VIFs for interaction terms. Don't worry about it. 
   
   # Plot residuals vs each variable (in the model)
@@ -375,7 +433,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
   plot(x,y,main='y~x-log(x)\n x=[0-1]')
   
   y<--log(x)
-  plot(x,y,main='y~x-log(x)\n x=[0-1]')
+  plot(x,y,main='y~log(x)\n x=[0-1]')
   
   # Checkout what abundance ratio vs Myc.Frc look like graphically
    model<-lm(abundance.ratio~Myc.Frac+log(Myc.Frac),data=dat.8t)
@@ -391,6 +449,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
   lines(sort(dat.8t$Myc.Frac), predict(model)[order(dat.8t$Myc.Frac)], 
         type='b', 
         col='red')
+  
+  # Myc.Frac + log(Myc.Frac) better predicts high abundance ratio of Carex scabrata
+  # pattern driven by one datapoint. 
 
   
   
@@ -597,7 +658,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    #===============================================================#
    # SUMMARY OF LMs 
    # assumptions badly violated, so we need to fit a glm
-   # by far, bestmodel has both myc.frac and log.myc.frac (adjR2=0.75, aic=119)
+   # by far, bestmodel has both myc.frac and log.myc.frac (adjR2=0.62, aic=135)
    # 2nd best model has myc.frac (no Log(Myc.Frac)) with all other variables (adjR2=0.69, aic=126)
    #===============================================================#
         
@@ -612,8 +673,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    
         H1<-glm(abundance.ratio~
               Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                 + log(Myc.Frac)+
-                 SRL:Myc.Frac + Log.Leaf.Area:SRL + Max.Root.Loca:SRL + Log.Ht.veg:SRL+
+                 +log(Myc.Frac)+
+                 SRL:Myc.Frac+
                  Myc.Frac:SRL:Log.Ht.veg,
               data=dat.8t,
               family=Gamma(link='log'),
@@ -628,7 +689,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
         
         summary(best.glm.abund.8t)
         AIC(best.glm.abund.8t)
-        # 102.99
+        # 95.62
         
         # can I simplify any further?
         drop1(best.glm.abund.8t) # drop Max.Root.Loca decreases AIC by 1.9
@@ -700,7 +761,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
                     Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
                     + log(Myc.Frac)+
                     SRL:Myc.Frac + Log.Leaf.Area:SRL + Max.Root.Loca:SRL + Log.Ht.veg:SRL+
-                    Myc.Frac:SRL:Log.Ht.veg,
+                    Myc.Frac:SRL:Log.Ht.veg+Max.Root.Loca:SRL:Myc.Frac,
                  data=dat.8t,
                  family=Gamma(link='log'),
                  maxit=10000,na.action='na.fail')
@@ -720,6 +781,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
             # Log.Ht.veg:SRL + 
             # Myc.Frc:SRL + 
             # Log.Ht.veg:Myc.Frc:SRL
+         
+            # overfitted bc it has 8 parameters! 
          
          #  A3.2.1b AICc model selection ####
          #------------#
