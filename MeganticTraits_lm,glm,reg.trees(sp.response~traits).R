@@ -192,12 +192,10 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        #     
        #=====================================================================================#
     
-    # A1.2 - Test trait-trait interactions w lm
+    # A1.2 - Test trait-trait interactions w lm ####
     ----
        
-      # A1.2.1
-      # -------# 
-    
+
     # Check all possible interactions in subgroups because sample size too small to test 
     # all interactions simultaneously
     summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC)^2,
@@ -236,7 +234,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        # SRL:Myc.Frac significant @p=0.0004
        # LDMC:SRL significant @p=0.02
     
-    # Test 3-way interactions because regression trees suggest they may be occuring
+    # Test 3-way interactions suggested in regression tree 
     summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+SRL+Myc.Frac+Leaf.Area+Leaf.Mass.Frac+
                                                SRL:Myc.Frac+SRL:Max.Root.Loca+SRL:Log.Ht.veg+
                                                Myc.Frac:SRL:Max.Root.Loca+Myc.Frac:SRL:Log.Ht.veg),
@@ -264,7 +262,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     
       # overfitted, with 6 parameters?
    
-    # A1.2.1
+    # A1.2.1 - competing T-T interactions
     # -------# 
       # Simultaneously test all interactions in same model to make them compete against each other. 
     
@@ -277,6 +275,98 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
                data=merge(sp.response,Xs,by="row.names",all=T)))
     
       # Now only SRL:Myc.Frac and SRL:Myc.Frac:Max.Root.Loca are significant ! 
+    
+    
+    # A1.3 - Test trait-trait interactions w glm ####
+    # -------# 
+    
+    # 8 traits = 28 interaction terms. Can't test them all on 36 datapoints. So, fit interaction terms
+    # in randomly selected pairs
+    
+    # create list of possible interactions:
+    interactions<-c('S.MRL','S.LLT','S.L','S.LLA','S.LMF','S.LHV','S.MF','MRL.LLT','MRL.L','MRL.LLA',
+                    'MRL.LMF','MRL.LHV','MRL.MF','LLT.L','LLT.LLA','LLT.LMF','LLT.LHV','LLT.MF',
+                    'L.LLA','L.LMF','L.LHV','L.MF','LLA.LMF','LLA.LHV','LLA.MF','LMF.LHV','LHV.MF')
+    
+    
+    # shuffle interactions
+    sample(interactions)
+    # Test interactions 4 at a time. 8 main effects + 4 interactions = 12 parameteres (36/12=3)
+    
+          # [1] "LLA.MF"  "LHV.MF"  "LMF.LHV" "MRL.MF" 
+          # [5] "MRL.LLT" "LLA.LHV" "L.LHV"   "LLA.LMF"
+          # [9] "LLT.LLA" "S.LMF"   "S.MRL"   "MRL.L"  
+          # [13] "LLT.LMF" "MRL.LHV" "LLT.L"   "MRL.LLA"
+          # [17] "L.MF"    "S.MF"    "L.LLA"   "MRL.LMF"
+          # [21] "S.LLT"   "S.L"     "S.LLA"   "S.LHV"  
+          # [25] "LLT.MF"  "LLT.LHV" "L.LMF"
+    
+    # Check all possible interactions in subgroups because sample size too small to test 
+    # all interactions simultaneously
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                +Log.Leaf.Area:Myc.Frac+Log.Ht.veg:Myc.Frac+Leaf.Mass.Frac:Log.Ht.veg+Max.Root.Loca:Myc.Frac,
+               data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+      #/ Leaf.Mass.Frac:Log.Ht.veg   p=0.0370
+      #/ Max.Root.Loca:Myc.Frac      p=0.0446
+      #/ Log.Leaf.Area:Myc.Frac
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                   +Max.Root.Loca:Log.Lamina.thck+Log.Leaf.Area:Log.Ht.veg+LDMC:Log.Ht.veg+Log.Leaf.Area:Leaf.Mass.Frac,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+      #/ Nothing significant 
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                   +Log.Lamina.thck:Log.Leaf.Area+SRL:Leaf.Mass.Frac+SRL:Max.Root.Loca+Max.Root.Loca:LDMC,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+       #/ Nothing significant 
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                   +Log.Lamina.thck:Leaf.Mass.Frac+Max.Root.Loca:Log.Ht.veg+Log.Lamina.thck:LDMC+Max.Root.Loca:Log.Leaf.Area,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+       #/ Nothing significant
+    
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                   +LDMC:Myc.Frac+SRL:Myc.Frac+LDMC:Log.Leaf.Area+Max.Root.Loca:Leaf.Mass.Frac,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+       #/ Max.Root.Loca:Leaf.Mass.Frac  p=0.00545 
+       #/ LDMC:Myc.Frac                 p=0.06964
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                   +SRL:Log.Lamina.thck + SRL:LDMC + SRL:Log.Leaf.Area + SRL:Log.Ht.veg,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+       #/ Nothing significant
+    
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                +Log.Lamina.thck:Myc.Frac + Log.Lamina.thck:Log.Ht.veg + LDMC:Leaf.Mass.Frac,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+       #/ LDMC:Leaf.Mass.Frac          p=0.0240
+    
+    # Test 3-way interactions because regression trees suggest they may be occuring
+    summary(glm(sp.response$abundance.ratio~SRL+Max.Root.Loca+Myc.Frac+Log.Ht.veg
+                + SRL:Myc.Frac + SRL:Max.Root.Loca + SRL:Log.Ht.veg
+                + Myc.Frac:SRL:Max.Root.Loca + Myc.Frac:SRL:Log.Ht.veg,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+      #/ SRL:Myc.Frac                 p=0.0782 - 2-WAY
+      #/ SRL:Log.Ht.veg               p=0.0786 - 2-WAY
+      #/ SRL:Myc.Frac:Log.Ht.veg      P=0.1021 - 3-WAY
+    
+    # Test all significant interactions against each other
+    summary(glm(sp.response$abundance.ratio~SRL + Max.Root.Loca + Log.Lamina.thck + LDMC + Log.Leaf.Area + Leaf.Mass.Frac + Myc.Frac + Log.Ht.veg
+                + Leaf.Mass.Frac:Log.Ht.veg + Max.Root.Loca:Myc.Frac + Log.Leaf.Area:Myc.Frac
+                + Max.Root.Loca:Leaf.Mass.Frac + LDMC:Myc.Frac + LDMC:Leaf.Mass.Frac,
+                data=merge(sp.response,Xs,by="row.names",all=T),family=Gamma(link='log'),maxit=1000))
+    
+      #/ LDMC:Leaf.Mass.Frac p=0.03983 only significant term 
+      #/ weird, that's different from regression tree. 
     
     #===============================================================#
     # SUMMARY of trait interactions #
@@ -291,6 +381,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     #    Myc.Frac:SRL 
     #    Log.Ht.veg:SRL
     #    Log.Ht.veg:SRL:Myc.Frac
+    # 
+    #    From glm
     #    
     #===============================================================#
     
@@ -325,6 +417,12 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
                data=merge(sp.response,Xs,by="row.names",all=T)))
       # Myc.Frac + (Myc.fFrac)^2 are significant @ p=0.03 & 0.01
     
+    plot(sp.response$abundance~I(Myc.Frac^2),
+         data=merge(sp.response,Xs,by="row.names",all=T))
+    
+    x<-seq(0.01,1,0.01)
+    y<- -54*x+ 33*x^2 # these are the parameters of abund~Myc.Frac+I(Myc.Frac)^2
+    plot(y~x)
     
     summary(lm(sp.response$abundance.ratio~Myc.Frac+log(Myc.Frac),
                data=merge(sp.response,Xs,by="row.names",all=T)))
@@ -1117,7 +1215,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          # Regression Tree retains Myc.Frac, SRL, Max.Root.Loca, Log.Lamian.thck and their interactions - R2 = 0.29
          #=====================================================================================#
          
-      # B1.2 - Test trait-trait interactions 
+      # B1.2 - Test trait-trait interactions w lm ####
       ----
          
       # need to check in subgroups because sample size too small to test all interactions
@@ -1143,17 +1241,101 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       summary(lm(dat.8t$occurence.ratio~(Log.Ht.veg+Max.Root.Loca+SRL+Myc.Frac)^2,
                  data=dat.8t))
       
-      # No significant terms
+      # B1.3 - Test trait-trait interactions w glm ####
+      # -------# 
+      
+      # 8 traits = 28 interaction terms. Can't test them all on 36 datapoints. So, fit interaction terms
+      # in randomly selected pairs
+      
+      # create list of possible interactions:
+      interactions<-c('S.MRL','S.LLT','S.L','S.LLA','S.LMF','S.LHV','S.MF','MRL.LLT','MRL.L','MRL.LLA',
+                      'MRL.LMF','MRL.LHV','MRL.MF','LLT.L','LLT.LLA','LLT.LMF','LLT.LHV','LLT.MF',
+                      'L.LLA','L.LMF','L.LHV','L.MF','LLA.LMF','LLA.LHV','LLA.MF','LMF.LHV','LHV.MF')
+      
+      
+      # shuffle interactions
+      sample(interactions)
+      # Test interactions 4 at a time. 8 main effects + 4 interactions = 12 parameteres (36/12=3)
+      
+         #/ [1] "LLA.MF"  "LHV.MF"  "LMF.LHV" "MRL.MF" 
+         #/ [5] "MRL.LLT" "LLA.LHV" "L.LHV"   "LLA.LMF"
+         #/ [9] "LLT.LLA" "S.LMF"   "S.MRL"   "MRL.L"  
+         #/ [13] "LLT.LMF" "MRL.LHV" "LLT.L"   "MRL.LLA"
+         #/ [17] "L.MF"    "S.MF"    "L.LLA"   "MRL.LMF"
+         #/ [21] "S.LLT"   "S.L"     "S.LLA"   "S.LHV"  
+         #/ [25] "LLT.MF"  "LLT.LHV" "L.LMF"
+      
+      # Check all possible interactions in subgroups because sample size too small to test 
+      # all interactions simultaneously
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Leaf.Area:Myc.Frac+Log.Ht.veg:Myc.Frac+Leaf.Mass.Frac:Log.Ht.veg+Max.Root.Loca:Myc.Frac,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Log.Leaf.Area:Myc.Frac     p=0.05401
+         #/ Max.Root.Loca:Myc.Frac     p=0.05401
+
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Max.Root.Loca:Log.Lamina.thck+Log.Leaf.Area:Log.Ht.veg+LDMC:Log.Ht.veg+Log.Leaf.Area:Leaf.Mass.Frac,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Nothing significant 
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Log.Leaf.Area+SRL:Leaf.Mass.Frac+SRL:Max.Root.Loca+Max.Root.Loca:LDMC,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Nothing significant 
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Leaf.Mass.Frac+Max.Root.Loca:Log.Ht.veg+Log.Lamina.thck:LDMC+Max.Root.Loca:Log.Leaf.Area,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Nothing significant
+      
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +LDMC:Myc.Frac+SRL:Myc.Frac+LDMC:Log.Leaf.Area+Max.Root.Loca:Leaf.Mass.Frac,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Max.Root.Loca:Leaf.Mass.Frac  p=0.0615 
+         #/ LDMC:Myc.Frac                 p=0.0890
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +SRL:Log.Lamina.thck + SRL:LDMC + SRL:Log.Leaf.Area + SRL:Log.Ht.veg,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ SRL:Log.Leaf.Area       p=0.0746
+      
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Myc.Frac + Log.Lamina.thck:Log.Ht.veg + LDMC:Leaf.Mass.Frac,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+      # Test 3-way interactions because regression trees suggest they may be occuring
+      summary(glm(occurence.ratio~SRL+Max.Root.Loca+Myc.Frac+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Log.Ht.veg
+                  + SRL:Myc.Frac + SRL:Max.Root.Loca + Myc.Frac:SRL:Max.Root.Loca,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+         #/ Nothing significant
+      
+      # Test all significant interactions against each other
+      summary(glm(occurence.ratio~SRL + Max.Root.Loca + Log.Lamina.thck + LDMC + Log.Leaf.Area + Leaf.Mass.Frac + Myc.Frac + Log.Ht.veg
+                  + Max.Root.Loca:Myc.Frac + Log.Leaf.Area:Myc.Frac + Max.Root.Loca:Leaf.Mass.Frac
+                  + LDMC:Myc.Frac + SRL:Log.Leaf.Area ,
+                  data=dat.8t,family=Gamma(link='log'),maxit=1000))
+      
+      #/ Log.Leaf.Area:Myc.Frac     p=0.0762 
+      #/ SRL:Log.Leaf.Area          p=0.0989
+      #/ weird, that's different from regression tree. 
       
             #=====================================================================================#
             # Summary of trait-trait interactions. 
-            # None of the interactions in regression tree are selected by lm. Potential candidates are:
+            # Only one of the interactions in regression tree are selected by glm. Potential candidates are:
+            #  - Max.Root.Loca:Myc.Frac
             #  - Log.Leaf.Area:Myc.Frac
-            #  - Log.Leaf.Area:Max.Root.Loca
-            #  - Log.Leaf.Area:Leaf.Mass.Frac
-            #  - Log.Leaf.Area:Log.Ht.veg
-            #  - LDMC:Log.Ht.veg
-            #  - LDMC:Max.Root.Loca
+            #  - Max.Root.Loca:Leaf.Mass.Frac
+            #  - LDMC:Myc.Frac
+            #  - SRL:Log.Leaf.Area
             #=====================================================================================#
       
       # B2 - Explore non-linearity ####
@@ -1215,7 +1397,6 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # Includes all 1st order terms 
       # + significant non-linear variables
       # + significant trait interactions - seven 2nd order, one 3rd order
-      # .
       
       H1<-glm(occurence.ratio~
                  Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
@@ -1703,35 +1884,98 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #  and their interactions - R2 = 0.59
          #=====================================================================================#
       
-      # C1.2 - Test trait-trait interactions 
-      ----
-         
-      # need to check in subgroups because sample size too small to test all interactions
-      # simultaneously
-      summary(lm(dat.8t$ElevDif~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC)^2,
+      # C1.2 - Test trait-trait interactions w lm ####
+      # -------# 
+      
+      # 8 traits = 28 interaction terms. Can't test them all on 36 datapoints. So, fit interaction terms
+      # in randomly selected pairs
+      
+      # create list of possible interactions:
+      interactions<-c('S.MRL','S.LLT','S.L','S.LLA','S.LMF','S.LHV','S.MF','MRL.LLT','MRL.L','MRL.LLA',
+                      'MRL.LMF','MRL.LHV','MRL.MF','LLT.L','LLT.LLA','LLT.LMF','LLT.LHV','LLT.MF',
+                      'L.LLA','L.LMF','L.LHV','L.MF','LLA.LMF','LLA.LHV','LLA.MF','LMF.LHV','LHV.MF')
+      
+      
+      # shuffle interactions
+      sample(interactions)
+      # Test interactions 4 at a time. 8 main effects + 4 interactions = 12 parameteres (36/12=3)
+      
+         #/ [1] "LLA.MF"  "LHV.MF"  "LMF.LHV" "MRL.MF" 
+         #/ [5] "MRL.LLT" "LLA.LHV" "L.LHV"   "LLA.LMF"
+         #/ [9] "LLT.LLA" "S.LMF"   "S.MRL"   "MRL.L"  
+         #/ [13] "LLT.LMF" "MRL.LHV" "LLT.L"   "MRL.LLA"
+         #/ [17] "L.MF"    "S.MF"    "L.LLA"   "MRL.LMF"
+         #/ [21] "S.LLT"   "S.L"     "S.LLA"   "S.LHV"  
+         #/ [25] "LLT.MF"  "LLT.LHV" "L.LMF"
+      
+      # Check all possible interactions in subgroups because sample size too small to test 
+      # all interactions simultaneously
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Leaf.Area:Myc.Frac+Log.Ht.veg:Myc.Frac+Leaf.Mass.Frac:Log.Ht.veg+Max.Root.Loca:Myc.Frac,
                  data=dat.8t))
       
-      # No significant terms
+         #/ Log.Leaf.Area:Myc.Frac     p=0.00472
+         #/ Myc.Frac:Log.Ht.veg        p=0.07485
       
-      summary(lm(dat.8t$ElevDif~(Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac)^2,
+      
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Max.Root.Loca:Log.Lamina.thck+Log.Leaf.Area:Log.Ht.veg+LDMC:Log.Ht.veg+Log.Leaf.Area:Leaf.Mass.Frac,
                  data=dat.8t))
       
-      # Log.Leaf.Area:Myc.Frac     @p=0.0039
+         #/ Nothing significant 
       
-      summary(lm(dat.8t$ElevDif~(Log.Ht.veg+Max.Root.Loca+Log.Leaf.Area+Leaf.Mass.Frac)^2,
-                 data=dat.8t))
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Log.Leaf.Area+SRL:Leaf.Mass.Frac+SRL:Max.Root.Loca+Max.Root.Loca:LDMC,
+                  data=dat.8t))
       
-      # Max.Root.Loca:Log.Ht.veg  @p=0.0895
- 
-      summary(lm(dat.8t$ElevDif~(Log.Ht.veg+Max.Root.Loca+SRL+Myc.Frac)^2,
-                 data=dat.8t))
+         #/ Nothing significant 
       
-      # Max.Root.Loca:Log.Ht.veg @p=0.0704
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Leaf.Mass.Frac+Max.Root.Loca:Log.Ht.veg+Log.Lamina.thck:LDMC+Max.Root.Loca:Log.Leaf.Area,
+                  data=dat.8t))
+      
+         #/ Nothing significant
+      
+      
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +LDMC:Myc.Frac+SRL:Myc.Frac+LDMC:Log.Leaf.Area+Max.Root.Loca:Leaf.Mass.Frac,
+                  data=dat.8t))
+      
+         #/ SRL:Myc.Frac      p=0.0726 
+      
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +SRL:Log.Lamina.thck + SRL:LDMC + SRL:Log.Leaf.Area + SRL:Log.Ht.veg,
+                  data=dat.8t))
+      
+         #/ SRL:Log.Lamina.thck     p=0.04928
+      
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Myc.Frac+Log.Ht.veg
+                  +Log.Lamina.thck:Myc.Frac + Log.Lamina.thck:Log.Ht.veg + LDMC:Leaf.Mass.Frac,
+                  data=dat.8t))
+      
+         #/ Log.Lamina.thck:Myc.Frac     p=0.0186
+      
+      # Test 3-way interactions because regression trees suggest they may be occuring
+      summary(lm(ElevDif~SRL+Max.Root.Loca+Myc.Frac+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+Log.Ht.veg
+                  + Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg ,
+                  data=dat.8t))
+      
+         #/ Nothing significant
+      
+      # Test all significant interactions against each other
+      summary(lm(ElevDif ~ SRL + Max.Root.Loca + Log.Lamina.thck + LDMC + Log.Leaf.Area + Leaf.Mass.Frac + Myc.Frac + Log.Ht.veg
+                 + Log.Leaf.Area:Myc.Frac + Myc.Frac:Log.Ht.veg + SRL:Myc.Frac + SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
+                  data=dat.8t))
+      
+         #/ SRL:Log.Lamina.thck       0.03396 *       p=0.03396
+         #/ Log.Lamina.thck:Myc.Frac  0.04280 *       p=0.00472
+      
       
          #=====Summary of trait-trait interactions =======#
-         # include in model: 
-         #        Log.Leaf.Area:Myc.Frac        significant
-         #        Max.Root.Loca:Log.Ht.veg      marginally significant
+         # lm includes in model: 
+         #        SRL:Log.Lamina.thck        significant
+         #        Log.Lamina.thck:Myc.Frac    significant
+         # 
          #====================================#
       
       #=====================================================================================#
