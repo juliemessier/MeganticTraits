@@ -383,6 +383,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     #    Log.Ht.veg:SRL:Myc.Frac
     # 
     #    From glm
+    #    LDMC:Leaf.Mass.Frac
     #    
     #===============================================================#
     
@@ -763,20 +764,22 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
 
    # A3.2 - glm ####
   
-   # A3.2.1 glm full with myc.frac & log(myc.frac) ####
+   # A3.2.1 glm full - backward - with myc.frac & log(myc.frac) ####
    #=========================================#
-   # Includes all 1st order terms 
-   # + significant trait interactions - four 2nd order, one 3rd order
-   # + significant non-linear variables.
+   # Includes: 
+   #        - all 1st order terms 
+   #        + significant non-linear variables (log Myc.Frac) 
+   #        + trait interactions from regression tree
    
         H1<-glm(abundance.ratio~
               Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
                  +log(Myc.Frac)+
-                 SRL:Myc.Frac+
+                 SRL:Myc.Frac+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca+LDMC:Leaf.Mass.Frac+
                  Myc.Frac:SRL:Log.Ht.veg,
               data=dat.8t,
               family=Gamma(link='log'),
               maxit=1000)
+    
         
         H0<-glm(abundance.ratio~1,
            data=dat.8t,
@@ -790,56 +793,51 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
         # 95.62
         
         # can I simplify any further?
-        drop1(best.glm.abund.8t) # drop Max.Root.Loca decreases AIC by 1.9
-        best.glm.abund.8t.minus1<-update(best.glm.abund.8t,~.-Max.Root.Loca)
-        drop1(best.glm.abund.8t.minus1) # can't simplify any further
+        drop1(best.glm.abund.8t) # drop Log.Ht.veg decreases AIC by 1.4
+        best.glm.abund.8t.minus1<-update(best.glm.abund.8t,~.-Log.Ht.veg)
+        drop1(best.glm.abund.8t.minus1) # drop LDMC decreases AIC by 0.4
+        best.glm.abund.8t.minus2<-update(best.glm.abund.8t.minus1,~.-LDMC)
+        drop1(best.glm.abund.8t.minus2) # this is the best model
         
-        summary(best.glm.abund.8t.minus1)
-         # Call:
-         # glm(formula = abundance.ratio ~ Log.Ht.veg + SRL + Myc.Frac + 
-         #     log(Myc.Frac) + SRL:Myc.Frac + Log.Ht.veg:SRL + Log.Ht.veg:SRL:Myc.Frac, 
-         #     family = Gamma(link = "log"), data = dat.8t, maxit = 1000)
-         # 
-         # Deviance Residuals: 
-         #     Min       1Q   Median       3Q      Max  
-         # -1.8907  -0.4921  -0.1665   0.1199   1.7460  
-         # 
-         # Coefficients:
-         #                         Estimate Std. Error t value Pr(>|t|)   
-         # (Intercept)             -9.22969    6.54073  -1.411  0.16923   
-         # Log.Ht.veg              -0.91118    0.50775  -1.795  0.08353 . 
-         # SRL                     -0.86938    0.30163  -2.882  0.00750 **
-         # Myc.Frac                12.59711    6.89394   1.827  0.07834 . 
-         # log(Myc.Frac)           -9.89562    4.60171  -2.150  0.04030 * 
-         # SRL:Myc.Frac             0.90387    0.37275   2.425  0.02202 * 
-         # Log.Ht.veg:SRL           0.26178    0.08752   2.991  0.00574 **
-         # Log.Ht.veg:SRL:Myc.Frac -0.27393    0.10820  -2.532  0.01724 * 
-         # ---
-         # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-         # 
-         # (Dispersion parameter for Gamma family taken to be 0.7733397)
-         # 
-         #     Null deviance: 37.596  on 35  degrees of freedom
-         # Residual deviance: 17.588  on 28  degrees of freedom
-         # AIC: 92.371
-         # 
-         # Number of Fisher Scoring iterations: 8
+        summary(best.glm.abund.8t.minus2)
+           #/ Coefficients:
+           #/                             Estimate Std. Error t value Pr(>|t|)  
+           #/ (Intercept)                -14.40466    6.46092  -2.230   0.0340 *
+           #/ Max.Root.Loca                0.18803    0.29340   0.641   0.5268  
+           #/ SRL                         -0.27467    0.13566  -2.025   0.0525 .
+           #/ Myc.Frac                    14.32075    6.63632   2.158   0.0397 *
+           #/ log(Myc.Frac)              -11.93093    4.71616  -2.530   0.0173 *
+           #/ SRL:Myc.Frac                 0.36023    0.18988   1.897   0.0682 .
+           #/ Max.Root.Loca:SRL            0.14473    0.05556   2.605   0.0145 *
+           #/ Max.Root.Loca:SRL:Myc.Frac  -0.19041    0.07235  -2.632   0.0137 *
+           #/ ---
+           #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+           #/ 
+           #/ (Dispersion parameter for Gamma family taken to be 0.663598)
+           #/ 
+           #/ Null deviance: 37.596  on 35  degrees of freedom
+           #/ Residual deviance: 18.567  on 28  degrees of freedom
+           #/ AIC: 94.481
+           #/ 
+           #/ Number of Fisher Scoring iterations: 13
         
          # Explained Deviance
-         1-(best.glm.abund.8t.minus1$deviance/best.glm.abund.8t.minus1$null)
-            # 0.5321823
+         1-(best.glm.abund.8t.minus2$deviance/best.glm.abund.8t.minus2$null)
+            # 0.5061356
          
-         AIC(best.glm.abund.8t.minus1)
-            # 92.37
+         AIC(best.glm.abund.8t.minus2)
+            # 94.48
 
          #library(Mumin)
          library(MuMIn)
-         AICc(best.glm.abund.8t.minus1)
-            # 99.29
+         AICc(best.glm.abund.8t)
+            # 106.52
+         AICc(best.glm.abund.8t.minus2)
+            # 101.40
          
          # Validate model
-         par(mfrow=c(2,2));plot(best.glm.abund.8t.minus1)
-            # Looks awesome
+         par(mfrow=c(2,2));plot(best.glm.abund.8t.minus2)
+            # CASC & TICO have high leverage
          
          # Plot residuals vs each variable (in the model)
          plot((resid(best.glm.abund.8t.minus1))~dat.8t$Log.Ht.veg)
@@ -853,90 +851,114 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          plot((resid(best.glm.abund.8t.minus1))~dat.8t$LDMC)
          plot((resid(best.glm.abund.8t.minus1))~dat.8t$Log.Leaf.Area)
          
-         # Try with MuMIn{} dredge()
-         # rewrite H1 with na.action='fail' - required by dredge ()
-         H1<-glm(abundance.ratio~
-                    Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                    + log(Myc.Frac)+
-                    SRL:Myc.Frac + Log.Leaf.Area:SRL + Max.Root.Loca:SRL + Log.Ht.veg:SRL+
-                    Myc.Frac:SRL:Log.Ht.veg+Max.Root.Loca:SRL:Myc.Frac,
-                 data=dat.8t,
-                 family=Gamma(link='log'),
-                 maxit=10000,na.action='na.fail')
          
-         d.abund<-dredge(H1,beta='sd',rank=AIC,trace=F)
-         head(d.abund)
-            # 10 equivalent models (within 2 AIC of best model )
-            # :-(
-            
-            # best model includes:
-            # log(Myc.Frac) +
-            # Log.Ht.veg + 
-            # Log.Lmn.thc + 
-            # Myc.Frac +
-            # SRL+  
-            # 
-            # Log.Ht.veg:SRL + 
-            # Myc.Frc:SRL + 
-            # Log.Ht.veg:Myc.Frc:SRL
-         
-            # overfitted bc it has 8 parameters! 
-         
-         #  A3.2.1b AICc model selection ####
+         #  A3.2.1b AICc dredge ####
          #------------#
          
-         d.abund.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
-            # Warning message:
-            # glm.fit: algorithm did not converge 
-         head(d.abund.aicc)
-            # 10 equivalent models (within 2 AIC of best model )
-            # :-(
+         # Try with MuMIn{} dredge()
+         # rewrite H1 with na.action='fail' - required by dredge ()
          
-            # best model includes:
-            # log (Myc.Frac) +
-            # Myc.Frac
+         # Include:
+         #     - all 1st order effects, 
+         #     - interactions suggested by reg.tree  
+         #     - interactions suggested by interaction screening
+         H1<-glm(abundance.ratio~
+                    Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+                    +log(Myc.Frac)+
+                    SRL:Myc.Frac+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca+LDMC:Leaf.Mass.Frac+
+                    Myc.Frac:SRL:Log.Ht.veg,
+                 data=dat.8t,
+                 family=Gamma(link='log'),
+                 maxit=1000,na.action='na.fail')
          
-         best.abund.aicc<-glm(abundance.ratio~
-                           log(Myc.Frac)+Myc.Frac,
-                        data=dat.8t,
-                        family=Gamma(link='log'),
-                        maxit=10000,na.action='na.fail')
-         1-(best.abund.aicc$deviance/best.abund.aicc$null)
-         # 0.3562679
+         #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
          
-         # Too many internations for # of variables. 
-         # Try with 1st order effect only
-         H1.1order<-glm(abundance.ratio~
-                           Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+
-                           + Myc.Frac,
-                        data=dat.8t,
-                        family=Gamma(link='log'),
-                        maxit=1000,na.action='na.fail')
+         dredge.abund<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,4),extra=c("R^2"),trace=F)
          
-         d.abund.aicc.1order<-dredge(H1.1order,beta='sd',rank=AICc,trace=F)
-         d.abund.aicc.1order[1:5]
-         # 5 equivalent models! 
-         # :-(
+         # get best models
+         get.models (dredge.abund,subset = delta < 2)
+         
+         dredge.abund[1:9]
+            # 9 equivalent models (within 2 AIC of best model )
+            # best model has 2terms - Myc.Frac & Log.Myc.Frac.
+            # 
          
          
+            # Model selection table 
+            #      (Int) Lef.Mss.Frc log(Myc.Frc) Log.Lmn.thc Max.Rot.Loc Myc.Frc    R^2 df  logLik AICc delta weight
+            # 133     0                  -0.9034                          0.7123 0.3928  4 -43.466 96.2  0.00  0.183
+            # 5       0                  -0.2044                                 0.3456  3 -44.814 96.4  0.16  0.169
+            # 21      0                  -0.2158    -0.10040                     0.3897  4 -43.557 96.4  0.18  0.167
+            # 7       0     0.08417      -0.2309                                 0.3710  4 -44.101 97.5  1.27  0.097
+            # 149     0                  -0.7561    -0.07888              0.5528 0.4163  5 -42.754 97.5  1.29  0.096
+            # 145     0                             -0.10760             -0.2112 0.3630  4 -44.328 97.9  1.72  0.077
+            # 69      0                  -0.2152                 0.06034         0.3606  4 -44.395 98.1  1.86  0.072
+            # 129     0                                                  -0.1968 0.3124  3 -45.705 98.2  1.94  0.069
+            # 135     0     0.06087      -0.8487                          0.6350 0.4049  5 -43.102 98.2  1.98  0.068
+            # Models ranked by AICc(x)
+            #
          
-   # A3.2.2 glm full, with Myc.Frac only #### 
-   #=========================================#
-   # Not both Myc.Frac and log(Myc.Frac).
-  
-    H1<-glm(abundance.ratio~
-              Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-              SRL:Myc.Frac + Log.Leaf.Area:SRL + Max.Root.Loca:SRL + Log.Ht.veg:SRL+
-              Myc.Frac:SRL:Log.Ht.veg,
-            data=dat.8t,
-            family=Gamma(link='log'),
-            maxit=100,na.action=na.omit)
+         # Model average models with delta AICc < 2
+         model.avg(dredge.abund, subset = delta < 2)
+         
+            #/ Component models: 
+            #/ ‘25’  ‘2’   ‘23’  ‘12’  ‘235’ ‘35’  ‘24’  ‘5’   ‘125’
+         
+            #/ Coefficients: 
+            #/        (Intercept) log(Myc.Frac)  Myc.Frac Log.Lamina.thck Leaf.Mass.Frac Max.Root.Loca
+            #/ full             0    -0.4045283 0.1967686     -0.03270205     0.01230656   0.004364802
+            #/ subset           0    -0.4741166 0.3982682     -0.09597647     0.07457388   0.060341882
+         
+            #/ Why are these model numbers different from dredge.abund[1:9] ?
+         
+            #/ The ‘subset’ (or ‘conditional’) average only averages over the models where the parameter 
+            #/ appears. An alternative, the ‘full’ average assumes that a variable is included in every 
+            #/ model, but in some models the corresponding coefficient (and its respective variance) is 
+            #/ set to zero.
+         
+         #'Best' model
+         summary(get.models(dredge.abund, 1)[[1]])
+         
+            # Coefficients:
+            #               Estimate Std. Error t value Pr(>|t|)  
+            # (Intercept)    -10.529      6.720  -1.567   0.1267  
+            # log(Myc.Frac)   -8.919      4.634  -1.925   0.0629 .
+            # Myc.Frac        10.702      7.053   1.517   0.1387  
+            # ---
+            # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+            # 
+            # (Dispersion parameter for Gamma family taken to be 0.8544126)
+            # 
+            # Null deviance: 37.596  on 35  degrees of freedom
+            # Residual deviance: 24.202  on 33  degrees of freedom
+            # AIC: 94.932
+         
+         
+         #or as a 95% confidence set:
+         model.avg(dredge.abund, subset = cumsum(weight) <= .95)
+         
+         #/ not sure what this returns
 
-    # use 3-way interactions with Myc.Frac
-    H0<-glm(abundance.ratio~1,
+   # A3.2.2 glm full - backward - with Myc.Frac only #### 
+   #=========================================#
+   # Not including both Myc.Frac and log(Myc.Frac).
+   #        - all 1st order terms 
+   #        - trait interactions from regression tree
+   #        - trait interaction from interaction screening.
+  
+   H1<-glm(abundance.ratio~
+              Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+              Myc.Frac:SRL + SRL:Max.Root.Loca + SRL:Log.Ht.veg+
+              Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca +
+              LDMC:Leaf.Mass.Frac,
            data=dat.8t,
            family=Gamma(link='log'),
-           maxit=100)
+           maxit=1000)
+
+   H0<-glm(abundance.ratio~1,
+        data=dat.8t,
+        family=Gamma(link='log'),
+        maxit=100)
     
     best.glm.abund.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
     
@@ -945,67 +967,57 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # family=Gamma(link='log')),dispersion=1
     
     # Explained Deviance
-     1-(best.glm.abund.8t$deviance/best.glm.abund.8t$null)
-    # 0.4825224
+    1-(best.glm.abund.8t$deviance/best.glm.abund.8t$null)
+      #/ 0.31
      
      AIC(best.glm.abund.8t) 
-     # 96.30
+      #/ 96.30
      library (MuMIn); AICc(best.glm.abund.8t)
-     # 103.23
+      #/ 103.23
      
      summary(best.glm.abund.8t)
      
-     # Call:
-     #    glm(formula = abundance.ratio ~ Log.Ht.veg + Leaf.Mass.Frac + 
-     #           SRL + Myc.Frac + SRL:Myc.Frac + Log.Ht.veg:SRL + Log.Ht.veg:SRL:Myc.Frac, 
-     #        family = Gamma(link = "log"), data = dat.8t, maxit = 100)
-     # 
-     # Deviance Residuals: 
-     #    Min       1Q   Median       3Q      Max  
-     # -1.6157  -0.5183  -0.2746   0.1531   1.7109  
-     # 
-     # Coefficients:
-     #                         Estimate Std. Error t value Pr(>|t|)   
-     # (Intercept)              3.74528    1.85804   2.016  0.05352 . 
-     # Log.Ht.veg              -0.50642    0.50807  -0.997  0.32742   
-     # Leaf.Mass.Frac           1.52255    0.72489   2.100  0.04483 * 
-     # SRL                     -0.77606    0.29277  -2.651  0.01307 * 
-     # Myc.Frac                -3.50276    1.97328  -1.775  0.08676 . 
-     # SRL:Myc.Frac             0.81487    0.36596   2.227  0.03419 * 
-     # Log.Ht.veg:SRL           0.23476    0.08478   2.769  0.00986 **
-     # Log.Ht.veg:SRL:Myc.Frac -0.24574    0.10548  -2.330  0.02726 * 
-     #    ---
-     #    Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-     # 
-     # (Dispersion parameter for Gamma family taken to be 0.7247453)
-     # 
-     # Null deviance: 37.596  on 35  degrees of freedom
-     # Residual deviance: 19.455  on 28  degrees of freedom
-     # AIC: 96.307
+     #/ Coefficients:
+     #/                   Estimate Std. Error t value Pr(>|t|)   
+     #/ (Intercept)              3.74528    1.85804   2.016  0.05352 . 
+     #/ Log.Ht.veg              -0.50642    0.50807  -0.997  0.32742   
+     #/ Leaf.Mass.Frac           1.52255    0.72489   2.100  0.04483 * 
+     #/ SRL                     -0.77606    0.29277  -2.651  0.01307 * 
+     #/ Myc.Frac                -3.50276    1.97328  -1.775  0.08676 . 
+     #/ SRL:Myc.Frac             0.81487    0.36596   2.227  0.03419 * 
+     #/ Log.Ht.veg:SRL           0.23476    0.08478   2.769  0.00986 **
+     #/ Log.Ht.veg:SRL:Myc.Frac -0.24574    0.10548  -2.330  0.02726 * 
+     #/ ---
+     #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+     #/ 
+     #/ (Dispersion parameter for Gamma family taken to be 0.7247453)
+     #/ 
+     #/ Null deviance: 37.596  on 35  degrees of freedom
+     #/ Residual deviance: 19.455  on 28  degrees of freedom
+     #/ AIC: 96.307
      # 
      # Number of Fisher Scoring iterations: 12
+     
+     1-(deviance(best.glm.abund.8t)/deviance(best.glm.abund.8t)$null)
     
     # can I simplify any further?
-    summary(best.glm.abund.8t)
     drop1(best.glm.abund.8t) 
-      # droping LMF only increases AIC by 1.2, but the term is significant
+    # droping LMF only increases AIC by 1.2
     
-          best.glm.abund.8t.minus1<-update(best.glm.abund.8t,~.-Leaf.Mass.Frac)
-          summary(best.glm.abund.8t.minus1)# most variables are now NS
-          drop1(best.glm.abund.8t.minus1)# increases AIC to above 2.0 above best model.  
-          
-          
-          AIC(best.glm.abund.8t.minus1) 
-            #98.83
-          AICc(best.glm.abund.8t.minus1)
-            # 104.16
+    best.glm.abund.8t.minus1<-update(best.glm.abund.8t,~.-Leaf.Mass.Frac)
+    summary(best.glm.abund.8t.minus1)# most variables are now NS
+    AICc(best.glm.abund.8t.minus1)
+      #/ 104.16
+    drop1(best.glm.abund.8t.minus1)# increases AIC to above 2.0 above best model.  
     
-
+    
+      #/ best.glm.abund.8t has lowest AICc
 
     # validate model
     par(mfrow=c(2,2))
     plot(best.glm.abund.8t)
     # YESS !!! All good :-)
+    # OSCL has slightly high leverage (0.5)
     
     # Plot residuals vs each variable (in the model)
     plot((resid(best.glm.abund.8t))~dat.8t$Log.Ht.veg)
@@ -1018,7 +1030,75 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     plot((resid(best.glm.abund.8t))~log(dat.8t$LDMC))
     plot((resid(best.glm.abund.8t))~log(dat.8t$Log.Leaf.Area))
     
-    # A3.2.3 glm full, with log(Myc.Frac) only #### 
+    #  A3.2.2b AICc dredge ####
+    #------------#
+    
+    # Try with MuMIn{} dredge()
+    # rewrite H1 with na.action='fail' - required by dredge ()
+    
+    # Include:
+    #     - all 1st order effects, 
+    #     - interactions suggested by reg.tree  
+    #     - interactions suggested by interaction screening
+    H1<-glm(abundance.ratio~
+               Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+               SRL:Myc.Frac+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca+LDMC:Leaf.Mass.Frac+
+               Myc.Frac:SRL:Log.Ht.veg,
+            data=dat.8t,
+            family=Gamma(link='log'),
+            maxit=1000,na.action='na.fail')
+    
+    #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
+    
+    dredge.abund<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,4),extra=c("R^2"),trace=F)
+    
+    # get best models
+    get.models (dredge.abund,subset = delta < 2)
+    
+    dredge.abund[1:5]
+    # 5 equivalent models (within 2 AIC of best model )
+    # best model has 2terms - Myc.Frac & Log.Lmamina.thck
+    
+       #/ Model selection table 
+       #/    (Int)     LDM Lef.Mss.Frc Log.Lmn.thc Max.Rot.Loc Myc.Frc    R^2 df  logLik AICc delta weight
+       #/ 73     0                         -0.1076             -0.2112 0.3630  4 -44.328 97.9  0.00  0.313
+       #/ 65     0                                             -0.1968 0.3124  3 -45.705 98.2  0.21  0.282
+       #/ 67     0             0.08825                         -0.2255 0.3400  4 -44.967 99.2  1.28  0.165
+       #/ 66     0 0.06517                                     -0.1858 0.3288  4 -45.269 99.8  1.88  0.122
+       #/ 97     0                                     0.06039 -0.2087 0.3274  4 -45.307 99.9  1.96  0.118
+       #/ Models ranked by AICc(x) 
+    
+    # Model average models with delta AICc < 2
+    model.avg(dredge.abund, subset = delta < 2)
+    
+       #Component models: 
+    ‘35’ ‘5’  ‘25’ ‘15’ ‘45’
+    
+       #/ Coefficients: 
+       #/         (Intercept) Log.Lamina.thck   Myc.Frac Leaf.Mass.Frac        LDMC Max.Root.Loca
+       #/ full             0     -0.03369803 -0.2061203     0.01459191 0.007965964   0.007110918
+       #/ subset           0     -0.10760909 -0.2061203     0.08824975 0.065172579   0.060388331
+    
+    #'Best' model
+    summary(get.models(dredge.abund, 1)[[1]])
+    
+       #/ Coefficients:
+       #/                 Estimate Std. Error t value Pr(>|t|)   
+       #/ (Intercept)       5.8636     2.0386   2.876  0.00700 **
+       #/ Log.Lamina.thck  -0.6828     0.3907  -1.748  0.08977 . 
+       #/ Myc.Frac         -3.1732     0.9250  -3.431  0.00164 **
+       #/ ---
+       #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+       #/ 
+       #/ (Dispersion parameter for Gamma family taken to be 0.6650726)
+       #/ 
+       #/ Null deviance: 37.596  on 35  degrees of freedom
+       #/ Residual deviance: 25.269  on 33  degrees of freedom
+       #/ AIC: 96.657
+       #/ 
+       #/ Number of Fisher Scoring iterations: 9
+    
+   # A3.2.3 glm full, with log(Myc.Frac) only #### 
     #=========================================#
     # Not both Myc.Frac and log(Myc.Frac).
     
@@ -1100,7 +1180,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        #================================================================#
     
 
-   # A4 Rerun Tree & GLM models without high-leverage points ####
+   
+    # A4 Rerun Tree & GLM models without high-leverage points ####
    #============================================================#
    # (CIAL, LYAN,OSCL) 
   ----
@@ -1174,6 +1255,31 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
   # Model still valid without outliers, but 
   # Different model is selected without the 3 outlier species
   #==========================================================#
+
+    # A5 - RDA - abund ~ traits ####
+    #===================================#
+
+    library(vegan)
+    redun.abund<-rda(dat.8t$abundance.ratio~
+                        Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
+                     data=dat.8t)
+    plot(redun.abund)
+    summary(redun.abund)
+       #/ Partitioning of variance:
+       #/               Inertia Proportion
+       #/ Total           5.089     1.0000
+       #/ Constrained     1.907     0.3748
+       #/ Unconstrained   3.181     0.6252
+       #/ 
+       #/ Eigenvalues, and their contribution to the variance 
+       #/ 
+       #/ Importance of components:
+       #/    RDA1    PC1
+       #/ Eigenvalue            1.9075 3.1815
+       #/ Proportion Explained  0.3748 0.6252
+       #/ Cumulative Proportion 0.3748 1.0000
+    
+         #/ compare with 31 deviance explained by best glm model
   
 #==============================#
 # (B) Occurence vs 8 Traits ####
