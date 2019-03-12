@@ -90,29 +90,32 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     # A1 - Explore Trait Interactions #### 
     #==============================#
    
-    # A1.1 - Tree Model
+    # A1.1 - Tree Model ####
+    #----
     par(mfrow=c(1,1))
-    tree.model<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
+    tree.model.abund<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
                      control=tree.control(nobs=36,mincut=3))
-    plot(tree.model); text(tree.model);title('Regression Tree \n Abundance.ratio vs 8 traits')
+    plot(tree.model.abund); text(tree.model.abund);title('Regression Tree \n Abundance.ratio vs 8 traits')
        # Myc.frac is most important variable, 
        # for those with high myc.frac, SRL matters
     
-    tree.model 
-    # node), split, n, deviance, yval
-    #      * denotes terminal node
-    # 
-    # 1) root 36 178.1000 1.5740  
-    #   2) Myc.Frac < 0.58 5 104.0000 4.3820 *
-    #   3) Myc.Frac > 0.58 31  28.3700 1.1220  
-    #     6) SRL < 10.7122 12  13.1100 1.5160  
-    #      12) Max.Root.Loca < 2.05 7   0.9664 1.0740 *
-    #      13) Max.Root.Loca > 2.05 5   8.8620 2.1360 *
-    #     7) SRL > 10.7122 19  12.2100 0.8723 *
-    
+    tree.model.abund 
+      #/ node), split, n, deviance, yval
+      #/      * denotes terminal node
+      #/ 
+      #/ 1) root 36 178.1000 1.5740  
+      #/    2) Myc.Frac < 0.52 3  68.7900 6.5480 *
+      #/    3) Myc.Frac > 0.52 33  28.3800 1.1220  
+      #/       6) SRL < 10.7122 14  13.3800 1.4620  
+      #/          12) Max.Root.Loca < 2.05 9   0.9808 1.0870 *
+      #/          13) Max.Root.Loca > 2.05 5   8.8620 2.1360 *
+      #/       7) SRL > 10.7122 19  12.2100 0.8723  
+      #/          14) Log.Ht.veg < 2.33319 3   7.0340 1.7590 *
+      #/          15) Log.Ht.veg > 2.33319 16   2.3720 0.7061 *
+       
     #  i.e. null deviance = 178.1
  
-    summary(tree.model)
+    summary(tree.model.abund)
    # Regression tree:
    # tree(formula = sp.response$abundance.ratio ~ ., data = Xs[, Trait.Names.8t])
    # Variables actually used in tree construction:
@@ -127,17 +130,17 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     # Pseudo-R2
     # 1-(deviance(model)/Total(Null) Deviance)
     
-    1-(deviance(tree.model)/178.1) 
-      # 0.2924518
-    plot(cv.tree(tree.model)) 
+    1-(deviance(tree.model.abund)/178.1) 
+      # 0.5056788
+    plot(cv.tree(tree.model.abund)) 
     # c.v.  splits the data into 'training' set for model fitting and a 
     # validation set to evaluate goodness of fit 
     # look for how many splits produces the minimum deviance - run this multiple times
     
     # lowest deviations at 2-4 branches
     
-    pruned.tree.model<-prune.tree(tree.model,best=2)
-    plot(pruned.tree.model);text(pruned.tree.model)
+    pruned.tree.model.abund<-prune.tree(tree.model.abund,best=2)
+    plot(pruned.tree.model.abund);text(pruned.tree.model.abund)
     
           # See if regression tree retains Myc.Frac-log(Myc.Frac), like lm and glms do.
           Xs$Log.Myc.Frac<-log(Xs$Myc.Frac)
@@ -939,6 +942,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          
          #/ not sure what this returns
 
+   
    # A3.2.2 glm full - backward - with Myc.Frac only #### 
    #=========================================#
    # Not including both Myc.Frac and log(Myc.Frac).
@@ -998,7 +1002,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
      # 
      # Number of Fisher Scoring iterations: 12
      
-     1-(deviance(best.glm.abund.8t)/deviance(best.glm.abund.8t)$null)
+     1-(deviance(best.glm.abund.8t)/best.glm.abund.8t$null)
     
     # can I simplify any further?
     drop1(best.glm.abund.8t) 
@@ -1071,8 +1075,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     # Model average models with delta AICc < 2
     model.avg(dredge.abund, subset = delta < 2)
     
-       #Component models: 
-    ‘35’ ‘5’  ‘25’ ‘15’ ‘45’
+       #/ Component models: 
+       #/ ‘35’ ‘5’  ‘25’ ‘15’ ‘45’
     
        #/ Coefficients: 
        #/         (Intercept) Log.Lamina.thck   Myc.Frac Leaf.Mass.Frac        LDMC Max.Root.Loca
@@ -1228,10 +1232,10 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    # 0.6496394
   
   
-  tree.model<-tree(dat.8t.no.outliers$abundance.ratio~.,data=dat.8t.no.outliers[,Trait.Names.8t])
-  par(mfrow=c(1,1));plot(tree.model);  text(tree.model)
+  tree.model.abund.nooutlier<-tree(dat.8t.no.outliers$abundance.ratio~.,data=dat.8t.no.outliers[,Trait.Names.8t])
+  par(mfrow=c(1,1));plot(tree.model.abund.nooutlier);  text(tree.model.abund.nooutlier)
   title('Regression Tree, no outliers \n Abundance.ratio vs 8 traits')
-  tree.model
+  tree.model.abund.nooutlier
   
    # 1) root 33 152.5000 1.3860  
    #     2) Myc.Frac < 0.595 5 102.9000 3.6480 *
@@ -1241,9 +1245,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    #           14) Max.Root.Loca < 2.38333 5   8.3010 2.1120 *
    #           15) Max.Root.Loca > 2.38333 5   0.7923 0.9712 *
   
-  1-(deviance(tree.model)/152.5) 
+  1-(deviance(tree.model.abund.nooutlier)/152.5) 
   # 0.2511
-  plot(cv.tree(tree.model))
+  plot(cv.tree(tree.model.abund.nooutlier))
   
   # c.v.  splits the data into 'training' set for model fitting and a 
   # validation set to evaluate goodness of fit 
@@ -1279,7 +1283,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        #/ Proportion Explained  0.3748 0.6252
        #/ Cumulative Proportion 0.3748 1.0000
     
-         #/ compare with 31 deviance explained by best glm model
+         #/ 37% with compare with 31 deviance explained by best glm model
   
 #==============================#
 # (B) Occurence vs 8 Traits ####
@@ -1290,12 +1294,12 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
      
      # B1.1 - Tree Model
      par(mfrow=c(1,1))
-     tree.model<-tree(dat.8t$occurence.ratio~.,data=dat.8t[,Trait.Names.8t])
-     plot(tree.model); text(tree.model); title('Regression Tree \n Occurence.ratio vs 8 traits')
+     tree.model.occur<-tree(dat.8t$occurence.ratio~.,data=dat.8t[,Trait.Names.8t])
+     plot(tree.model.occur); text(tree.model.occur); title('Regression Tree \n Occurence.ratio vs 8 traits')
      # Myc.Frac is best predictor,
      # for those with high Myc.Frac, SRL is best predictor
   
-      tree.model
+      tree.model.occur
          # 1) root 36 30.7900 1.5530  
          #     2) Myc.Frac < 0.595 6 16.1900 2.4540 *
          #     3) Myc.Frac > 0.595 30  8.7560 1.3730  
@@ -1306,9 +1310,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #           13) Max.Root.Loca > 1.71364 12  0.9730 1.2580 *
          #        7) SRL > 27.7246 5  0.1851 0.9514 *
       
-      1-(deviance(tree.model)/30.79)
+      1-(deviance(tree.model.occur)/30.79)
       # 0.3223963
-      plot(cv.tree(tree.model))
+      plot(cv.tree(tree.model.occur))
       # c.v.  splits the data into 'training' set for model fitting and a 
       # validation set to evaluate goodness of fit 
       # look for how many splits produces the minimum deviance - run multiple times
@@ -1346,6 +1350,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       summary(lm(dat.8t$occurence.ratio~(Log.Ht.veg+Max.Root.Loca+SRL+Myc.Frac)^2,
                  data=dat.8t))
+      
       
       # B1.3 - Test trait-trait interactions w glm ####
       # -------# 
@@ -1435,13 +1440,10 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #/ weird, that's different from regression tree. 
       
             #=====================================================================================#
-            # Summary of trait-trait interactions. 
-            # Only one of the interactions in regression tree are selected by glm. Potential candidates are:
-            #  - Max.Root.Loca:Myc.Frac
-            #  - Log.Leaf.Area:Myc.Frac
-            #  - Max.Root.Loca:Leaf.Mass.Frac
-            #  - LDMC:Myc.Frac
-            #  - SRL:Log.Leaf.Area
+            #/ Summary of trait-trait interactions. 
+            #/ None of the interactions in regression tree are selected by glm. Potential candidates are:
+            #/  - Log.Leaf.Area:Myc.Frac     p=0.0762 
+            #/  - SRL:Log.Leaf.Area          p=0.0989
             #=====================================================================================#
       
       # B2 - Explore non-linearity ####
@@ -1491,7 +1493,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #=====================================================================================#
          
       
-# B3 - Model selection ####
+
+      # B3 - Model selection ####
 #=========================#
       
       # No lms - response variable lower-bound @ zero - violates normal distribution assumptions 
@@ -1502,7 +1505,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #=========================================#
       # Includes all 1st order terms 
       # + significant non-linear variables
-      # + significant trait interactions - seven 2nd order, one 3rd order
+      # + trait interactions suggested from reg.tree - seven 2nd order, one 3rd order
       
       H1<-glm(occurence.ratio~
                  Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
@@ -1660,15 +1663,14 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # :-( 
       
       
+      
       # B3.2.2 glm full with myc.frac only ####
       #=========================================#
       # Not Myc.Frac and log(Myc.Frac)
       
       H1<-glm(occurence.ratio~
                  Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca+
-                 Log.Leaf.Area:Max.Root.Loca + Log.Leaf.Area:Max.Root.Loca + Log.Leaf.Area:Log.Ht.veg+
-                 LDMC:Log.Ht.veg + LDMC:Max.Root.Loca,
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca,
               data=dat.8t,
               family=Gamma(link='log'),
               maxit=1000)
@@ -1680,116 +1682,47 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       best.glm.occur.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
       
-      
       1-(deviance(best.glm.occur.8t)/best.glm.occur.8t$null.deviance)
-         #  0.5600242
+         #/  0.5600242
       AIC(best.glm.occur.8t)
-         # 66.51
+         #/ 66.59
       AICc(best.glm.occur.8t)
-         # 83.05
+         #/ 67.88
       
       summary(best.glm.occur.8t)
-      # Coefficients:
-      #                             Estimate Std. Error t value Pr(>|t|)   
-      # (Intercept)                  2.49958    1.15085   2.172  0.03997 * 
-      # Log.Ht.veg                  -0.21786    0.30940  -0.704  0.48813   
-      # Max.Root.Loca               -0.33169    0.14997  -2.212  0.03675 * 
-      # LDMC                        -5.48208    3.32229  -1.650  0.11195   
-      # Log.Leaf.Area               -0.30023    0.10130  -2.964  0.00677 **
-      # SRL                         -0.11447    0.06629  -1.727  0.09707 . 
-      # Myc.Frac                    -0.78618    0.96748  -0.813  0.42443   
-      # SRL:Myc.Frac                 0.12866    0.09031   1.425  0.16711   
-      # Max.Root.Loca:SRL            0.05619    0.02818   1.994  0.05759 . 
-      # Max.Root.Loca:Log.Leaf.Area  0.10827    0.04294   2.521  0.01874 * 
-      # Log.Ht.veg:LDMC              1.99315    1.28439   1.552  0.13379   
-      # Max.Root.Loca:SRL:Myc.Frac  -0.06593    0.03601  -1.831  0.07958 . 
-      # ---
-      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-      # 
-      # (Dispersion parameter for Gamma family taken to be 0.1417102)
-      # 
-      # Null deviance: 7.4065  on 35  degrees of freedom
-      # Residual deviance: 3.2587  on 24  degrees of freedom
-      # AIC: 66.508
-      # 
-      # Number of Fisher Scoring iterations: 7
+         #/ Coefficients:
+         #/               Estimate Std. Error t value Pr(>|t|)   
+         #/ (Intercept)    1.14127    0.38369   2.974  0.00545 **
+         #/ Log.Leaf.Area -0.07423    0.04292  -1.730  0.09302 . 
+         #/ Myc.Frac      -0.76979    0.51566  -1.493  0.14498   
+         #/ ---
+         #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+         #/ 
+         #/ (Dispersion parameter for Gamma family taken to be 0.1981629)
+         #/ 
+         #/ Null deviance: 7.4065  on 35  degrees of freedom
+         #/ Residual deviance: 5.3344  on 33  degrees of freedom
+         #/ AIC: 66.596
+      
       
       # Can I simplify any further?
-      drop1(best.glm.occur.8t) # Dropping Log.Ht.veg:LDMC increases AIC by 0.2 
-      best.glm.occur.8t.minus1<-update(best.glm.occur.8t,~.-Log.Ht.veg:LDMC)
-      AIC(best.glm.occur.8t.minus1)
-         # 67.85
-      drop1(best.glm.occur.8t.minus1) # dropping LDMC decreases AIC by 1.7
-      best.glm.occur.8t.minus2<-update(best.glm.occur.8t.minus1,~.-LDMC)
-      AIC(best.glm.occur.8t.minus2)
-         # 66.39
-      drop1(best.glm.occur.8t.minus2) # dropping Log.Ht.veg increases AIC by 0.1
-      best.glm.occur.8t.minus3<-update(best.glm.occur.8t.minus2,~.-Log.Ht.veg)
-      AIC(best.glm.occur.8t.minus3)
-         # 67.58
-      drop1(best.glm.occur.8t.minus3) # dropping Max.Root.Loca:SRL:Myc.Frac increases AIC by 1.2
-      best.glm.occur.8t.minus4<-update(best.glm.occur.8t.minus3,~.-Max.Root.Loca:SRL:Myc.Frac)
-      AIC(best.glm.occur.8t.minus4)
-         # 69.91
-      drop1(best.glm.occur.8t.minus4)# dropping Max.Root.Loca:SRL decreases AIC by 0.7
-      best.glm.occur.8t.minus5<-update(best.glm.occur.8t.minus4,~.-Max.Root.Loca:SRL)
-      AIC(best.glm.occur.8t.minus5)   
-         # 68.62 
-      drop1(best.glm.occur.8t.minus5) # dropping SRL:Myc.Frac decreases AIC by 1.3
-      best.glm.occur.8t.minus6<-update(best.glm.occur.8t.minus5,~.-SRL:Myc.Frac)
-      AIC(best.glm.occur.8t.minus6)
-         # 67.58
-      drop1(best.glm.occur.8t.minus6) # dropping Myc.Frac decreases AIC by 1.2
-      best.glm.occur.8t.minus7<-update(best.glm.occur.8t.minus6,~.-Myc.Frac)
-      AIC(best.glm.occur.8t.minus7)
-         # 66.70
-      drop1(best.glm.occur.8t.minus7) # dropping SRL decreases AIC by 0.7
-      best.glm.occur.8t.minus8<-update(best.glm.occur.8t.minus7,~.-SRL)
-      AIC(best.glm.occur.8t.minus8)
-         # 66.50
-      drop1(best.glm.occur.8t.minus8) # none
-      
-         # two best model with best global minimum: orginal best and minus8
-         summary(best.glm.occur.8t.minus8)
-         # Coefficients:
-         # Estimate Std. Error t value Pr(>|t|)    
-         # (Intercept)                  0.86384    0.17226   5.015  1.9e-05 ***
-         # Max.Root.Loca               -0.17782    0.08657  -2.054   0.0482 *  
-         # Log.Leaf.Area               -0.19494    0.07746  -2.517   0.0171 *  
-         # Max.Root.Loca:Log.Leaf.Area  0.06627    0.03829   1.731   0.0931 .  
-         # ---
-         # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-         # 
-         # (Dispersion parameter for Gamma family taken to be 0.1636046)
-         # 
-         # Null deviance: 7.4065  on 35  degrees of freedom
-         # Residual deviance: 5.0398  on 32  degrees of freedom
-         # AIC: 66.502 
-         # 
-         # Number of Fisher Scoring iterations: 8
-         
-      1-(deviance(best.glm.occur.8t.minus8)/best.glm.occur.8t.minus8$null.deviance)
-         # 0.3195456
-      AIC( best.glm.occur.8t.minus8)
-         # 66.50
-      AICc(best.glm.occur.8t.minus8)
-         # 68.50
+      drop1(best.glm.occur.8t) # No
       
       # Validate model
-      par(mfrow=c(2,2));plot(best.glm.occur.8t.minus8,which = c(1,3:5))
-         # LYAN is an outlier with too much leverage 
+      par(mfrow=c(2,2));plot(best.glm.occur.8t,which = c(1,3:5))
+         #/ LYAN has high leverage - 1.5
       
       # Plot residuals vs each variable (in the model)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Myc.Frac)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Log.Leaf.Area)
+      plot((resid(best.glm.occur.8t))~dat.8t$Myc.Frac)
+      plot((resid(best.glm.occur.8t))~dat.8t$Log.Leaf.Area)
       
       # Plot residuals vs each variable (NOT in the model)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Log.Ht.veg)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$SRL)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Max.Root.Loca)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Leaf.Mass.Frac)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$Log.Lamina.thck)
-      plot((resid(best.glm.occur.8t.minus8))~dat.8t$LDMC)
+      plot((resid(best.glm.occur.8t))~dat.8t$Log.Ht.veg)
+      plot((resid(best.glm.occur.8t))~dat.8t$SRL)
+      plot((resid(best.glm.occur.8t))~dat.8t$Max.Root.Loca)
+      plot((resid(best.glm.occur.8t))~dat.8t$Leaf.Mass.Frac)
+      plot((resid(best.glm.occur.8t))~dat.8t$Log.Lamina.thck)
+      plot((resid(best.glm.occur.8t))~dat.8t$LDMC)
    
       # B3.2.3 glm full with log(myc.frac) only ####
       #=========================================#
@@ -1942,6 +1875,35 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       
 #==============================#
+
+
+      # B5 - RDA - occurence ~ traits ####
+      #===================================#
+      
+      library(vegan)
+      redun.occur<-rda(dat.8t$occurence.ratio~
+                          Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
+                       data=dat.8t)
+      plot(redun.occur)
+      text(redun.occur,display=c('sites'))
+      summary(redun.occur)      
+      
+         #/ Partitioning of variance:
+         #/               Inertia Proportion
+         #/ Total          0.8798     1.0000
+         #/ Constrained    0.3099     0.3523
+         #/ Unconstrained  0.5698     0.6477
+         #/ 
+         #/ Eigenvalues, and their contribution to the variance 
+         #/ 
+         #/ Importance of components:
+         #/                         RDA1    PC1
+         #/ Eigenvalue            0.3099 0.5698
+         #/ Proportion Explained  0.3523 0.6477
+         #/ Cumulative Proportion 0.3523 1.0000
+      
+         #/ compare variance explained with deiance of 0.27 for reduced model
+      
 # (C) Elevation vs 8 Traits ####
 #==============================#
       
@@ -1949,12 +1911,12 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    #==============================#
       # C1.1 - Tree Model
       par(mfrow=c(1,1))
-      tree.model<-tree(dat.8t$ElevDif~.,data=dat.8t[,Trait.Names.8t])
-      plot(tree.model); text(tree.model); title('Regression Tree \n Elevation Shift vs 8 traits')
+      tree.model.elev<-tree(dat.8t$ElevDif~.,data=dat.8t[,Trait.Names.8t])
+      plot(tree.model.elev); text(tree.model.elev); title('Regression Tree \n Elevation Shift vs 8 traits')
       # Leaf.Mass.Frac is best predictor,
       # for those with high Leaf.Mass.Frac, Max.Root.Loca is best predictor
       
-      tree.model
+      tree.model.elev
          # 1) root 32 92210  36.94  
          #     2) Leaf.Mass.Frac < 0.302389 5  7741 -25.60 *
          #     3) Leaf.Mass.Frac > 0.302389 27 61290  48.52  
@@ -1966,9 +1928,10 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #           15) Max.Root.Loca > 2.60256 5  5148  32.00 *
       
       # Pseudo-R2
-      1-(deviance(tree.model)/92210)
+      1-(deviance(tree.model.elev)/92210)
       # 0.59832
-      plot(cv.tree(tree.model))
+      
+      plot(cv.tree(tree.model.elev))
       
       # c.v.  splits the data into 'training' set for model fitting and a 
       # validation set to evaluate goodness of fit 
@@ -2090,8 +2053,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #     Leaf.Mass.Frac:Max.Root.Loca, 
       #     Max.Root.Loca:Log.Ht.veg, 
       #     Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg
-      #     Log.Leaf.Area:Myc.Frac        
-      #     Max.Root.Loca:Log.Ht.veg      
+      #     SRL:Log.Lamina.thck        
+      #     Log.Lamina.thck:Myc.Frac      
       # ====================================================================================#
   
    # C2 - Explore non-linearity ####
@@ -2121,22 +2084,22 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # I(SRL^2)            significant @p=0.02
       # I(Log.Leaf.Area^2)  significant @p=0.04
       
-   # C3 - Model selection ####
-   #==============================#
+      plot(ElevDif~Leaf.Mass.Frac,data=dat.8t)
+      plot(Leaf.Mass.Frac,predict(ElevDif~I(Leaf.Mass.Frac^2),data=dat.8t),data=dat.8t)
+      
+      # C3 - Model selection ####
+      #==============================#
       
       # C3.1 - lm full ####
       #=========================================#
       # Start with lm bc values range from negative to positive inf. 
       
       # Includes all 1st order terms 
-      # + 5 significant non-linear variables
-      # + 5 significant trait interactions
+      # + 3 trait interactions suggested by regression tree
       #====================================#
       
    H1<-lm(ElevDif~
       Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-         I(Leaf.Mass.Frac^2) + I(Max.Root.Loca^2) + I(SRL^2) + I(LDMC^2) + I(Log.Leaf.Area^2)+
-         Log.Leaf.Area:Myc.Frac + Max.Root.Loca:Log.Ht.veg  +
          Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
       data=dat.8t)
 
@@ -2151,185 +2114,157 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # 325.00
    
    # Can the model be simplified?
-   drop1(best.lm.elev.8t) # dropping I(SRL^2) only increases AIC by 0.6
-   best.lm.elev.8t.minus1<-update(best.lm.elev.8t,~.-I(SRL^2) )
-   AIC(best.lm.elev.8t.minus1) 
-      # 325.61
-   drop1(best.lm.elev.8t.minus1) # dropping Log.Lamina.thck increases AIC by 1.4
-   best.lm.elev.8t.minus2<-update(best.lm.elev.8t.minus1,~.-Log.Lamina.thck )
-   AIC(best.lm.elev.8t.minus2)
-      # 327.00
-   drop1(best.lm.elev.8t.minus2) # dropping SRL increases AIc by 0.6
-   best.lm.elev.8t.minus3<-update(best.lm.elev.8t.minus2,~.-SRL)
-   AIC(best.lm.elev.8t.minus3)
-      # 327.53
-   drop1(best.lm.elev.8t.minus3) # dropping Log.Ht.veg:Max.Root.Loca:Leaf.Mass.Frac decreases AIC by 0.1
-   best.lm.elev.8t.minus4<-update(best.lm.elev.8t.minus3,~.-Log.Ht.veg:Max.Root.Loca:Leaf.Mass.Frac)
-   AIC(best.lm.elev.8t.minus4)
-      # 327.41
-   drop1(best.lm.elev.8t.minus4) # dropping Max.Root.Loca:Leaf.Mass.Frac decreases AIC by 1.4 
-   best.lm.elev.8t.minus5<-update(best.lm.elev.8t.minus4,~.-Max.Root.Loca:Leaf.Mass.Frac)
-   AIC(best.lm.elev.8t.minus5)
-      # 325.68
-   
-   drop1(best.lm.elev.8t.minus5) # dropping I(Log.Leaf.Area^2) increases AIC by 0.4
-   best.lm.elev.8t.minus6<-update(best.lm.elev.8t.minus5,~.-I(Log.Leaf.Area^2))
-   AIC(best.lm.elev.8t.minus6)
-      # 326.0845 
-   
-      # all parameters of .minus6 are statistically significant
-      # globally lowest AIC = best.lm.elev.8t 
-   
+   drop1(best.lm.elev.8t) # Nope
+   AICc(best.lm.elev.8t)
+      #/ 343
+
    # Best model (globally lowest AIC)
    summary(best.lm.elev.8t)
       # Coefficients:
-      #                                          Estimate Std. Error t value Pr(>|t|)    
-      # (Intercept)                              514.14674  207.56027   2.477 0.023394 *  
-      # Log.Ht.veg                                49.71068   28.88259   1.721 0.102370    
-      # Max.Root.Loca                            234.42043  113.02893   2.074 0.052703 .  
-      # Log.Lamina.thck                          -43.09295   27.10131  -1.590 0.129229    
-      # Log.Leaf.Area                           -210.54889   48.24919  -4.364 0.000374 ***
-      # Leaf.Mass.Frac                           217.82081   65.82081   3.309 0.003900 ** 
-      # SRL                                       -5.41214    3.18663  -1.698 0.106653    
-      # Myc.Frac                                -547.70525  165.30436  -3.313 0.003866 ** 
-      # I(SRL^2)                                   0.08798    0.07122   1.235 0.232625    
-      # I(Log.Leaf.Area^2)                         8.13330    4.39313   1.851 0.080595 .  
-      # Log.Leaf.Area:Myc.Frac                   239.21141   63.77892   3.751 0.001464 ** 
-      # Log.Ht.veg:Max.Root.Loca                 -80.57210   37.00948  -2.177 0.043027 *  
-      # Max.Root.Loca:Leaf.Mass.Frac            -277.76071  181.92097  -1.527 0.144186    
-      # Log.Ht.veg:Max.Root.Loca:Leaf.Mass.Frac   78.31334   54.71178   1.431 0.169456    
+      #                          Estimate Std. Error t value Pr(>|t|)    
+      # (Intercept)              -180.343     69.015  -2.613 0.014971 *  
+      # Log.Ht.veg                 44.581     24.594   1.813 0.081909 .  
+      # Max.Root.Loca              55.427     41.099   1.349 0.189544    
+      # LDMC                      200.949    110.969   1.811 0.082196 .  
+      # Log.Leaf.Area              12.068      7.965   1.515 0.142303    
+      # Leaf.Mass.Frac            152.996     39.556   3.868 0.000695 ***
+      # Log.Ht.veg:Max.Root.Loca  -30.221     13.938  -2.168 0.039861 *  
       # ---
-      #    Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+      # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
       # 
-      # Residual standard error: 32.4 on 18 degrees of freedom
+      # Residual standard error: 41.4 on 25 degrees of freedom
       # (4 observations deleted due to missingness)
-      # Multiple R-squared:  0.795,	Adjusted R-squared:  0.647 
-      # F-statistic: 5.371 on 13 and 18 DF,  p-value: 0.0006709
+      # Multiple R-squared:  0.5353,	Adjusted R-squared:  0.4238 
+      # F-statistic: 4.799 on 6 and 25 DF,  p-value: 0.002204
+      # 
    
    # Validation plots
-   plot(best.lm.elev.8t)
-      # # All looks good, except that CLBO has a large leverage (>0.5, < 1)
+   par(mfrow=c(2,2));plot(best.lm.elev.8t,which=c(1:5))
+      # # All looks good, except that GATR has a larger leverage (=0.5)
    
-   # minimal model - smallest with 2 AIC of best global model
-   summary(best.lm.elev.8t.minus6)
-      # Coefficients:
-      #                          Estimate Std. Error t value Pr(>|t|)    
-      # (Intercept)                237.10     109.28   2.170 0.040152 *  
-      # Log.Ht.veg                  61.94      21.01   2.949 0.007009 ** 
-      # Max.Root.Loca               74.04      34.32   2.157 0.041205 *  
-      # Log.Leaf.Area             -155.61      40.77  -3.817 0.000836 ***
-      # Leaf.Mass.Frac             164.92      32.95   5.005  4.1e-05 ***
-      # Myc.Frac                  -567.17     143.27  -3.959 0.000585 ***
-      # Log.Leaf.Area:Myc.Frac     207.15      51.01   4.061 0.000451 ***
-      # Log.Ht.veg:Max.Root.Loca   -32.98      11.59  -2.845 0.008944 ** 
-      # ---
-      # Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-      # 
-      # Residual standard error: 34.42 on 24 degrees of freedom
-      # (4 observations deleted due to missingness)
-      # Multiple R-squared:  0.6916,	Adjusted R-squared:  0.6016 
-      # F-statistic: 7.688 on 7 and 24 DF,  p-value: 6.754e-05
+                           # minimal model - smallest with 2 AIC of best global model
+                           summary(best.lm.elev.8t.minus6)
+                              # Coefficients:
+                              #                          Estimate Std. Error t value Pr(>|t|)    
+                              # (Intercept)                237.10     109.28   2.170 0.040152 *  
+                              # Log.Ht.veg                  61.94      21.01   2.949 0.007009 ** 
+                              # Max.Root.Loca               74.04      34.32   2.157 0.041205 *  
+                              # Log.Leaf.Area             -155.61      40.77  -3.817 0.000836 ***
+                              # Leaf.Mass.Frac             164.92      32.95   5.005  4.1e-05 ***
+                              # Myc.Frac                  -567.17     143.27  -3.959 0.000585 ***
+                              # Log.Leaf.Area:Myc.Frac     207.15      51.01   4.061 0.000451 ***
+                              # Log.Ht.veg:Max.Root.Loca   -32.98      11.59  -2.845 0.008944 ** 
+                              # ---
+                              # Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+                              # 
+                              # Residual standard error: 34.42 on 24 degrees of freedom
+                              # (4 observations deleted due to missingness)
+                              # Multiple R-squared:  0.6916,	Adjusted R-squared:  0.6016 
+                              # F-statistic: 7.688 on 7 and 24 DF,  p-value: 6.754e-05
 
    library(MuMIn)
    AICc(best.lm.elev.8t)
    # 355.01
-   AICc(best.lm.elev.8t.minus6)
-   # 334.26
+                                    AICc(best.lm.elev.8t.minus6)
+                                    # 334.26
    
    # Validate model
-   par(mfrow=c(2,2)); plot(best.lm.elev.8t.minus6)
+   
    # Looks awesome
    
    # Plot residuals vs each variable (in the model)
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Ht.veg'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Max.Root.Loca'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Leaf.Area'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Leaf.Mass.Frac'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Myc.Frac'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Ht.veg'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Max.Root.Loca'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'LDMC'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Leaf.Area'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Leaf.Mass.Frac'])
+   
  
    
    # Plot residuals vs each variable (NOT in the model)
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Lamina.thck'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'LDMC'])
-   plot((resid(best.lm.elev.8t.minus6))~dat.8t[!is.na(dat.8t$ElevDif),'SRL'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Lamina.thck'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'SRL'])
+   plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Myc.Frac'])
 
+   # C3.1b - AICc dredge #
+   #==============================#
+   
+  
    # Try with MuMIn{} dredge()
    # rewrite H1 with na.action='fail' - required by dredge (), 
    # add dat8[!is.na(ElevDif),] to remove 3 rows with NA
+   
    dat.8t.nona<-dat.8t[!is.na(dat.8t$ElevDif),]
    H1<-lm(ElevDif~
              Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-             I(Leaf.Mass.Frac^2) + I(Max.Root.Loca^2) + I(SRL^2) + I(LDMC^2) + I(Log.Leaf.Area^2)+
-             Log.Leaf.Area:Myc.Frac + Max.Root.Loca:Log.Ht.veg  +
              Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
           data=dat.8t.nona,
           na.action='na.fail')
    
-   d.elev<-dredge(H1,beta='sd',rank=AIC,trace=F)
-   head(d.elev)
-      # 40 models within 2 AIC points... 
-      
-      # best model includes (AIC = 325):
-      # LDMC
-      # Leaf.Mass.Frac 
-      # Log.Ht.veg 
-      # Log.Leaf.Area 
-      # Log.Leaf.Area^2 
-      # Max.Root.Loca
-      # Myc.Frac    
-      # SRL  
-      # SRL^2 
-      # Log.Ht.veg:Max.Rot.Loc
-      # Log.Lef.Are:Myc.Frc
+   dredge.elev<-dredge(H1,beta='sd',rank=AIC,trace=F)
+   dredge.elev[1:16]
+      #/ 16 equivalent models  (within 2 AIC of best model )
    
-   # Too many interaction terms for too small sample size.
-   # Explore best model with only 1st order effects
-   H1.1order<-lm(ElevDif~
-                    +            Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
-                 +        data=dat.8t.nona,
-                 +        na.action='na.fail')
-   d.elev.aicc.1order<-dredge(H1.1order,beta='sd',rank=AICc,trace=F)
-   head(d.elev.aicc.1order)
-   # 4 equivalent models (within 2 AICc points)
-      
-   # C3.2.1b AICc model selection ####
-   #------------
+   # get best models
+   get.models(dredge.elev,subset = delta < 2)
+   
+   # Model average models with delta AICc < 2
+   model.avg(dredge.elev, subset = delta < 2)
+   
+      #/ Coefficients: 
+      #/        (Intercept)      LDMC Leaf.Mass.Frac Log.Ht.veg Log.Leaf.Area Max.Root.Loca Log.Ht.veg:Max.Root.Loca        SRL Leaf.Mass.Frac:Max.Root.Loca Log.Lamina.thck
+      #/ full             0 0.2415077      0.6621822  0.4472667     0.1881654      1.023782                -1.667721 0.06377022                   -0.1108884      0.03144751
+      #/ subset           0 0.2866069      0.6621822  0.5155009     0.3025822      1.023782                -1.922146 0.19642102                   -0.6618630      0.15046305
+      #/ Myc.Frac
+      #/ full   -0.005216707
+      #/ subset -0.059263166
+   
+   #'Best' model
+   summary(get.models(dredge.elev, 1)[[1]])
+   
    
    d.elev.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
-     
-   head(d.elev.aicc)
-      # 7 equivalent models (within 2 AIC of best model )
-      # :-(
-   
-   d.elev.aicc[1]   
-      # best model includes:
-      # LDMC +
-      # Leaf.Mass.Frac
-      # Log.Leaf.Area^2
-      # Max.Root.Loc^2
-      # SRL
-      # SRL^2
-   
-   
-   best.elev.aicc<-lm(ElevDif~
-                          LDMC + Leaf.Mass.Frac +
-                          Log.Leaf.Area^2 + Max.Root.Loca^2 +
-                          SRL + SRL^2,
-                        data=dat.8t)
-   summary(best.elev.aicc)
-   # AdjR2 = 0.3947
-   
-   # 7 models within 3 AICc points of each other 
+      #/                          Estimate Std. Error t value Pr(>|t|)    
+      #/ (Intercept)              -180.343     69.015  -2.613 0.014971 *  
+      #/ LDMC                      200.949    110.969   1.811 0.082196 .  
+      #/ Leaf.Mass.Frac            152.996     39.556   3.868 0.000695 ***
+      #/ Log.Ht.veg                 44.581     24.594   1.813 0.081909 .  
+      #/ Log.Leaf.Area              12.068      7.965   1.515 0.142303    
+      #/ Max.Root.Loca              55.427     41.099   1.349 0.189544    
+      #/ Log.Ht.veg:Max.Root.Loca  -30.221     13.938  -2.168 0.039861 *  
+      #/ ---
+      #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      #/ 
+      #/ Residual standard error: 41.4 on 25 degrees of freedom
+      #/ Multiple R-squared:  0.5353,	Adjusted R-squared:  0.4238 
+      #/ F-statistic: 4.799 on 6 and 25 DF,  p-value: 0.002204
 
-   # best model includes (AICc = 333.8):
-   # LDMC
-   # Lef.Mss.Frc
-   # Log.Lef.Are^2
-   # Max.Rot.Loc^2
-   # SRL
-   # SRL^2
+   # C5 - RDA elev ~ traits ####
+   #===========================#
    
-#   ====================================
+   library(vegan)
+   redun.elev<-rda(dat.8t.nona$ElevDif~
+                       Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
+                    data=dat.8t.nona)
+   plot(redun.elev)
+   text(redun.elev,display=c('sites'))
+   summary(redun.elev)    
+   
+      #/ Partitioning of variance:
+      #/               Inertia Proportion
+      #/ Total            2974     1.0000
+      #/ Constrained      1512     0.5085
+      #/ Unconstrained    1462     0.4915
+      #/ 
+      #/ Eigenvalues, and their contribution to the variance 
+      #/ 
+      #/ Importance of components:
+      #/                            RDA1       PC1
+      #/ Eigenvalue            1512.4152 1462.0324
+      #/ Proportion Explained     0.5085    0.4915
+      #/ Cumulative Proportion    0.5085    1.0000
+   
+# ==================================== # 
 
      
       
