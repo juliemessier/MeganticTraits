@@ -1501,7 +1501,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       # B3.2 - glm ####
       
-      # B3.2.1 glm full with myc.frac & log(myc.frac) ####
+      # B3.2.1 glm full - backward - with myc.frac & log(myc.frac) ####
       #=========================================#
       # Includes all 1st order terms 
       # + significant non-linear variables
@@ -1623,10 +1623,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          # 2nd equivalently good model (same AIC) includes:
          # Myc.Frac + log(Myc.Frac) 
       
-      
-      
-      
-      # B3.2.1b AICc model selection ####
+      # B3.2.1b AICc dredge ####
       #------------#
       
       d.occur.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
@@ -1664,7 +1661,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       
       
-      # B3.2.2 glm full with myc.frac only ####
+      # B3.2.2 glm full - backward - with myc.frac only ####
       #=========================================#
       # Not Myc.Frac and log(Myc.Frac)
       
@@ -1723,6 +1720,70 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       plot((resid(best.glm.occur.8t))~dat.8t$Leaf.Mass.Frac)
       plot((resid(best.glm.occur.8t))~dat.8t$Log.Lamina.thck)
       plot((resid(best.glm.occur.8t))~dat.8t$LDMC)
+      
+      # 3.2.2b - AICc dredge ####
+      #-------------------------#
+      
+      # Try with MuMIn{} dredge()
+      # rewrite H1 with na.action='fail' - required by dredge ()
+      
+      # Include:
+      #     - all 1st order effects, 
+      #     - interactions suggested by reg.tree  
+      H1<-glm(occurence.ratio~
+                 Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca,
+              data=dat.8t,
+              family=Gamma(link='log'),
+              maxit=1000,na.action='na.fail')
+      
+      #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
+      
+      dredge.occur<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,4),extra=c("R^2"),trace=F)
+      
+      # get best models
+      get.models (dredge.occur,subset = delta < 2)
+      
+      dredge.occur[1:7]
+      # 7 equivalent models (within 2 AIC of best model )
+      # best 4-parameter model has 2terms - Myc.Frac & Log.Leaf.Area
+      
+      #/ Model selection table 
+      #/ (Int) Log.Ht.veg Log.Lef.Are Max.Rot.Loc Myc.Frc      SRL    R^2 df  logLik AICc delta weight
+      #/ 81      0                -0.1428             -0.1232          0.2866  4 -29.298 67.9  0.00  0.258
+      #/ 17      0                -0.1914                              0.2150  3 -31.020 68.8  0.90  0.164
+      #/ 85      0    0.09192     -0.1689             -0.1282          0.3204  5 -28.425 68.9  0.96  0.160
+      #/ 53      0    0.13110     -0.2002    -0.13630                  0.3078  5 -28.755 69.5  1.62  0.115
+      #/ 65      0                                    -0.1796          0.1962  3 -31.445 69.6  1.75  0.108
+      #/ 49      0                -0.1724    -0.09497                  0.2478  4 -30.253 69.8  1.91  0.099
+      #/ 209     0                -0.1445             -0.1236 -0.06131 0.3008  5 -28.936 69.9  1.99  0.096
+      #/ Models ranked by AICc(x)  
+      
+      # Model average models with delta AICc < 2
+      model.avg(dredge.occur, subset = delta < 2)
+      
+      #/ Component models: 
+      #/‘24’  ‘2’   ‘124’ ‘123’ ‘4’   ‘23’  ‘245’
+      #/ Coefficients: 
+      #/    (Intercept) Log.Leaf.Area    Myc.Frac Log.Ht.veg Max.Root.Loca         SRL
+      #/ full             0    -0.1492819 -0.08345072 0.02972095   -0.02509438 -0.00587132
+      #/ subset           0    -0.1672640 -0.13431786 0.10831982   -0.11712064 -0.06130908      
+      #/'Best' model
+      
+      summary(get.models(dredge.occur, 1)[[1]])
+         #/ Coefficients:
+         #/               Estimate Std. Error t value Pr(>|t|)   
+         #/ (Intercept)    1.14127    0.38369   2.974  0.00545 **
+         #/ Log.Leaf.Area -0.07423    0.04292  -1.730  0.09302 . 
+         #/ Myc.Frac      -0.76979    0.51566  -1.493  0.14498   
+         #/ ---
+         #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+         #/ 
+         #/ (Dispersion parameter for Gamma family taken to be 0.1981629)
+         #/ 
+         #/ Null deviance: 7.4065  on 35  degrees of freedom
+         #/ Residual deviance: 5.3344  on 33  degrees of freedom
+         #/ AIC: 66.596
    
       # B3.2.3 glm full with log(myc.frac) only ####
       #=========================================#
@@ -2186,7 +2247,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'SRL'])
    plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Myc.Frac'])
 
-   # C3.1b - AICc dredge #
+   # C3.1b - AICc dredge ####
    #==============================#
    
   
@@ -2201,9 +2262,11 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
           data=dat.8t.nona,
           na.action='na.fail')
    
-   dredge.elev<-dredge(H1,beta='sd',rank=AIC,trace=F)
-   dredge.elev[1:16]
-      #/ 16 equivalent models  (within 2 AIC of best model )
+   # Can set the maximum number of parameters to include with m.lim = c(0,4)
+   dredge.elev<-dredge(H1,beta='sd', rank="AICc", m.lim = c(0,4),extra=c("R^2"), trace=F)
+   
+   dredge.elev[1:5]
+      #/ 5 equivalent models  (within 2 AIC of best model )
    
    # get best models
    get.models(dredge.elev,subset = delta < 2)
@@ -2212,32 +2275,26 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    model.avg(dredge.elev, subset = delta < 2)
    
       #/ Coefficients: 
-      #/        (Intercept)      LDMC Leaf.Mass.Frac Log.Ht.veg Log.Leaf.Area Max.Root.Loca Log.Ht.veg:Max.Root.Loca        SRL Leaf.Mass.Frac:Max.Root.Loca Log.Lamina.thck
-      #/ full             0 0.2415077      0.6621822  0.4472667     0.1881654      1.023782                -1.667721 0.06377022                   -0.1108884      0.03144751
-      #/ subset           0 0.2866069      0.6621822  0.5155009     0.3025822      1.023782                -1.922146 0.19642102                   -0.6618630      0.15046305
-      #/ Myc.Frac
-      #/ full   -0.005216707
-      #/ subset -0.059263166
+      #/ (Intercept) Leaf.Mass.Frac Max.Root.Loca Leaf.Mass.Frac:Max.Root.Loca Log.Ht.veg Log.Ht.veg:Max.Root.Loca       LDMC Log.Leaf.Area
+      #/ full             0      0.8063928     0.4100599                   -0.5558821  0.1336575               -0.5327919 0.08179634     0.1341013
+      #/ subset           0      0.8063928     0.4100599                   -1.3953227  0.5601391               -2.2328529 0.24371920     0.3694296
    
    #'Best' model
    summary(get.models(dredge.elev, 1)[[1]])
-   
-   
-   d.elev.aicc<-dredge(H1,beta='sd',rank=AICc,trace=F)
-      #/                          Estimate Std. Error t value Pr(>|t|)    
-      #/ (Intercept)              -180.343     69.015  -2.613 0.014971 *  
-      #/ LDMC                      200.949    110.969   1.811 0.082196 .  
-      #/ Leaf.Mass.Frac            152.996     39.556   3.868 0.000695 ***
-      #/ Log.Ht.veg                 44.581     24.594   1.813 0.081909 .  
-      #/ Log.Leaf.Area              12.068      7.965   1.515 0.142303    
-      #/ Max.Root.Loca              55.427     41.099   1.349 0.189544    
-      #/ Log.Ht.veg:Max.Root.Loca  -30.221     13.938  -2.168 0.039861 *  
+      #/ Coefficients:
+      #/                              Estimate Std. Error t value Pr(>|t|)   
+      #/ (Intercept)                    -78.55      42.86  -1.833  0.07748 . 
+      #/ Leaf.Mass.Frac                 257.47      70.45   3.655  0.00105 **
+      #/ Max.Root.Loca                   32.68      26.63   1.227  0.22986   
+      #/ Leaf.Mass.Frac:Max.Root.Loca   -81.59      38.05  -2.144  0.04084 * 
       #/ ---
       #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
       #/ 
-      #/ Residual standard error: 41.4 on 25 degrees of freedom
-      #/ Multiple R-squared:  0.5353,	Adjusted R-squared:  0.4238 
-      #/ F-statistic: 4.799 on 6 and 25 DF,  p-value: 0.002204
+      #/ Residual standard error: 44.39 on 28 degrees of freedom
+      #/ Multiple R-squared:  0.4017,	Adjusted R-squared:  0.3376 
+      #/ F-statistic: 6.266 on 3 and 28 DF,  p-value: 0.002167
+   
+   
 
    # C5 - RDA elev ~ traits ####
    #===========================#
