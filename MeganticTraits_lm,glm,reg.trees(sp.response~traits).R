@@ -950,17 +950,16 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    #=========================================#
    # Not including both Myc.Frac and log(Myc.Frac).
    #        - all 1st order terms 
-   #        - trait interactions from regression tree
-   #        - trait interaction from interaction screening.
+   #        - 2-way and 3-way trait interactions from regression tree
+   #        - Don't include trait interaction from interaction screening.
          
          # *A3.2.2.1. backward AIC ####
          #-------------------------------------#
   
          H1<-glm(abundance.ratio~
-                    Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+                    Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
                     Myc.Frac:SRL + SRL:Max.Root.Loca + SRL:Log.Ht.veg+
-                    Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca +
-                    LDMC:Leaf.Mass.Frac,
+                    Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca,
                  data=dat.8t,
                  family=Gamma(link='log'),
                  maxit=1000)
@@ -971,14 +970,11 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
               maxit=100)
           
           best.glm.abund.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
-          
-          # Warning: glm.fit: algorithm did not converge - fixed - add parameter maxit=100 in H0 and H1 models
-          # why did I include a dispersion parameter in previous model ?
-            # family=Gamma(link='log')),dispersion=1
+
           
           # Explained Deviance
           1-(best.glm.abund.8t$deviance/best.glm.abund.8t$null)
-            #/ 0.31
+            #/ 0.48
            
            AIC(best.glm.abund.8t) 
             #/ 96.30
@@ -987,16 +983,16 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
      
            summary(best.glm.abund.8t)
            
-           #/ Coefficients:
-           #/                   Estimate Std. Error t value Pr(>|t|)   
+           # Coefficients:
+           #                          Estimate Std. Error t value Pr(>|t|)   
            #/ (Intercept)              3.74528    1.85804   2.016  0.05352 . 
+           #/ Myc.Frac                -3.50276    1.97328  -1.775  0.08676 . 
+           #/ SRL                     -0.77606    0.29277  -2.651  0.01307 * 
            #/ Log.Ht.veg              -0.50642    0.50807  -0.997  0.32742   
            #/ Leaf.Mass.Frac           1.52255    0.72489   2.100  0.04483 * 
-           #/ SRL                     -0.77606    0.29277  -2.651  0.01307 * 
-           #/ Myc.Frac                -3.50276    1.97328  -1.775  0.08676 . 
-           #/ SRL:Myc.Frac             0.81487    0.36596   2.227  0.03419 * 
-           #/ Log.Ht.veg:SRL           0.23476    0.08478   2.769  0.00986 **
-           #/ Log.Ht.veg:SRL:Myc.Frac -0.24574    0.10548  -2.330  0.02726 * 
+           #/ Myc.Frac:SRL             0.81487    0.36596   2.227  0.03419 * 
+           #/ SRL:Log.Ht.veg           0.23476    0.08478   2.769  0.00986 **
+           #/ Myc.Frac:SRL:Log.Ht.veg -0.24574    0.10548  -2.330  0.02726 * 
            #/ ---
            #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
            #/ 
@@ -1007,21 +1003,20 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
            #/ AIC: 96.307
            # 
            # Number of Fisher Scoring iterations: 12
-           
-           1-(deviance(best.glm.abund.8t)/best.glm.abund.8t$null)
-    
+
           # can I simplify any further?
           drop1(best.glm.abund.8t,test=c('Chisq')) 
-          # droping LMF only increases AIC by 1.2
+          # droping Leaf.Mass.Frac only increases AIC by 1.2
           
           best.glm.abund.8t.minus1<-update(best.glm.abund.8t,~.-Leaf.Mass.Frac)
-          summary(best.glm.abund.8t.minus1)# most variables are now NS
+          summary(best.glm.abund.8t.minus1)# all variables are now NS
           AICc(best.glm.abund.8t.minus1)
             #/ 104.16
           drop1(best.glm.abund.8t.minus1,test=c('Chisq'))# increases AIC to above 2.0 above best model.  
           
           
-            #/ best.glm.abund.8t has lowest AICc
+            
+          #/ best.glm.abund.8t has lowest AICc
       
           # validate model
           par(mfrow=c(2,2))
@@ -1046,18 +1041,19 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
           
           # Try with MuMIn{} dredge()
           # rewrite H1 with na.action='fail' - required by dredge ()
+          #
           
              H1<-glm(abundance.ratio~
-                        Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                        SRL:Myc.Frac+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca+LDMC:Leaf.Mass.Frac+
-                        Myc.Frac:SRL:Log.Ht.veg,
+                        Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                        Myc.Frac:SRL + SRL:Max.Root.Loca + SRL:Log.Ht.veg+
+                        Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca,
                      data=dat.8t,
                      family=Gamma(link='log'),
                      maxit=1000,na.action='na.fail')
              
              #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
              
-             dredge.abund<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,4),extra=c("R^2"),trace=F)
+             dredge.abund<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
              
              # get best models
              get.models (dredge.abund,subset = delta < 2)
@@ -1087,7 +1083,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
              #/ subset           0     -0.10760909 -0.2061203     0.08824975 0.065172579   0.060388331
           
           #'Best' model
-          summary(get.models(dredge.abund, 1)[[1]])
+          summary(get.models(dredge.abund, 1)[[1:5]])
           
              #/ Coefficients:
              #/                 Estimate Std. Error t value Pr(>|t|)   
@@ -1109,10 +1105,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          # *A3.2.2.3 - forward AIC ####
           
           H1<-glm(abundance.ratio~
-                     Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+                     Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
                      Myc.Frac:SRL + SRL:Max.Root.Loca + SRL:Log.Ht.veg+
-                     Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca +
-                     LDMC:Leaf.Mass.Frac,
+                     Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca,
                   data=dat.8t,
                   family=Gamma(link='log'),
                   maxit=1000)
@@ -1126,7 +1121,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
           
           # Explained Deviance
           1-(best.glm.f.abund.8t$deviance/best.glm.f.abund.8t$null)
-          #/ 0.327
+          #/ 0.328
           
           library (MuMIn); AICc(best.glm.f.abund.8t)
           #/ 97.94
@@ -1149,13 +1144,21 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
           #/ 
           #/ Number of Fisher Scoring iterations: 9
           
-          1-(deviance(best.glm.f.abund.8t)/best.glm.f.abund.8t$null)
-          # 0.327
+          # can I simplify any further?
+          add1(best.glm.f.abund.8t,scope=H1) 
+          # adding Max.Root.Loca increases AIC by 1.7
+          
+          best.glm.f.abund.8t.plus1<-update(best.glm.f.abund.8t,~.+Max.Root.Loca)
+          summary(best.glm.f.abund.8t.plus1)# all variables are now NS
+          AICc(best.glm.f.abund.8t.plus1)
+          #/ 100.31
+          add1(best.glm.f.abund.8t.plus1,scope=H1)
+          #/ AICc keeps going up!
           
           # validate model
           par(mfrow=c(2,2))
           plot(best.glm.f.abund.8t)
-            # Seems fine
+            # Scale-Location is positive - appears to be driven by two datapoints. Worry?
             # CASC has slightly high leverage (0.6)
           
           # Plot residuals vs each variable (in the model)
