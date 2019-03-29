@@ -1083,7 +1083,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
              #/ subset           0     -0.10760909 -0.2061203     0.08824975 0.065172579   0.060388331
           
           #'Best' model
-          summary(get.models(dredge.abund, 1)[[1:5]])
+          summary(get.models(dredge.abund, 1)[[1]])
           
              #/ Coefficients:
              #/                 Estimate Std. Error t value Pr(>|t|)   
@@ -1745,8 +1745,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #--------------------------#
       
       H1<-glm(occurence.ratio~
-                 Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca,
+                 Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+Log.Ht.veg+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Max.Root.Loca:Log.Lamina.thck+
+                 Myc.Frac:SRL:Max.Root.Loca,
               data=dat.8t,
               family=Gamma(link='log'),
               maxit=1000)
@@ -1758,8 +1759,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       
       best.glm.occur.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
       
-      1-(deviance(best.glm.occur.8t)/best.glm.occur.8t$null.deviance)
-         #/  0.5600242
+      1-(best.glm.occur.8t$deviance/best.glm.occur.8t$null.deviance)
+         #/  0.279
       AIC(best.glm.occur.8t)
          #/ 66.59
       AICc(best.glm.occur.8t)
@@ -1769,8 +1770,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #/ Coefficients:
          #/               Estimate Std. Error t value Pr(>|t|)   
          #/ (Intercept)    1.14127    0.38369   2.974  0.00545 **
-         #/ Log.Leaf.Area -0.07423    0.04292  -1.730  0.09302 . 
          #/ Myc.Frac      -0.76979    0.51566  -1.493  0.14498   
+         #/ Log.Leaf.Area -0.07423    0.04292  -1.730  0.09302 .  
          #/ ---
          #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
          #/ 
@@ -1810,15 +1811,16 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #     - all 1st order effects, 
       #     - interactions suggested by reg.tree  
       H1<-glm(occurence.ratio~
-                 Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca,
+                 Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+Log.Ht.veg+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Max.Root.Loca:Log.Lamina.thck+
+                 Myc.Frac:SRL:Max.Root.Loca,
               data=dat.8t,
               family=Gamma(link='log'),
               maxit=1000,na.action='na.fail')
       
       #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
       
-      dredge.occur<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,4),extra=c("R^2"),trace=F)
+      dredge.occur<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
       
       # get best models
       get.models (dredge.occur,subset = delta < 2)
@@ -1828,7 +1830,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # best 4-parameter model has 2terms - Myc.Frac & Log.Leaf.Area
       
       #/ Model selection table 
-      #/ (Int) Log.Ht.veg Log.Lef.Are Max.Rot.Loc Myc.Frc      SRL    R^2 df  logLik AICc delta weight
+      #/     (Int) Log.Ht.veg Log.Lef.Are Max.Rot.Loc Myc.Frc      SRL    R^2 df  logLik AICc delta weight
       #/ 81      0                -0.1428             -0.1232          0.2866  4 -29.298 67.9  0.00  0.258
       #/ 17      0                -0.1914                              0.2150  3 -31.020 68.8  0.90  0.164
       #/ 85      0    0.09192     -0.1689             -0.1282          0.3204  5 -28.425 68.9  0.96  0.160
@@ -1867,8 +1869,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # *B3.2.2.3 - forward AIC####
       #----------------------#
       H1<-glm(occurence.ratio~
-                 Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-                 Myc.Frac:SRL+SRL:Max.Root.Loca+Myc.Frac:SRL:Max.Root.Loca,
+                 Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+Log.Ht.veg+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Max.Root.Loca:Log.Lamina.thck+
+                 Myc.Frac:SRL:Max.Root.Loca,
               data=dat.8t,
               family=Gamma(link='log'),
               maxit=1000)
