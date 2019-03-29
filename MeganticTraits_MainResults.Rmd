@@ -9,7 +9,7 @@ output:
       fig_height: 4
 date: '`r Sys.Date()`'
 ---
-
+***
 
 
 ```{r,include=FALSE}
@@ -88,24 +88,27 @@ Xs<-U.traits4.sp[rownames(U.traits4.sp)%in%rownames(U.Ys.c),]
  
     tree.model.abund
 ```    
-Deviance explained:
+**Deviance explained:**
 ```{r,echo=T}
   1-(deviance(tree.model.abund)/178.1) 
 ```
-            =======
-            A1 - SUMMARY
-            trait-trait interactions to include in global model: 
-            
-                * Myc.Frac:SRL 
-                * SRL:Max.Root.Loca
-                * SRL:Log.Ht.veg
-                * Myc.Frac:SRL:Max.Root.Loca
-                * Myc.Frac:SRL:Log.Ht.veg
-                
-            =======
+
+>            =======
+>            A1 - SUMMARY
+>              trait-trait interactions to include in global model: 
+>            
+>                * Myc.Frac:SRL 
+>                * SRL:Max.Root.Loca
+>                * SRL:Log.Ht.veg
+>                * Myc.Frac:SRL:Max.Root.Loca
+>                * Myc.Frac:SRL:Log.Ht.veg
+>                
+>            =======
 
 
-## A2 - Run Full Model
+
+
+## A2 - Test Full Model
 ```{r,echo=F}
 H.full.abund<-glm(abundance.ratio~
                     Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+
@@ -115,21 +118,25 @@ H.full.abund<-glm(abundance.ratio~
                  maxit=1000)
 summary(H.full.abund)$coefficients
 ```
-Deviance explained:
+**Deviance explained:**
 ```{r,echo=T}
 1-(H.full.abund$deviance/H.full.abund$null) 
+AICc(H.full.abund)
 ```
-=======
-SUMMARY
-Only Mycorrhizal fraction is significant. 
-Full model explains 36% of deviance
-=======
+
+>         =======
+>         A2 - SUMMARY
+>         Only Mycorrhizal fraction is significant. 
+>         Full model explains 36% of deviance
+>         =======
+
+
 
 ## A3 - Find best subset of models with AICc dredge ####
 
 ```{r,echo=F}
 
-   # Not including both Myc.Frac and log(Myc.Frac).
+   # Not including both Myc.Frac and log(Myc.Frac). Include:
    #        - all 1st order terms 
    #        - 2-way and 3-way trait interactions from regression tree
    #        - Don't include trait interaction from interaction screening.
@@ -151,4 +158,101 @@ dredge.abund[1:5]
 
 ```
 
+>         =======
+>         A3- SUMMARY
+>         Only Mycorrhizal fraction matters. 
+>         It explains ~1/3 of the variation in change in abundance
+>         =======
 
+***
+\pagebreak
+
+#(B) Occurence vs 8 Traits
+- occurence and abundance are correlated. Do we want to present them both?
+- Do we want to show an RDA on the 3 response variables =f(8 traits)
+
+## B1 - Explore Trait Interactions
+   
+### B1.1 - Regression Tree
+
+```{r,echo=F,eval=T}
+par(mfrow=c(1,1))
+     tree.model.occur<-tree(dat.8t$occurence.ratio~.,data=dat.8t[,Trait.Names.8t])
+     plot(tree.model.occur); text(tree.model.occur); title('Regression Tree \n Occurence.ratio vs 8 traits')
+     
+     tree.model.occur
+```
+**Deviance explained:**
+```{r,echo=T}
+  1-(deviance(tree.model.occur)/30.79) 
+AICc(H.full.occur)
+```
+
+>            =======
+>            B1 - SUMMARY
+.              trait-trait interactions to include in global model: 
+>            
+>                * Myc.Frac:SRL 
+>                * SRL:Max.Root.Loca
+>                * Max.Root.Loca:Log.Lamina.thck
+>                * Myc.Frac:SRL:Max.Root.Loca
+>                * SRL:Myc.Frac:Log.Lamina.thck
+>                
+>            =======
+
+## B2 - Test Full Model
+```{r,echo=F}
+H.full.occur<-glm(occurence.ratio~
+                    Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+Log.Ht.veg+
+                     LDMC+Log.Leaf.Area+Leaf.Mass.Frac,
+                 data=dat.8t,
+                 family=Gamma(link='log'),
+                 maxit=1000)
+summary(H.full.occur)$coefficients
+```
+**Deviance explained:**
+```{r,echo=T}
+1-(H.full.occur$deviance/H.full.occur$null) 
+```
+
+>         =======
+>         B2 - SUMMARY
+>         Nothing significant. 
+>         Full model explains 36% of deviance 
+>            - although no variables are significant...
+>         =======
+
+## B3 - Find best subset of models with AICc dredge ####
+
+```{r,echo=F}
+
+
+   # Not including both Myc.Frac and log(Myc.Frac). Include:
+   #        - all 1st order terms 
+   #        - 2-way and 3-way trait interactions from regression tree
+   #        - Don't include trait interaction from interaction screening.
+         
+          # rewrite H1 with na.action='fail' - required by dredge ()
+          #
+          
+H.global.occur<-glm(occurence.ratio~
+                 Myc.Frac+SRL+Max.Root.Loca+Log.Lamina.thck+Log.Ht.veg+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                 Myc.Frac:SRL+SRL:Max.Root.Loca+Max.Root.Loca:Log.Lamina.thck+
+                 Myc.Frac:SRL:Max.Root.Loca,
+              data=dat.8t,
+              family=Gamma(link='log'),
+              maxit=1000,na.action='na.fail')
+
+```
+```{r,echo=T,eval=T,message=F}
+dredge.occur<-dredge(H.global.occur,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
+dredge.occur[1:7]
+
+```
+
+>         =======
+>         B3 - SUMMARY
+>         Log.Leaf.Area matters. 
+>         Traits explains ~1/5 of variation in change in occurence 
+>            - although individually no variables are significant...
+>         =======
