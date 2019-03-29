@@ -59,6 +59,17 @@ dim(Xs)
       # 46 species
     
 Xs<-U.traits4.sp[rownames(U.traits4.sp)%in%rownames(U.Ys.c),]
+
+    dat.8t<-merge(sp.response[,c("LatinName","abundance.ratio","occurence.ratio",'ElevDif')],
+                    Xs[which(complete.cases(Xs[,Trait.Names.8t])),Trait.Names.8t],
+                    by="row.names",all.y=T)
+    # Cleanup
+    dim(dat.8t)
+    # 36 13
+    rownames(dat.8t)<-dat.8t$Row.names
+    dat.8t$Row.names<-NULL
+    dim(dat.8t)
+    # 36 12
 ```
 
 #(A) Abundance vs 8 Traits
@@ -81,17 +92,63 @@ Deviance explained:
 ```{r,echo=T}
   1-(deviance(tree.model.abund)/178.1) 
 ```
+            =======
+            A1 - SUMMARY
+            trait-trait interactions to include in global model: 
+            
+                * Myc.Frac:SRL 
+                * SRL:Max.Root.Loca
+                * SRL:Log.Ht.veg
+                * Myc.Frac:SRL:Max.Root.Loca
+                * Myc.Frac:SRL:Log.Ht.veg
+                
+            =======
+
+
+## A2 - Run Full Model
+```{r,echo=F}
+H.full.abund<-glm(abundance.ratio~
+                    Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+
+                     Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac,
+                 data=dat.8t,
+                 family=Gamma(link='log'),
+                 maxit=1000)
+summary(H.full.abund)$coefficients
+```
+Deviance explained:
+```{r,echo=T}
+1-(H.full.abund$deviance/H.full.abund$null) 
+```
+=======
+SUMMARY
+Only Mycorrhizal fraction is significant. 
+Full model explains 36% of deviance
 =======
 
- SUMMARY
+## A3 - Find best subset of models with AICc dredge ####
 
- significant trait-trait interactions to include in full model: 
+```{r,echo=F}
 
-    * SRL:Myc.Frac 
-    * Log.Leaf.Area:SRL
-    * Log.Ht.veg:Max.Root.Loca 
-    * Max.Root.Loca:Leaf.Mass.Frac
-    * Log.Ht.veg:SRL
-    * Max.Root.Loca:SRL 
-    * LDMC:SRL
-========
+   # Not including both Myc.Frac and log(Myc.Frac).
+   #        - all 1st order terms 
+   #        - 2-way and 3-way trait interactions from regression tree
+   #        - Don't include trait interaction from interaction screening.
+         
+          # rewrite H1 with na.action='fail' - required by dredge ()
+          #
+          
+H.global.abund<-glm(abundance.ratio~
+                        Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
+                        Myc.Frac:SRL + SRL:Max.Root.Loca + SRL:Log.Ht.veg+
+                        Myc.Frac:SRL:Log.Ht.veg + Myc.Frac:SRL:Max.Root.Loca,
+                     data=dat.8t,
+                     family=Gamma(link='log'),
+                     maxit=1000,na.action='na.fail')
+```
+```{r,echo=T,eval=T,message=F}
+dredge.abund<-dredge(H.global.abund,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
+dredge.abund[1:5]
+
+```
+
+
