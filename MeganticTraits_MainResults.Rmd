@@ -1,0 +1,183 @@
+---
+title: "MeganticTraits_Species~Traits" 
+author: "Julie Messier" 
+output: 
+   pdf_document:
+      toc: true
+      toc_depth: 3
+      fig_width: 4
+      fig_height: 3
+date: '`r Sys.Date()`'
+---
+
+
+
+```{r,include=FALSE}
+#<<WORKSPACES>>
+wrk.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Workspaces/") # Workspaces
+data.dir<-(("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Trait/Data/")) # data
+res.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Traits/Results/")  # Results
+grp.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Trait/Graphs/")   # Graphs
+fct.dir<-("C:/Users/Julie/Desktop/Postdoc/PROJECT - Megantic Trait/Functions/") # Functions
+
+#<<LIBRARIES>>
+library(car) # for powerTransform
+library(vegan) # for decostand (standardizing data)
+library(tree) # for tree()
+library(MASS) # for glm.nb()  
+library(mgcv) # for gam()
+
+#<<LOAD FILES>>
+
+load(file=paste0(wrk.dir,'Species-Level.Traits.Understory-Layer.with.MycFrac.and.SeedSize.and.PCs.RData')) 
+   # Object = U.traits4.sp
+   # Species-level traits
+   # Understory layer only
+   # Includes mycorhizal fraction, seed size, log-transformed traits and principal components of PCA performed on traits
+   dim(U.traits4.sp)
+   # dim = 53 30
+
+load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RData')) 
+   # object = U.Ys.c
+   # Species temporal responses
+   # Understory layer only
+   # Includes abundance ratio, occurence ratio, elevation shift, ratio of log(abundances) and ratio of log(occurences)
+   dim(U.Ys.c)
+   # dim = 47 14
+
+#===============================================================================#
+# Make trait and abundance dataframes correspond based on shared species ####
+#===============================================================================#
+
+    # subset abundance data to include only the species with trait data 
+    sp.response<-U.Ys.c[rownames(U.Ys.c)%in%rownames(U.traits4.sp),]
+    dim(sp.response)
+      # 47 14
+    
+    # subset trait data to include only the species with abundance data
+    Xs<-U.traits4.sp[rownames(U.traits4.sp)%in%rownames(U.Ys.c),]
+    dim(Xs)
+      # 47 30
+    
+    all(rownames(sp.response)==rownames(Xs)) 
+      # TRUE
+    
+    # Create long and short lists of traits 
+    Trait.Names.8t<-c("Log.Ht.veg","Max.Root.Loca","Log.Lamina.thck","LDMC","Log.Leaf.Area",  
+                        "Leaf.Mass.Frac","SRL","Myc.Frac")
+      # 8 traits
+    length(which(complete.cases(Xs[,Trait.Names.8t])))
+      # 36 species (instead of 35 previously)
+    
+    Trait.Names.5t<-c("Log.Ht.veg","Log.Lamina.thck","LDMC","Log.Leaf.Area","Leaf.Mass.Frac")
+      # 5 traits
+    length(which(complete.cases(Xs[,Trait.Names.5t])))
+      # 46 species (instead of 44 previously)
+```    
+
+#(A) Abundance vs 8 Traits
+
+## A1 - Explore Trait Interactions
+   
+### A1.1 - Tree Model
+   
+```{r,echo=T,eval=T}
+   
+    par(mfrow=c(1,1))
+    tree.model<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t])
+    plot(tree.model); text(tree.model);title('Regression Tree \n Abundance.ratio vs 8 traits')
+    
+```    
+
+- Myc.frac is most important variable 
+- for sp. with high myc.frac, SRL matters
+
+```{r,echo=T,eval=T}    
+    tree.model
+```
+
+    - i.e. null deviance = 178.1
+    
+```{r,echo=T,eval=T}
+    summary(tree.model)
+```    
+   
+    R2 = 1 - SSres/SStotal
+    Pseudo-R2=  1-(deviance(model)/Total(Null) Deviance)
+    1-(deviance(tree.model)/178.1) 
+    = 0.2924518
+    
+```{r,echo=T,eval=T}
+    plot(cv.tree(tree.model)) 
+```
+    
+    c.v.  splits the data into 'training' set for model fitting and a 
+    validation set to evaluate goodness of fit 
+    look for how many splits produces the minimum deviance - run multiple times
+    
+    - lowest deviations at 2-4 branches? 
+    
+### A1.2 - Test trait-trait interactions 
+
+need to check interactions in trait subgroups because sample size too small to test all interactions simultaneously
+
+```{r,echo=T,eval=F}
+summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC)^2,
+               data=merge(sp.response,Xs,by="row.names",all=T)))
+```
+
+No significant interactions
+
+```{r,echo=T,eval=F}
+summary(lm(sp.response$abundance.ratio~(Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac)^2,
+               data=merge(sp.response,Xs,by="row.names",all=T)))
+```
+
+- SRL:Myc.Frac significant @p=0.01
+- Log.Leaf.Area:SRL significant @p=0.01
+
+```{r,echo=T, eval=F}
+summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+Log.Leaf.Area+Leaf.Mass.Frac)^2,
+         data=merge(sp.response,Xs,by="row.names",all=T)))
+```
+
+- Log.Ht.veg:Max.Root.Loca marginally significant @p=0.0584
+- Max.Root.Loca:Leaf.Mass.Frac marginally significant @p=0.0977
+
+``` {r, echo=T, eval=F}
+summary(lm(sp.response$abundance.ratio~(Log.Ht.veg+Max.Root.Loca+SRL+Myc.Frac)^2,
+         data=merge(sp.response,Xs,by="row.names",all=T)))
+```
+
+- SRL:Myc.Frac significant @p=0.001
+- Log.Ht.veg:SRL marginally significant @p=0.077
+- Max.Root.Loca:SRL marginally significant @p=0.059
+
+```{R, echo=T,eval=F}
+summary(lm(sp.response$abundance.ratio~(Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac)^2,
+           data=merge(sp.response,Xs,by="row.names",all=T)))
+```    
+- No significant interactions
+    
+```{r,echo=T, eval=F}    
+summary(lm(sp.response$abundance.ratio~(Log.Lamina.thck+LDMC+SRL+Myc.Frac)^2,
+           data=merge(sp.response,Xs,by="row.names",all=T)))
+```              
+    
+- SRL:Myc.Frac significant @p=0.0004
+- LDMC:SRL significant @p=0.02
+
+=======
+
+ SUMMARY
+
+ significant trait-trait interactions to include in full model: 
+
+    * SRL:Myc.Frac 
+    * Log.Leaf.Area:SRL
+    * Log.Ht.veg:Max.Root.Loca 
+    * Max.Root.Loca:Leaf.Mass.Frac
+    * Log.Ht.veg:SRL
+    * Max.Root.Loca:SRL 
+    * LDMC:SRL
+========
