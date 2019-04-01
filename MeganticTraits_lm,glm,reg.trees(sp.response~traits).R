@@ -95,7 +95,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     par(mfrow=c(1,1))
     tree.model.abund<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
                      control=tree.control(nobs=36,mincut=3))
-    plot(tree.model.abund); text(tree.model.abund);title('Regression Tree \n Abundance.ratio vs 8 traits')
+    plot(tree.model.abund); text(tree.model.abund)
+    title('Regression Tree \n Abundance.ratio ~ 8 traits \n Deviance explained = 0.51')
        # Myc.frac is most important variable, 
        # for those with high myc.frac, SRL matters
     
@@ -132,6 +133,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     
     1-(deviance(tree.model.abund)/178.1) 
       # 0.5056788
+    
+    text(x=0.1, y =0.1, labels ='0.51')
     plot(cv.tree(tree.model.abund)) 
     # c.v.  splits the data into 'training' set for model fitting and a 
     # validation set to evaluate goodness of fit 
@@ -1362,13 +1365,14 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
 # (B) Occurence vs 8 Traits ####
 #==============================#
   
-     # B1 - Explore Trait Interactions #### 
+     # *B1 - Explore Trait Interactions #### 
      #==============================#
      
-     # B1.1 - Tree Model
+     # *B1.1 - Tree Model
      par(mfrow=c(1,1))
      tree.model.occur<-tree(dat.8t$occurence.ratio~.,data=dat.8t[,Trait.Names.8t])
-     plot(tree.model.occur); text(tree.model.occur); title('Regression Tree \n Occurence.ratio vs 8 traits')
+     plot(tree.model.occur); text(tree.model.occur);
+     title('Regression Tree \n Occurence.ratio vs 8 traits \n Deviance explained =0.32')
      # Myc.Frac is best predictor,
      # for those with high Myc.Frac, SRL is best predictor
   
@@ -2093,12 +2097,13 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
 # (C) Elevation vs 8 Traits ####
 #==============================#
       
-   # C1 - Explore Trait Interactions ####
+   # *C1 - Explore Trait Interactions ####
    #====================================#
-      # C1.1 - Tree Model
+      # *C1.1 - Tree Model ####
       par(mfrow=c(1,1))
       tree.model.elev<-tree(dat.8t$ElevDif~.,data=dat.8t[,Trait.Names.8t])
-      plot(tree.model.elev); text(tree.model.elev); title('Regression Tree \n Elevation Shift vs 8 traits')
+      plot(tree.model.elev,mar=c(3,1,5,1)); text(tree.model.elev)
+      title('Regression Tree \n Elevation Shift ~ 8 traits \n Deviance Explained = 0.60')
       # Leaf.Mass.Frac is best predictor,
       # for those with high Leaf.Mass.Frac, Max.Root.Loca is best predictor
       
@@ -2136,7 +2141,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #  Leaf.Mass.Frac, 
          #  Max.Root.Loca, 
          #  Log.Ht.veg
-         #  and their interactions - R2 = 0.59
+         #  and their interactions - R2 = 0.60
          #=====================================================================================#
       
       # C1.2 - Test trait-trait interactions w lm ####
@@ -2308,13 +2313,17 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # + 3 trait interactions suggested by regression tree
       # + 2 trait-trait interactions suggested by screening
       
-      # C3.1.2.1 - backward AIC ####
+      # *C3.1.2.1 - backward AIC ####
       #----------------------------#
+      
+      # I get a better model fit if I start with a full model including teh two interactions 
+      # found in C1.2 Interaction screening. However, the model has 10 parameters, which is
+      # too many for 32 datapoints (overfitting)
 
       H1<-lm(ElevDif~
          Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-            Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg+
-            SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
+            Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
+            #SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
          data=dat.8t)
    
    
@@ -2323,36 +2332,33 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    
       best.lm.elev.8t<-step(H1,scope=list(lower=H0,upper=H1),direction='backward',trace = T)
       summary(best.lm.elev.8t)
-         #AdjR2 = 0.65
+         #/ AdjR2 = 0.42
       AIC(best.lm.elev.8t)
-         # 323.00
+         #/ 337.20
    
       # Can the model be simplified?
       drop1(best.lm.elev.8t) # Nope
       AICc(best.lm.elev.8t)
-         #/ 336
+         #/ 343.4
    
       # Best model (globally lowest AIC)
       summary(best.lm.elev.8t)
-         #/ Coefficients:
-         #/    Estimate Std. Error t value Pr(>|t|)    
-         #/ (Intercept)               2209.909    701.101   3.152 0.004625 ** 
-         #/  Log.Ht.veg                 -33.501     15.880  -2.110 0.046503 *  
-         #/  Log.Lamina.thck           -467.445    147.040  -3.179 0.004341 ** 
-         #/  LDMC                       291.559     92.418   3.155 0.004596 ** 
-         #/  Log.Leaf.Area               18.611      7.047   2.641 0.014931 *  
-         #/  Leaf.Mass.Frac             118.204     31.530   3.749 0.001110 ** 
-         #/  SRL                         51.207     11.705   4.375 0.000241 ***
-         #/  Myc.Frac                 -3461.157    821.834  -4.212 0.000360 ***
-         #/  Log.Lamina.thck:SRL        -11.119      2.608  -4.263 0.000317 ***
-         #/  Log.Lamina.thck:Myc.Frac   729.009    176.800   4.123 0.000446 ***
-         #/  ---
-         #/  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+         #/Coefficients:
+         #/                          Estimate Std. Error t value Pr(>|t|)    
+         #/ (Intercept)              -180.343     69.015  -2.613 0.014971 *  
+         #/ Log.Ht.veg                 44.581     24.594   1.813 0.081909 .  
+         #/ Max.Root.Loca              55.427     41.099   1.349 0.189544    
+         #/ LDMC                      200.949    110.969   1.811 0.082196 .  
+         #/ Log.Leaf.Area              12.068      7.965   1.515 0.142303    
+         #/ Leaf.Mass.Frac            152.996     39.556   3.868 0.000695 ***
+         #/ Log.Ht.veg:Max.Root.Loca  -30.221     13.938  -2.168 0.039861 *  
+         #/ ---
+         #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
          #/ 
-         #/  Residual standard error: 32.23 on 22 degrees of freedom
-         #/  (4 observations deleted due to missingness)
-         #/  Multiple R-squared:  0.7522,	Adjusted R-squared:  0.6509 
-         #/  F-statistic: 7.421 on 9 and 22 DF,  p-value: 6.343e-05
+         #/ Residual standard error: 41.4 on 25 degrees of freedom
+         #/ (4 observations deleted due to missingness)
+         #/ Multiple R-squared:  0.5353,	Adjusted R-squared:  0.4238 
+         #/ F-statistic: 4.799 on 6 and 25 DF,  p-value: 0.002204
       
          # Validation plots
          par(mfrow=c(2,2));plot(best.lm.elev.8t,which=c(1:5))
@@ -2379,7 +2385,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
                                     # F-statistic: 7.688 on 7 and 24 DF,  p-value: 6.754e-05
       
          library(MuMIn); AICc(best.lm.elev.8t)
-         # 336.27
+         #/ 343.5
          
          # Plot residuals vs each variable (in the model)
          plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Log.Ht.veg'])
@@ -2395,42 +2401,39 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'SRL'])
          plot((resid(best.lm.elev.8t))~dat.8t[!is.na(dat.8t$ElevDif),'Myc.Frac'])
 
-   # C3.1.2.2 - AICc dredge ####
+   # *C3.1.2.2 - AICc dredge ####
    #---------------------------#
    
    # Try with MuMIn{} dredge()
    # rewrite H1 with na.action='fail' - required by dredge (), 
    # add dat8[!is.na(ElevDif),] to remove 3 rows with NA
+   # 32 Datapoints
    
    dat.8t.nona<-dat.8t[!is.na(dat.8t$ElevDif),]
    H1<-lm(ElevDif~
              Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
-             Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg+
-             SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
+             Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
+             # SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
           data=dat.8t.nona, na.action='na.fail')
    
    # Can set the maximum number of parameters to include with m.lim = c(0,4)
-   dredge.elev<-dredge(H1,beta='sd', rank="AICc", m.lim = c(0,4),extra=c("R^2"), trace=F)
+   dredge.elev<-dredge(H1,beta='sd', rank="AICc", m.lim = c(0,6),extra=c("R^2"), trace=F)
    
-   dredge.elev[1:6]
-      #/ 6 equivalent models  (within 2 AIC of best model )
+   dredge.elev[1:8]
+      #/ 8 equivalent models  (within 2 AIC of best model )
    
       #/ Model selection table 
-      #/      (Int)    LDM Lef.Mss.Frc Log.Ht.veg Log.Lmn.thc Log.Lef.Are Max.Rot.Loc Myc.Frc Lef.Mss.Frc:Max.Rot.Loc Log.Ht.veg:Max.Rot.Loc Log.Lmn.thc:Myc.Frc
-      #/ 291      0             1.0700                                         0.6331                          -1.377                                           
-      #/ 551      0             0.6022     0.5601                              1.5130                                                 -2.233                    
-      #/ 52       0 0.2825      0.6464                             0.4117     -0.5963                                                                           
-      #/ 51       0             0.6798                             0.3160     -0.5330                                                                           
-      #/ 292      0 0.1845      1.0420                                         0.6568                          -1.433                                           
-      #/ 1099     0             0.6453                   -3.5                          -7.167                                                              7.212
-      #/         R^2 df   logLik  AICc delta weight
-      #/ 291  0.4017  5 -164.645 341.6  0.00  0.241
-      #/ 551  0.4525  6 -163.225 341.8  0.21  0.217
-      #/ 52   0.4469  6 -163.388 342.1  0.54  0.184
-      #/ 51   0.3825  5 -165.149 342.6  1.01  0.146
-      #/ 292  0.4321  6 -163.810 343.0  1.38  0.121
-      #/ 1099 0.4220  6 -164.091 343.5  1.95  0.091
-      #/ Models ranked by AICc(x)
+      #/Model selection table 
+      #/     (Int)    LDM Lef.Mss.Frc Log.Ht.veg Log.Lef.Are Max.Rot.Loc    SRL Lef.Mss.Frc:Max.Rot.Loc Log.Ht.veg:Max.Rot.Loc    R^2 df   logLik  AICc delta weight
+      #/ 291     0             1.0700                             0.6331                         -1.377                        0.4017  5 -164.645 341.6  0.00  0.188
+      #/ 551     0             0.6022     0.5601                  1.5130                                                -2.233 0.4525  6 -163.225 341.8  0.21  0.169
+      #/ 52      0 0.2825      0.6464                 0.4117     -0.5963                                                       0.4469  6 -163.388 342.1  0.54  0.144
+      #/ 51      0             0.6798                 0.3160     -0.5330                                                       0.3825  5 -165.149 342.6  1.01  0.114
+      #/ 552     0 0.2178      0.5618     0.6299                  1.5320                                                -2.309 0.4926  7 -162.007 342.7  1.08  0.109
+      #/ 180     0 0.3410      0.6530                 0.4641     -0.5755 0.2261                                                0.4924  7 -162.015 342.7  1.10  0.108
+      #/ 292     0 0.1845      1.0420                             0.6568                         -1.433                        0.4321  6 -163.810 343.0  1.38  0.094
+      #/ 568     0 0.2779      0.6360     0.4653      0.2703      1.0740                                                -1.868 0.5353  8 -160.602 343.5  1.87  0.074
+      #/ Models ranked by AICc(x) 
    
    # get best models
    get.models(dredge.elev,subset = delta < 2)
@@ -2440,18 +2443,19 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    model.avg(dredge.elev, subset = delta < 2)
    
    # Coefficients: 
-   #        (Intercept) Leaf.Mass.Frac Max.Root.Loca Leaf.Mass.Frac:Max.Root.Loca Log.Ht.veg Log.Ht.veg:Max.Root.Loca       LDMC Log.Leaf.Area Log.Lamina.thck   Myc.Frac
-   # full             0      0.7917022     0.3726667                   -0.5051913  0.1214693               -0.4842068 0.07433736     0.1218726      -0.3191998 -0.6535807
-   # subset           0      0.7917022     0.4100599                   -1.3953227  0.5601391               -2.2328529 0.24371920     0.3694296      -3.5003931 -7.1672646
-   #        Log.Lamina.thck:Myc.Frac
-   # full                  0.6576303
-   # subset                7.2116734
+   #        (Intercept) Leaf.Mass.Frac Max.Root.Loca Leaf.Mass.Frac:Max.Root.Loca Log.Ht.veg Log.Ht.veg:Max.Root.Loca      LDMC
+   # full             0       0.750416     0.4748925                   -0.3937208  0.1979378               -0.7679165 0.1392801
+   # subset           0       0.750416     0.4748925                   -1.3953227  0.5618978               -2.1799298 0.2630754
+   #        Log.Leaf.Area        SRL
+   # full       0.1652944 0.02452182
+   # subset     0.3761185 0.22609372
    
    #'Best' model
+   
    summary(get.models(dredge.elev, 1)[[1]])
       #/ Coefficients:
       #/                              Estimate Std. Error t value Pr(>|t|)   
-      #/ (Intercept)                    -78.55      42.86  -1.833  0.07748 . 
+      #/(Intercept)                    -78.55      42.86  -1.833  0.07748 . 
       #/ Leaf.Mass.Frac                 257.47      70.45   3.655  0.00105 **
       #/ Max.Root.Loca                   32.68      26.63   1.227  0.22986   
       #/ Leaf.Mass.Frac:Max.Root.Loca   -81.59      38.05  -2.144  0.04084 * 
@@ -2491,7 +2495,7 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    redun.elev<-rda(dat.8t.nona$ElevDif~
                        Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac,
                     data=dat.8t.nona)
-   plot(redun.elev)
+   par(mfrow=c(1,1));plot(redun.elev)
    text(redun.elev,display=c('sites'))
    summary(redun.elev)    
    
