@@ -5,8 +5,8 @@ output:
    pdf_document:
       toc: true
       toc_depth: 3
-      fig_width: 5
-      fig_height: 4
+      fig_width: 4.5
+      fig_height: 3.5
 date: '`r Sys.Date()`'
 ---
 ***
@@ -72,7 +72,7 @@ Xs<-U.traits4.sp[rownames(U.traits4.sp)%in%rownames(U.Ys.c),]
     # 36 12
 ```
 
-#(A) Abundance vs 8 Traits
+#(A) Abundance Ratio ~ 8 Traits
 
 ## A1 - Explore Trait Interactions
    
@@ -83,11 +83,12 @@ Xs<-U.traits4.sp[rownames(U.traits4.sp)%in%rownames(U.Ys.c),]
     par(mfrow=c(1,1))
     tree.model.abund<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
                      control=tree.control(nobs=36,mincut=3))
-    plot(tree.model.abund); text(tree.model.abund);title('Regression Tree \n Abundance.ratio vs 8 traits')
+    plot(tree.model.abund,mar=c(3,1,5,1)); text(tree.model.abund)
+    title('Abundance.ratio ~ 8 traits \n Deviance explained = 0.51')
       # Myc.frac is most important variable       # for sp. with high myc.frac, SRL matters
- 
     tree.model.abund
 ```    
+
 **Deviance explained:**
 ```{r,echo=T}
   1-(deviance(tree.model.abund)/178.1) 
@@ -162,14 +163,14 @@ dredge.abund[1:5]
 >         A3- SUMMARY
 >         Only Mycorrhizal fraction matters. 
 >         It explains ~1/3 of the variation in change in abundance
+>         Best models have 2 traits
 >         =======
 
 ***
 \pagebreak
 
-#(B) Occurence vs 8 Traits
+#(B) Occurence Ratio ~ 8 Traits
 - occurence and abundance are correlated. Do we want to present them both?
-- Do we want to show an RDA on the 3 response variables =f(8 traits)
 
 ## B1 - Explore Trait Interactions
    
@@ -178,14 +179,14 @@ dredge.abund[1:5]
 ```{r,echo=F,eval=T}
 par(mfrow=c(1,1))
      tree.model.occur<-tree(dat.8t$occurence.ratio~.,data=dat.8t[,Trait.Names.8t])
-     plot(tree.model.occur); text(tree.model.occur); title('Regression Tree \n Occurence.ratio vs 8 traits')
+     plot(tree.model.occur,mar=c(3,1,5,1)); text(tree.model.occur);
+     title('Occurence.ratio vs 8 traits \n Deviance explained =0.32')
      
      tree.model.occur
 ```
 **Deviance explained:**
 ```{r,echo=T}
   1-(deviance(tree.model.occur)/30.79) 
-AICc(H.full.occur)
 ```
 
 >            =======
@@ -209,6 +210,7 @@ H.full.occur<-glm(occurence.ratio~
                  family=Gamma(link='log'),
                  maxit=1000)
 summary(H.full.occur)$coefficients
+AICc(H.full.occur)
 ```
 **Deviance explained:**
 ```{r,echo=T}
@@ -255,4 +257,83 @@ dredge.occur[1:7]
 >         Log.Leaf.Area matters. 
 >         Traits explains ~1/5 of variation in change in occurence 
 >            - although individually no variables are significant...
+>         Best models have 1-3 traits
+>         =======
+
+#(C) Elevation Shift ~ 8 Traits
+
+## C1 - Explore Trait Interactions
+   
+### C1.1 - Regression Tree
+
+```{r,echo=F,eval=T}
+par(mfrow=c(1,1))
+     tree.model.elev<-tree(dat.8t$ElevDif~.,data=dat.8t[,Trait.Names.8t])
+     plot(tree.model.elev,mar=c(3,1,5,1)); text(tree.model.elev);
+     title('Elevation Shift ~ 8 traits \n Deviance explained = 0.60')
+     
+     tree.model.elev
+```
+**Deviance explained:**
+```{r,echo=T}
+  1-(deviance(tree.model.elev)/92210) 
+```
+
+>            =======
+>            C1 - SUMMARY
+               trait-trait interactions to include in global model: 
+>            
+>                * Leaf.Mass.Frac:Max.Root.Loca
+>                * Max.Root.Loca:Log.Ht.veg
+>                * Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg>                
+>            =======
+
+## C2 - Test Full Model
+```{r,echo=F}
+H.full.elev<-lm(ElevDif~
+                    Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+
+                     Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac,
+                 data=dat.8t)
+summary(H.full.elev)$coefficients
+AICc(H.full.elev)
+```
+
+
+```{r,echo=T}
+AICc(H.full.elev)
+```
+
+>         =======
+>         C2 - SUMMARY
+>         Leaf Mass Fraction and Maximum Root Location are significant. 
+>         Full model explains 33% of variance (Adjusted R2)
+>         =======
+
+## C3 - Find best subset of models with AICc dredge ####
+
+```{r,echo=F}
+   # Include:
+   #        - all 1st order terms 
+   #        - 2-way and 3-way trait interactions from regression tree
+   #        - Don't include trait interaction from interaction screening.
+         
+          # rewrite H1 with na.action='fail' - required by dredge ()
+          #
+dat.8t.nona<-dat.8t[!is.na(dat.8t$ElevDif),]          
+H.global.elev<-lm(ElevDif~ Log.Ht.veg+Max.Root.Loca+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+             Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg +
+                Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
+       data=dat.8t.nona,na.action='na.fail')
+```
+```{r,echo=T,eval=T,message=F}
+dredge.elev<-dredge(H.global.elev,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
+dredge.elev[1:8]
+
+```
+
+>         =======
+>         C3 - SUMMARY
+>         Leaf.Mass.fraction and Max.Root.Location matter.  
+>         Traits explains ~0.4 to 0.5 of variation in change in elevation
+>         Best models include 3-5 traits
 >         =======
