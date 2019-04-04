@@ -123,12 +123,20 @@ summary(H.full.abund)$coefficients
 ```{r,echo=T}
 1-(H.full.abund$deviance/H.full.abund$null) 
 AICc(H.full.abund)
+
+# Analysis of Deviance to get p-value of whole model
+H0<-glm(abundance.ratio~1,
++         data=dat.8t,
++         family=Gamma(link='log'),
++         maxit=1000)
+
+with(anova(H0,H.full.abund),pchisq(Deviance,Df,lower.tail=FALSE)[2])
 ```
 
 >         =======
 >         A2 - SUMMARY
 >         Only Mycorrhizal fraction is significant. 
->         Full model explains 36% of deviance
+>         Full model explains 36% of deviance with p=0.09
 >         =======
 
 
@@ -215,12 +223,20 @@ AICc(H.full.occur)
 **Deviance explained:**
 ```{r,echo=T}
 1-(H.full.occur$deviance/H.full.occur$null) 
+
+# Analysis of Deviance to get p-value of whole model
+H0<-glm(occurence.ratio~1,
++         data=dat.8t,
++         family=Gamma(link='log'),
++         maxit=1000)
+
+with(anova(H0,H.full.occur),pchisq(Deviance,Df,lower.tail=FALSE)[2])
 ```
 
 >         =======
 >         B2 - SUMMARY
 >         Nothing significant. 
->         Full model explains 36% of deviance 
+>         Full model explains 36% of deviance with p=0.95 
 >            - although no variables are significant...
 >         =======
 
@@ -279,6 +295,9 @@ par(mfrow=c(1,1))
   1-(deviance(tree.model.elev)/92210) 
 ```
 
+***
+\pagebreak
+
 >            =======
 >            C1 - SUMMARY
                trait-trait interactions to include in global model: 
@@ -306,7 +325,7 @@ AICc(H.full.elev)
 >         =======
 >         C2 - SUMMARY
 >         Leaf Mass Fraction and Maximum Root Location are significant. 
->         Full model explains 33% of variance (Adjusted R2)
+>         Full model explains 33% of variance (Adjusted R2) with p=0.01
 >         =======
 
 ## C3 - Find best subset of models with AICc dredge ####
