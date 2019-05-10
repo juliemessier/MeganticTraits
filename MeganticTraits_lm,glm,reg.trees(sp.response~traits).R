@@ -94,56 +94,54 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     #----#
     par(mfrow=c(1,1))
     tree.model.abund<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.8t],
-                     control=tree.control(nobs=36,mincut=3))
-    plot(tree.model.abund); text(tree.model.abund)
-    title('Regression Tree \n Abundance.ratio ~ 8 traits \n Deviance explained = 0.51')
+                     control=tree.control(nobs=36,mincut=5))
+    plot(tree.model.abund); text(tree.model.abund,pretty=0)
+    title('Abundance.ratio ~ 8 traits \n Deviance explained = 0.51')
        # Myc.frac is most important variable, 
        # for those with high myc.frac, SRL matters
     
     tree.model.abund 
-      #/ node), split, n, deviance, yval
-      #/      * denotes terminal node
-      #/ 
       #/ 1) root 36 178.1000 1.5740  
-      #/    2) Myc.Frac < 0.52 3  68.7900 6.5480 *
-      #/    3) Myc.Frac > 0.52 33  28.3800 1.1220  
-      #/       6) SRL < 10.7122 14  13.3800 1.4620  
-      #/          12) Max.Root.Loca < 2.05 9   0.9808 1.0870 *
-      #/          13) Max.Root.Loca > 2.05 5   8.8620 2.1360 *
-      #/       7) SRL > 10.7122 19  12.2100 0.8723  
-      #/          14) Log.Ht.veg < 2.33319 3   7.0340 1.7590 *
-      #/          15) Log.Ht.veg > 2.33319 16   2.3720 0.7061 *
+      #/ 2) Myc.Frac < 0.58 5 104.0000 4.3820 *
+      #/ 3) Myc.Frac > 0.58 31  28.3700 1.1220  
+      #/ 6) SRL < 10.7122 12  13.1100 1.5160  
+      #/ 12) Max.Root.Loca < 2.05 7   0.9664 1.0740 *
+      #/ 13) Max.Root.Loca > 2.05 5   8.8620 2.1360 *
+      #/ 7) SRL > 10.7122 19  12.2100 0.8723 *
        
-    #  i.e. null deviance = 178.1
+      #/  i.e. null deviance = 178.1
  
     summary(tree.model.abund)
-   # Regression tree:
-   # tree(formula = sp.response$abundance.ratio ~ ., data = Xs[, Trait.Names.8t])
-   # Variables actually used in tree construction:
-   # [1] "Myc.Frac"      "SRL"           "Max.Root.Loca"
-   # Number of terminal nodes:  4 
-   # Residual mean deviance:  3.938 = 126 / 32 
-   # Distribution of residuals:
-   #    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-   # -3.4060 -0.6045 -0.1723  0.0000  0.2187  8.2850 
-    
-    # R2 = 1 - SSres/SStotal
-    # Pseudo-R2
-    # 1-(deviance(model)/Total(Null) Deviance)
+
     
     1-(deviance(tree.model.abund)/178.1) 
-      # 0.5056788
+      # 0.2924518
     
-    text(x=0.1, y =0.1, labels ='0.51')
+    tree.model.abund$where
+       #/ ARNU ARTR ATFI CAIN CASC CIAL CLBO COCA COTR DEAC DEDI DRIN GATR 
+       #/ 2    6    6    7    2    7    5    6    5    7    7    6    7 
+       #/ IMCA LYAN LYOB MACA MEVI MIRE OCAC OSCI OSCL OXMO PHCO POPU PRAL 
+       #/ 7    2    7    2    7    7    7    5    7    7    7    7    7 
+       #/ RUPU SMRA STAM STLA THNO TICO TRBO TRER TRUN VEVI 
+       #/ 7    5    2    5    6    7    7    5    5    7 
+    
     plot(cv.tree(tree.model.abund)) 
     # c.v.  splits the data into 'training' set for model fitting and a 
     # validation set to evaluate goodness of fit 
     # look for how many splits produces the minimum deviance - run this multiple times
     
-    # lowest deviations at 2-4 branches
+    # Out of 53 trials, selected 2-3 branch 36 times
     
-    pruned.tree.model.abund<-prune.tree(tree.model.abund,best=2)
-    plot(pruned.tree.model.abund);text(pruned.tree.model.abund)
+    # 1 split 17 times
+    # 2-3 splits 36 times 
+    #
+    
+    # Prune at 3 branch! 
+    
+    pruned.tree.model.abund<-prune.tree(tree.model.abund,best=3)
+    plot(pruned.tree.model.abund);text(pruned.tree.model.abund,pretty=0)
+    
+    # why don't we see 2 levels? SRL should also show up. 
     
           # See if regression tree retains Myc.Frac-log(Myc.Frac), like lm and glms do.
           Xs$Log.Myc.Frac<-log(Xs$Myc.Frac)
@@ -452,6 +450,9 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     dim(dat.8t)
     # 36 12
     
+    save(dat.8t,file=paste0(wrk.dir,'36Species.8Traits.3SpeciesResponses.Understory.Layer.RData'))
+    
+    
     dat.5t<-merge(sp.response[,c("LatinName","abundance.ratio","occurence.ratio",'ElevDif')],
                      Xs[which(complete.cases(Xs[,Trait.Names.5t])),Trait.Names.5t],
                      by="row.names",all.y=T)
@@ -462,6 +463,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     dat.5t$Row.names<-NULL
     dim(dat.5t)
     # 46 9
+    
+    save(dat.5t,file=paste0(wrk.dir,'46Species.5Traits.3SpeciesResponses.Understory.Layer.RData'))
     
    # A3.1 - lm ####
    #===================================#
@@ -2102,8 +2105,8 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # *C1.1 - Tree Model ####
       par(mfrow=c(1,1))
       tree.model.elev<-tree(dat.8t$ElevDif~.,data=dat.8t[,Trait.Names.8t])
-      plot(tree.model.elev,mar=c(3,1,5,1)); text(tree.model.elev)
-      title('Regression Tree \n Elevation Shift ~ 8 traits \n Deviance Explained = 0.60')
+      plot(tree.model.elev,mar=c(3,1,5,1)); text(tree.model.elev,pretty=0)
+      title('Elevation Shift ~ 8 traits \n Deviance Explained = 0.60')
       # Leaf.Mass.Frac is best predictor,
       # for those with high Leaf.Mass.Frac, Max.Root.Loca is best predictor
       
@@ -2128,12 +2131,36 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       # validation set to evaluate goodness of fit 
       # look for how many splits produces the minimum deviance - run multiple times
       
-      # unstable. out of 30 runs, select4-5 splits 15 times
-      # 3-4 splits 7 times
-      # 1-2 splits 6 times
-      # 2-3 splits 1 time
+      # unstable. out of 53 runs, select 3 splits 25 times
+      # 1 splits 13 times
+      # 2 splits 3 times
+      # 3 splits 25 time
+      # 4 splits 9 times
+      # 5 splits 2 times
       
-      # stop at 3 or 4 branches?
+      # prune at 3 branches
+      
+      pruned.tree.model.elev<-prune.tree(tree.model.elev,best=3)
+      plot(pruned.tree.model.elev);text(pruned.tree.model.elev,pretty=0)
+      
+      pruned.tree.model.elev
+         # 1) root 32 92210  36.94  
+         # 2) Leaf.Mass.Frac < 0.302389 5  7741 -25.60 *
+         # 3) Leaf.Mass.Frac > 0.302389 27 61290  48.52  
+         # 6) Max.Root.Loca < 2.15 17 30940  69.41 *
+         # 7) Max.Root.Loca > 2.15 10 10310  13.00 *
+      
+      1-(deviance(pruned.tree.model.elev)/92210)
+      # 0.4686551
+      
+      pruned.tree.model.elev$where
+      # ARNU ARTR ATFI CAIN CIAL CLBO COCA COTR DEAC DEDI DRIN GATR IMCA 
+      # 4    5    5    4    4    4    4    4    5    5    5    4    4 
+      # MACA MEVI MIRE OCAC OSCL OXMO PHCO POPU PRAL RUPU SMRA STAM STLA 
+      # 4    2    4    5    4    2    4    4    4    5    2    4    4 
+      # THNO TICO TRBO TRER TRUN VEVI 
+      # 5    5    4    2    2    5 
+      
       
          #=====================================================================================#
          # Summary of regression tree
@@ -2465,6 +2492,98 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
       #/ Residual standard error: 44.39 on 28 degrees of freedom
       #/ Multiple R-squared:  0.4017,	Adjusted R-squared:  0.3376 
       #/ F-statistic: 6.266 on 3 and 28 DF,  p-value: 0.002167
+   
+   # Visualize the interation terms of the best dredge models 
+   
+   library(sjPlot)
+   Elev.model.1<-lm(ElevDif~Max.Root.Loca*Leaf.Mass.Frac,data=dat.8t)
+   plot_model( Elev.model.1,type='int')
+   
+   summary(get.models(dredge.elev, 2)[[1]])
+   
+      #/ Coefficients:
+      #/ Estimate Std. Error t value Pr(>|t|)    
+      #/ (Intercept)               -147.83      67.39  -2.194 0.037045 *  
+      #/ Leaf.Mass.Frac             144.85      38.83   3.731 0.000898 ***
+      #/ Log.Ht.veg                  53.67      22.78   2.356 0.025980 *  
+      #/ Max.Root.Loca               78.11      39.70   1.967 0.059481 .  
+      #/ Log.Ht.veg:Max.Root.Loca   -36.12      13.67  -2.642 0.013557 *  
+      #/ ---
+      #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      #/ 
+      #/ Residual standard error: 43.24 on 27 degrees of freedom
+      #/ Multiple R-squared:  0.4525,	Adjusted R-squared:  0.3714 
+      #/ F-statistic: 5.578 on 4 and 27 DF,  p-value: 0.00209
+   
+   Elev.model.2<-lm(ElevDif~Max.Root.Loca*Log.Ht.veg+Leaf.Mass.Frac,data=dat.8t)
+   
+   plot_model(Elev.model.2,type='int')
+   plot_model(Elev.model.2,type='slope')
+   plot_model(Elev.model.2,type='est')
+   
+   summary(get.models(dredge.elev, 5)[[1]])
+      #/ Coefficients:
+      #/                          Estimate Std. Error t value Pr(>|t|)   
+      #/ (Intercept)               -183.68      70.68  -2.599  0.01521 * 
+      #/ LDMC                       157.51     109.84   1.434  0.16349   
+      #/ Leaf.Mass.Frac             135.14      38.69   3.493  0.00173 **
+      #/ Log.Ht.veg                  60.36      22.83   2.644  0.01370 * 
+      #/ Max.Root.Loca               79.09      38.95   2.031  0.05265 . 
+      #/ Log.Ht.veg:Max.Root.Loca   -37.35      13.44  -2.779  0.01000 **
+      #/ ---
+      #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      # 
+      #/ Residual standard error: 42.42 on 26 degrees of freedom
+      #/ Multiple R-squared:  0.4926,	Adjusted R-squared:  0.395 
+      #/ F-statistic: 5.049 on 5 and 26 DF,  p-value: 0.002301
+   
+   Elev.model.5<-lm(ElevDif~Max.Root.Loca*Log.Ht.veg+Leaf.Mass.Frac+LDMC,data=dat.8t)
+   plot_model(Elev.model.5,type='int')
+   plot_model(Elev.model.5,type='slope')
+   plot_model(Elev.model.5,type='est')
+   
+   summary(get.models(dredge.elev,7)[[1]])
+      #/ Coefficients:
+      #/                              Estimate Std. Error t value Pr(>|t|)   
+      #/ (Intercept)                    -95.97      44.92  -2.136  0.04187 * 
+      #/ LDMC                           133.43     111.00   1.202  0.23979   
+      #/ Leaf.Mass.Frac                 250.76      70.12   3.576  0.00134 **
+      #/ Max.Root.Loca                   33.91      26.44   1.283  0.21052   
+      #/ Leaf.Mass.Frac:Max.Root.Loca   -84.90      37.85  -2.243  0.03329 * 
+      #/ ---
+      #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      #/ 
+      #/ Residual standard error: 44.04 on 27 degrees of freedom
+      #/ Multiple R-squared:  0.4321,	Adjusted R-squared:  0.348 
+      #/ F-statistic: 5.136 on 4 and 27 DF,  p-value: 0.003292
+   
+   Elev.model.7<-lm(ElevDif~Max.Root.Loca*Leaf.Mass.Frac+LDMC,data=dat.8t)
+   plot_model(Elev.model.7,type='int')
+   plot_model(Elev.model.7,type='slope')
+   plot_model(Elev.model.7,type='est')
+   
+   summary(get.models(dredge.elev,8)[[1]])
+      #/ Coefficients:
+      #/                          Estimate Std. Error t value Pr(>|t|)    
+      #/ (Intercept)              -180.343     69.015  -2.613 0.014971 *  
+      #/ LDMC                      200.949    110.969   1.811 0.082196 .  
+      #/ Leaf.Mass.Frac            152.996     39.556   3.868 0.000695 ***
+      #/ Log.Ht.veg                 44.581     24.594   1.813 0.081909 .  
+      #/ Log.Leaf.Area              12.068      7.965   1.515 0.142303    
+      #/ Max.Root.Loca              55.427     41.099   1.349 0.189544    
+      #/ Log.Ht.veg:Max.Root.Loca  -30.221     13.938  -2.168 0.039861 *  
+      #/ ---
+      #/ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+      #/ 
+      #/ Residual standard error: 41.4 on 25 degrees of freedom
+      #/ Multiple R-squared:  0.5353,	Adjusted R-squared:  0.4238 
+      #/ F-statistic: 4.799 on 6 and 25 DF,  p-value: 0.002204
+   
+   Elev.model.8<-lm(ElevDif~Max.Root.Loca*Log.Ht.veg+Leaf.Mass.Frac+LDMC+Log.Leaf.Area,data=dat.8t)
+   plot_model(Elev.model.8,type='int')
+   plot_model(Elev.model.8,type='slope')
+   plot_model(Elev.model.8,type='est')
+   
    
    #C3.1.2.3 - forward AIC ####
    #----------------------#
