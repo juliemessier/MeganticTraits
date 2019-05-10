@@ -126,9 +126,9 @@ AICc(H.full.abund)
 
 # Analysis of Deviance to get p-value of whole model
 H0<-glm(abundance.ratio~1,
-+         data=dat.8t,
-+         family=Gamma(link='log'),
-+         maxit=1000)
+         data=dat.8t,
+         family=Gamma(link='log'),
+         maxit=1000)
 
 with(anova(H0,H.full.abund),pchisq(Deviance,Df,lower.tail=FALSE)[2])
 ```
@@ -226,9 +226,9 @@ AICc(H.full.occur)
 
 # Analysis of Deviance to get p-value of whole model
 H0<-glm(occurence.ratio~1,
-+         data=dat.8t,
-+         family=Gamma(link='log'),
-+         maxit=1000)
+         data=dat.8t,
+         family=Gamma(link='log'),
+         maxit=1000)
 
 with(anova(H0,H.full.occur),pchisq(Deviance,Df,lower.tail=FALSE)[2])
 ```
@@ -313,7 +313,7 @@ H.full.elev<-lm(ElevDif~
                     Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+
                      Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac,
                  data=dat.8t)
-summary(H.full.elev)$coefficients
+summary(H.full.elev)
 AICc(H.full.elev)
 ```
 
