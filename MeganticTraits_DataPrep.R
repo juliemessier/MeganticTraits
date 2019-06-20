@@ -1232,6 +1232,17 @@ abline(0,1)
          type = c("text",
                   "text"))
   
+  #Biplot with growth form labelled instead of species
+
+  biplot(my.pca,
+         choices=c(3,4),
+         display = c("sites","species"),
+         type = c("text","points"))
+  text(summary(my.pca)[[2]][,3],
+       summary(my.pca)[[2]][,4],
+       labels=U.traits4.sp[which(rownames(U.traits4.sp)%in%rownames(summary(my.pca)[[2]])),"Life.Form"]
+  )
+  
   # Plot with vegan functions to test for significance of axes and variables
   
   # "scaling = 1" means that we are looking at correlation biplot
@@ -1311,6 +1322,136 @@ abline(0,1)
   
   
   save(H.traits3.sp,file=paste0(wrk.dir,'Species-Level.Herbaceous.Layer.Traits.withMycFrac.PCs.RData'))
+  
+  # C5.3 Colinearity between traits and life-forms? ####
+  #-----------------------------------------#
+  
+     #5.3.1 - LMF vs LifeForm ####
+  U.traits4.sp$Life.Form<-droplevels(U.traits4.sp$Life.Form)
+  boxplot(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp)
+  library(ggplot2)
+  ggplot(U.traits4.sp, 
+         aes(x=Life.Form, 
+             y=Leaf.Mass.Frac, 
+             fill=Life.Form))+
+     geom_boxplot()
+  
+  
+  plot(lm(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp))
+  # homogeneity of variance violated. decreasing variance as values increase
+  summary(glm(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp,family=quasibinomial))
+  
+      # Dispersion parameter for quasibinomial family taken to be 0.1150261
+  
+  plot(glm(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp,family=quasibinomial))
+  
+  summary(glm(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp,family=quasibinomial))
+  summary(aov(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp))
+  
+     #             Df Sum Sq Mean Sq F value   Pr(>F)    
+     # Life.Form    3 0.9075 0.30250   10.71 1.59e-05 ***
+     # Residuals   49 1.3844 0.02825                     
+     # ---
+     # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  
+  (t.hsd<-TukeyHSD(aov(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp)))
+  
+     # $`Life.Form`
+     # diff          lwr         upr     p adj
+     # Fern-Clubmoss   0.14126814 -0.167203532  0.44973981 0.6186166
+     # Forb-Clubmoss  -0.22392842 -0.493490369  0.04563353 0.1350119
+     # Shrub-Clubmoss -0.05876533 -0.353028553  0.23549789 0.9510954
+     # Forb-Fern      -0.36519656 -0.551211977 -0.17918114 0.0000210
+     # Shrub-Fern     -0.20003347 -0.420326310  0.02025936 0.0875285
+     # Shrub-Forb      0.16516309  0.003800744  0.32652543 0.0430066
+  
+  
+  plot(TukeyHSD(aov(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp)))
+  
+  plotTukeyHSD(aov(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp))
+ 
+  
+  # Welch one-way test doesn't assume equal variances 
+  # = parametric but non-equal varainces
+  oneway.test(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp)
+  
+        # data:  Leaf.Mass.Frac and Life.Form
+        # F = 39.017, num df = 3.0000, denom df = 8.0618,
+        # p-value = 3.808e-05
+  
+  # Games-Howell Post-Hoc Test = equivalent to tuckey but 
+  # does not assume equal variances and sample sizes.
+  
+  library(userfriendlyscience)
+  oneway(U.traits4.sp$Life.Form, y = U.traits4.sp$Leaf.Mass.Frac, posthoc = 'games-howell')
+  
+        # SS Df   MS     F     p
+        # Between groups (error + effect) 0.91  3  0.3 10.71 <.001
+        # Within groups (error only)      1.38 49 0.03            
+        # 
+        # 
+        # ### Post hoc test: games-howell
+        # 
+        # diff ci.lo ci.hi     t    df     p
+        # Fern-Clubmoss   0.14 -0.47  0.75  1.57  2.04  .537
+        # Forb-Clubmoss  -0.22 -0.74  0.29  2.33  2.62  .289
+        # Shrub-Clubmoss -0.06 -0.58  0.46  0.62  2.55  .920
+        # Forb-Fern      -0.37 -0.46 -0.27 10.34 35.45 <.001
+        # Shrub-Fern     -0.20 -0.30 -0.10  5.93 10.24  .001
+        # Shrub-Forb      0.17  0.04  0.29  3.49 29.65  .008
+  
+  # Kruskal-Wallis is the non-parametric equivalent of Anova
+  kruskal.test(Leaf.Mass.Frac~Life.Form,data=U.traits4.sp)
+  
+     # data:  Leaf.Mass.Frac by Life.Form
+     # Kruskal-Wallis chi-squared = 22.222, df = 3, p-value =
+     #    5.865e-05
+  
+  
+     #5.3.2 - Max.Root.Loca vs LifeForm ####
+  
+        boxplot(Max.Root.Loca~Life.Form,data=U.traits4.sp)
+        library(ggplot2)
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Max.Root.Loca, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        plot(lm(Max.Root.Loca~Life.Form,data=U.traits4.sp))
+        # diagnostics look good
+        summary(aov(Max.Root.Loca~Life.Form,data=U.traits4.sp))
+           #             Df Sum Sq Mean Sq F value Pr(>F)
+           # Life.Form    3   4.16   1.386   1.051   0.38
+           # Residuals   41  54.08   1.319 
+        
+     #5.3.3 - ElevDif vs LifeForm ####
+        row_list<-which(rownames(U.traits4.sp)%in%rownames(Ys.c))
+         temp<-cbind.data.frame(SpCode=U.traits4.sp[row_list,'SpCode'],
+                     Life.Form=U.traits4.sp[row_list,'Life.Form'],
+                     ElevDif=Ys.c[row_list,'ElevDif'],
+                     abundance.ratio=Ys.c[row_list,'abundance.ratio'])
+        
+         ggplot(temp, 
+               aes(x=Life.Form, 
+                   y=ElevDif, 
+                   fill=Life.Form))+
+           geom_boxplot()
+         
+         plot(lm(ElevDif~Life.Form,data=temp))
+         summary(aov(ElevDif~Life.Form,data=temp))
+            # N.S.
+         
+      #5.3.4 - AbundRatio vs LifeForm ####
+         ggplot(temp, 
+                aes(x=Life.Form, 
+                    y=abundance.ratio, 
+                    fill=Life.Form))+
+            geom_boxplot()
+         
+         plot(lm(abundance.ratio~Life.Form,data=temp))
+         kruskal.test(abundance.ratio~Life.Form,data=temp) 
+            #N.S. 
   
   # C6 Relationship between Y and X linear? ----
   
