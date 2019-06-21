@@ -1235,9 +1235,19 @@ abline(0,1)
   #Biplot with growth form labelled instead of species
 
   biplot(my.pca,
+         display = c("sites","species"),
+         type = c("text","none"),
+         cex=2,pch=0.8)
+  text(summary(my.pca)[[2]][,1],
+       summary(my.pca)[[2]][,2],
+       cex=0.7,
+       labels=U.traits4.sp[which(rownames(U.traits4.sp)%in%rownames(summary(my.pca)[[2]])),"Life.Form"]
+  )
+  
+    biplot(my.pca,
          choices=c(3,4),
          display = c("sites","species"),
-         type = c("text","points"))
+         type = c("text","none"))
   text(summary(my.pca)[[2]][,3],
        summary(my.pca)[[2]][,4],
        labels=U.traits4.sp[which(rownames(U.traits4.sp)%in%rownames(summary(my.pca)[[2]])),"Life.Form"]
@@ -1425,7 +1435,104 @@ abline(0,1)
            # Life.Form    3   4.16   1.386   1.051   0.38
            # Residuals   41  54.08   1.319 
         
-     #5.3.3 - ElevDif vs LifeForm ####
+        #5.3.3 - Log.Ht.veg vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Log.Ht.veg, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        
+        #5.3.4 - Log.Lamina.thck vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Log.Lamina.thck, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.5 - Log.LMA vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Log.LMA, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.6 - LDMC vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=LDMC, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.7 - Log.Leaf.Area vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Log.Leaf.Area, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.8 - Leaf.Mass.Frac vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Leaf.Mass.Frac, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.8 - Supp.Mass.Frac vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Supp.Mass.Frac, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.9 - Rep.Mass.Frac vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Rep.Mass.Frac, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.10 - Stor.Mass.Frac vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Stor.Mass.Frac, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.11 - Log.F.Root.Diam vs LifeForm ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Log.F.Root.Diam, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.12 - SRL ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=SRL, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.13 - Myc.Frac ####
+        
+        ggplot(U.traits4.sp, 
+               aes(x=Life.Form, 
+                   y=Myc.Frac, 
+                   fill=Life.Form))+
+           geom_boxplot()
+        
+        #5.3.14 - ElevDif vs LifeForm ####
         row_list<-which(rownames(U.traits4.sp)%in%rownames(Ys.c))
          temp<-cbind.data.frame(SpCode=U.traits4.sp[row_list,'SpCode'],
                      Life.Form=U.traits4.sp[row_list,'Life.Form'],
@@ -1442,7 +1549,7 @@ abline(0,1)
          summary(aov(ElevDif~Life.Form,data=temp))
             # N.S.
          
-      #5.3.4 - AbundRatio vs LifeForm ####
+      #5.3.15 - AbundRatio vs LifeForm ####
          ggplot(temp, 
                 aes(x=Life.Form, 
                     y=abundance.ratio, 
@@ -1452,6 +1559,9 @@ abline(0,1)
          plot(lm(abundance.ratio~Life.Form,data=temp))
          kruskal.test(abundance.ratio~Life.Form,data=temp) 
             #N.S. 
+         
+         
+         
   
   # C6 Relationship between Y and X linear? ----
   
