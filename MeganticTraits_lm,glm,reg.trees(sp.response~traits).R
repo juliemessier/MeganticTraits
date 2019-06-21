@@ -83,6 +83,12 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     length(which(complete.cases(Xs[,Trait.Names.5t])))
       # 46 species (instead of 44 previously)
     
+    Trait.Names.7t.lma<-c("Log.Ht.veg","Max.Root.Loca","Log.LMA","Log.Leaf.Area",  
+                      "Leaf.Mass.Frac","SRL","Myc.Frac")
+    # 7 traits with LMA 
+    length(which(complete.cases(Xs[,Trait.Names.7t.lma])))
+    # 36 species 
+    
 #============================#
 #(A) Abundance vs 8 Traits####
 #============================#
@@ -196,6 +202,36 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
        #     
        #=====================================================================================#
     
+          
+       # *A1.1.2 - Tree Model w LMA (remove Lamina.thckness & LDMC) ########
+       #----#
+          par(mfrow=c(1,1))
+          tree.model.abund.7<-tree(sp.response$abundance.ratio~.,data=Xs[,Trait.Names.7t.lma],
+                                 control=tree.control(nobs=36,mincut=5))
+          plot(tree.model.abund.7); text(tree.model.abund.7,pretty=0)
+          title('Abundance.ratio ~ 7 traits (w LMA) \n Deviance explained = 0.51')
+          # Myc.frac is most important variable, 
+          # for those with high myc.frac, SRL matters
+          
+          tree.model.abund.7
+          
+            # 1) root 36 178.1000 1.5740  
+            #     2) Myc.Frac < 0.58 5 104.0000 4.3820 *
+            #     3) Myc.Frac > 0.58 31  28.3700 1.1220  
+            #        6) SRL < 10.7122 12  13.1100 1.5160  
+            #           12) Log.LMA < -6.2664 5   8.7410 2.1500 *
+            #           13) Log.LMA > -6.2664 7   0.9366 1.0640 *
+            #        7) SRL > 10.7122 19  12.2100 0.8723 *
+          
+          1-(deviance(tree.model.abund.7)/178.1) 
+            #0.2932957
+          
+          plot(cv.tree(tree.model.abund.7))
+          
+            # Running model with LMA instead of LDMC + Lamina.Thck 
+            # replaces Rooting depth as last important trait with LMA
+          
+          
     # A1.2 - Test trait-trait interactions w lm ####
     ----
        
@@ -465,6 +501,19 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
     # 46 9
     
     save(dat.5t,file=paste0(wrk.dir,'46Species.5Traits.3SpeciesResponses.Understory.Layer.RData'))
+    
+    dat.7t.lma<-merge(sp.response[,c("LatinName","abundance.ratio","occurence.ratio",'ElevDif')],
+                      Xs[which(complete.cases(Xs[,Trait.Names.7t.lma])),Trait.Names.7t.lma],
+                      by="row.names",all.y=T)
+    # Cleanup
+    dim(dat.7t.lma)
+    # 36 12
+    rownames(dat.7t.lma)<-dat.7t.lma$Row.names
+    dat.7t.lma$Row.names<-NULL
+    dim(dat.7t.lma)
+    # 36 11
+    
+    save(dat.7t.lma,file=paste0(wrk.dir,'36Species.7Traits.w.lma.SpeciesResponses.Understory.Layer.RData'))
     
    # A3.1 - lm ####
    #===================================#
@@ -950,8 +999,6 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          
          #/ not sure what this returns
 
-   
-         
    #* A3.2.2 glm full  with Myc.Frac only #### 
    #=========================================#
    # Not including both Myc.Frac and log(Myc.Frac).
@@ -1106,9 +1153,45 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
              #/ AIC: 96.657
              #/ 
              #/ Number of Fisher Scoring iterations: 9
-    
           
-         # *A3.2.2.3 - forward AIC ####
+          
+          # *A3.2.2.3 AICc dredge 7 traits: ADD SLA, REMOVE LDMC and Lamina.Thickness ########
+          #------------#
+          
+          H1<-glm(abundance.ratio~
+                     Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.LMA+Log.Leaf.Area+Leaf.Mass.Frac+
+                     Myc.Frac:SRL + SRL:Log.LMA+
+                     Myc.Frac:SRL:Log.LMA,
+                  data=dat.7t.lma,
+                  family=Gamma(link='log'),
+                  maxit=1000,na.action='na.fail')
+          
+          #/ Can set the maximum number of parameters to include with m.lim = c(0,4)
+          
+          dredge.abund.7<-dredge(H1,beta='sd',rank="AICc",m.lim = c(0,6),extra=c("R^2"),trace=F)
+          
+          dredge.abund.7[1:3]
+             # Model selection table 
+             #       (Int) Lef.Mss.Frc  Log.LMA  Myc.Frc   SRL Log.LMA:SRL Myc.Frc:SRL Log.LMA:Myc.Frc:SRL
+             # 1001     0             -0.08973  0.06211 12.12       12.75      -12.23              -12.71
+             # 33       0                      -0.19680                                                  
+             # 34       0     0.08825          -0.22550                                                  
+             #         R^2 df  logLik AICc delta weight
+             # 1001 0.5518  8 -38.002 97.3  0.00  0.487
+             # 33   0.3124  3 -45.705 98.2  0.82  0.323
+             # 34   0.3400  4 -44.967 99.2  1.89  0.190
+             # Models ranked by AICc(x) 
+             # 
+          
+            # Including LMA instead of LDMC & lamina.thck slightly changes model selection.
+            # 3 equivalent best models. 
+               # one is same as regression tree
+               # one is just myc.Frac
+               # one is myc.frac + Leaf.Mass.Fraction
+            # Basically, first best model that used to include Log.Lamina.thck now includes
+            # log.lma instead.
+          
+         # A3.2.2.3 - forward AIC ####
           
           H1<-glm(abundance.ratio~
                      Myc.Frac+SRL+Max.Root.Loca+Log.Ht.veg+Log.Lamina.thck+LDMC+Log.Leaf.Area+Leaf.Mass.Frac+
@@ -2171,6 +2254,30 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
          #  and their interactions - R2 = 0.60
          #=====================================================================================#
       
+      # C1.1.2 - Tree Model w LMA (remove Lamina.thckness& LDMC) ####
+      # -------------
+      
+      par(mfrow=c(1,1))
+      tree.model.elev.7<-tree(dat.7t.lma$ElevDif~.,data=dat.7t.lma[,Trait.Names.7t.lma])
+      plot(tree.model.elev.7,mar=c(3,1,5,1)); text(tree.model.elev.7,pretty=0)
+      title('Elevation Shift ~ 7 traits (w LMA) \n Deviance Explained = 0.59')
+      
+      tree.model.elev.7
+      # 1) root 32 92210  36.94  
+      #     2) Leaf.Mass.Frac < 0.302389 5  7741 -25.60 *
+      #     3) Leaf.Mass.Frac > 0.302389 27 61290  48.52  
+      #        6) Max.Root.Loca < 2.15 17 30940  69.41  
+      #           12) Log.Ht.veg < 2.83148 9 13630  89.78 *
+      #           13) Log.Ht.veg > 2.83148 8  9376  46.50 *
+      #        7) Max.Root.Loca > 2.15 10 10310  13.00  
+      #           14) Max.Root.Loca < 2.60256 5  1556  -6.00 *
+      #           15) Max.Root.Loca > 2.60256 5  5148  32.00 *
+      
+      # Pseudo-R2
+      1-(deviance(tree.model.elev.7)/92210)
+      
+         # Exact same tree model retained
+      
       # C1.2 - Test trait-trait interactions w lm ####
       # -------# 
       
@@ -2583,6 +2690,40 @@ load(file=paste0(wrk.dir,'All.Response.variables.Understory.Layer.Inf.removed.RD
    plot_model(Elev.model.8,type='int')
    plot_model(Elev.model.8,type='slope')
    plot_model(Elev.model.8,type='est')
+   
+   # *C3.1.2.3 - AICc dredge 7 traits: ADD SLA, REMOVE LDMC and Lamina.Thickness ####
+   #---------------------------#
+   
+   dat.7.nona<-dat.7t.lma[!is.na(dat.7t.lma$ElevDif),] #loose CASC, LYAN, LYOB, OSCI
+   H1<-lm(ElevDif~
+             Log.Ht.veg+Max.Root.Loca+Log.LMA+Log.Leaf.Area+Leaf.Mass.Frac+SRL+Myc.Frac+
+             Leaf.Mass.Frac:Max.Root.Loca + Max.Root.Loca:Log.Ht.veg + Leaf.Mass.Frac:Max.Root.Loca:Log.Ht.veg,
+          # SRL:Log.Lamina.thck + Log.Lamina.thck:Myc.Frac,
+          data=dat.7.nona, na.action='na.fail')
+   
+   dredge.elev.7<-dredge(H1,beta='sd', rank="AICc", m.lim = c(0,6),extra=c("R^2"), trace=F)
+   
+   dredge.elev.7[1:4]
+   
+   #/4 equivalent models  (within 2 AIC of best model )
+   
+   #/ Model selection table 
+         # ---
+         #    Model selection table 
+         #      (Int) Lef.Mss.Frc Log.Ht.veg Log.Lef.Are Log.LMA Max.Rot.Loc Lef.Mss.Frc:Max.Rot.Loc Log.Ht.veg:Max.Rot.Loc    R^2 df   logLik  AICc
+         # 146     0      1.0700                                     0.6331                  -1.377                        0.4017  5 -164.645 341.6
+         # 276     0      0.6022     0.5601                          1.5130                                         -2.233 0.4525  6 -163.225 341.8
+         # 22      0      0.6798                  0.316             -0.5330                                                0.3825  5 -165.149 342.6
+         # 284     0      0.5783     0.6311              0.1957      1.5560                                         -2.332 0.4857  7 -162.223 343.1
+         #     delta weight
+         # 146  0.00  0.337
+         # 276  0.21  0.302
+         # 22   1.01  0.203
+         # 284  1.52  0.158
+         # Models ranked by AICc(x)
+   
+   # Leaf.Mass.Fraction aand Max.Root.Location still the 2 variables
+   # that are always significant
    
    
    #C3.1.2.3 - forward AIC ####
